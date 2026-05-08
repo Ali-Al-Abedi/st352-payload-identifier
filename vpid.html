@@ -108,34 +108,6 @@
   .btn.primary { background: var(--accent); color: #001218; border-color: var(--accent); font-weight: 600; }
   .btn.primary:hover { background: #33dcff; }
 
-  /* Presets */
-  .presets {
-    display: flex; gap: 8px; flex-wrap: wrap;
-    margin-bottom: 24px;
-    padding: 14px 16px;
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-  }
-  .presets-label {
-    font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
-    color: var(--text-faint); font-weight: 600;
-    margin-right: 4px; align-self: center;
-  }
-  .preset-chip {
-    background: var(--bg-elev-2);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    padding: 5px 12px;
-    border-radius: 14px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 500;
-    transition: all 0.15s ease;
-  }
-  .preset-chip:hover { color: var(--accent); border-color: var(--accent); }
-  .preset-chip.active { background: var(--accent); color: #001218; border-color: var(--accent); font-weight: 600; }
-
   /* Main grid */
   .grid {
     display: grid;
@@ -567,11 +539,6 @@
       <button id="exportCsvBtn" class="btn" title="Download the per-field byte-by-byte breakdown as a CSV file">Export CSV</button>
       <button id="clearBtn" class="btn">Clear</button>
     </div>
-  </div>
-
-  <div class="presets">
-    <span class="presets-label">Common presets</span>
-    <span id="presetChips" style="display: contents;"></span>
   </div>
 
   <div class="grid">
@@ -4169,24 +4136,6 @@ function runSelfTest() {
 const $ = sel => document.querySelector(sel);
 const $$ = sel => Array.from(document.querySelectorAll(sel));
 
-function renderPresetChips() {
-  const container = $('#presetChips');
-  container.innerHTML = '';
-  for (const p of COMMON_PRESETS) {
-    const chip = document.createElement('span');
-    chip.className = 'preset-chip';
-    chip.textContent = p.name;
-    chip.title = p.hex;
-    chip.addEventListener('click', () => {
-      $('#hexInput').value = p.hex;
-      handleHexChange();
-      $$('.preset-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-    });
-    container.appendChild(chip);
-  }
-}
-
 function renderBitsRow(byteValue) {
   const rowEl = document.createElement('div');
   rowEl.className = 'byte-bits';
@@ -5420,11 +5369,6 @@ function handleHexChange() {
   }
   const decoded = decodeVpidBytes(...bytes);
   render(decoded);
-  // Highlight matching preset
-  $$('.preset-chip').forEach(c => c.classList.remove('active'));
-  for (const chip of $$('.preset-chip')) {
-    if (chip.title === formatted) chip.classList.add('active');
-  }
 }
 
 /* ---------- Init ---------- */
@@ -5492,7 +5436,6 @@ function flashBtn(btn, text, original, ms) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  renderPresetChips();
   $('#hexInput').addEventListener('input', handleHexChange);
   $('#hexInput').addEventListener('blur', handleHexChange);
   $('#clearBtn').addEventListener('click', () => { $('#hexInput').value = ''; handleHexChange(); });
