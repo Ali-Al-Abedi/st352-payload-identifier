@@ -1,0 +1,15 @@
+# Editor / OS
+.DS_Store
+Thumbs.db
+*~
+.vscode/
+.idea/
+
+# Node / Python build crud (we shouldn't have any, but just in case)
+node_modules/
+__pycache__/
+*.pyc
+
+# Local-only debug files
+/tmp/
+*.log
