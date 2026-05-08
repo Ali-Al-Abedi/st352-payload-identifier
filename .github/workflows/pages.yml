@@ -1,0 +1,76 @@
+# Deploy the VPID Calculator to GitHub Pages.
+#
+# This workflow publishes the static `vpid.html` (plus the README and
+# `docs/smpte/` PDF references) to `<owner>.github.io/<repo>/`.
+#
+# Prerequisites (one-time, in the repo's GitHub UI):
+#   1. Settings -> Pages -> "Build and deployment" source: "GitHub Actions".
+#   2. Either make the repo PUBLIC (free Pages), or have a paid GitHub plan
+#      (Pro / Team / Enterprise) for Pages on a private repo.
+#
+# After those are set, every push to `main` will publish the latest
+# vpid.html to https://<owner>.github.io/<repo>/vpid.html
+
+name: Deploy VPID Calculator to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Build a tiny site directory containing exactly the files we want
+      # to publish: the calculator, an index that redirects to it, and
+      # the README rendered as a homepage. We deliberately skip docs/
+      # because the SMPTE PDFs referenced there are SMPTE copyrighted
+      # material and aren't checked into the repo at all (they're
+      # gitignored — engineers grab their own copies locally).
+      - name: Stage site
+        run: |
+          mkdir -p _site
+          cp vpid.html _site/vpid.html
+          cp README.md _site/README.md
+          # index.html: redirect to vpid.html (Pages serves index.html by
+          # default, and we want the root URL to land on the calculator).
+          cat > _site/index.html <<'EOF'
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta http-equiv="refresh" content="0; url=vpid.html">
+            <title>VPID Calculator</title>
+          </head>
+          <body>
+            <p>Redirecting to <a href="vpid.html">vpid.html</a>&hellip;</p>
+          </body>
+          </html>
+          EOF
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
