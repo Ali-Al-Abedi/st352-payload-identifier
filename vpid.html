@@ -230,6 +230,141 @@
   .spec-warning { color: var(--warn); }
   .spec-error { color: var(--err); }
 
+  /* Collapsible ST 2110-20 SDP fmtp panel inside the Decoded Source card */
+  .sdp-details {
+    margin-top: 8px; padding: 10px 12px;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  }
+  .sdp-details > summary {
+    cursor: pointer; font-size: 12px; font-weight: 600;
+    color: var(--text-dim); letter-spacing: 0.02em;
+    list-style: none; user-select: none;
+  }
+  .sdp-details > summary::-webkit-details-marker { display: none; }
+  .sdp-details > summary::before {
+    content: "▸ "; color: var(--text-faint); margin-right: 4px;
+    transition: transform 0.15s;
+  }
+  .sdp-details[open] > summary::before { content: "▾ "; }
+  .sdp-fmtp {
+    margin: 8px 0 6px; padding: 10px 12px;
+    background: var(--bg-elev); border: 1px solid var(--border); border-radius: 6px;
+    font-size: 12.5px; line-height: 1.55; color: var(--text);
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .sdp-actions { display: flex; gap: 8px; margin-bottom: 4px; }
+  .btn-sm { padding: 4px 10px; font-size: 11px; }
+
+  /* Power-tool panels: batch decode + side-by-side compare.
+     Visually consistent with the main cards but stacked vertically below
+     the 3-column grid. Collapsed by default to keep the page approachable. */
+  .tool-panel {
+    border: 1px solid var(--border); border-radius: 12px;
+    background: var(--bg-elev);
+    margin-top: 16px; padding: 0;
+    overflow: hidden;
+  }
+  .tool-panel > summary {
+    cursor: pointer; padding: 14px 18px;
+    display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap;
+    list-style: none; user-select: none;
+    transition: background 0.15s;
+  }
+  .tool-panel > summary::-webkit-details-marker { display: none; }
+  .tool-panel > summary:hover { background: rgba(255,255,255,0.02); }
+  .tool-panel > summary::before {
+    content: "▸"; color: var(--text-faint); margin-right: 8px;
+    font-size: 12px; transition: transform 0.15s;
+    display: inline-block; min-width: 10px;
+  }
+  .tool-panel[open] > summary::before { content: "▾"; }
+  .tool-title { font-size: 15px; font-weight: 600; color: var(--text); }
+  .tool-sub { font-size: 12px; color: var(--text-dim); }
+  .tool-body { padding: 0 18px 18px; }
+  .tool-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+  .tool-status { font-size: 12px; color: var(--text-dim); margin-left: 8px; }
+
+  /* Batch decode */
+  .batch-input {
+    width: 100%; box-sizing: border-box;
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; font-size: 12.5px;
+    background: var(--bg); color: var(--text);
+    resize: vertical; min-height: 110px;
+  }
+  .batch-input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .batch-results { margin-top: 14px; }
+  .batch-table {
+    width: 100%; border-collapse: collapse; font-size: 12.5px;
+    border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+  }
+  .batch-table th {
+    background: var(--bg); color: var(--text-dim);
+    font-weight: 600; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    padding: 8px 10px; text-align: left;
+    border-bottom: 1px solid var(--border-strong);
+  }
+  .batch-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .batch-table tr:last-child td { border-bottom: none; }
+  .batch-table tr.batch-row-invalid td { color: var(--err); background: rgba(239,68,68,0.05); }
+  .batch-table tr.batch-row-registry td { color: var(--text-dim); background: rgba(245,158,11,0.05); }
+  .batch-table .batch-hex { font-family: 'JetBrains Mono', monospace; color: var(--accent); font-weight: 600; }
+  .batch-table .batch-friendly { font-weight: 500; }
+  .batch-table .batch-warns { color: var(--warn); font-size: 11px; font-style: italic; }
+
+  /* Compare two VPIDs */
+  .compare-inputs {
+    display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap;
+    align-items: flex-end;
+  }
+  .compare-input-wrap { flex: 1; min-width: 220px; display: flex; flex-direction: column; }
+  .compare-label {
+    font-size: 11px; color: var(--text-dim); text-transform: uppercase;
+    letter-spacing: 0.06em; margin-bottom: 4px; font-weight: 600;
+  }
+  .compare-actions { display: flex; gap: 8px; }
+  .compare-results { margin-top: 14px; }
+  .compare-summary {
+    display: flex; gap: 12px; flex-wrap: wrap;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 14px; margin-bottom: 12px;
+  }
+  .compare-summary-card { flex: 1; min-width: 220px; }
+  .compare-summary-card .label {
+    font-size: 11px; color: var(--text-dim); text-transform: uppercase;
+    letter-spacing: 0.06em; font-weight: 600; margin-bottom: 4px;
+  }
+  .compare-summary-card .value { font-size: 13.5px; color: var(--text); font-weight: 500; }
+  .compare-summary-card .sub { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+  .compare-table {
+    width: 100%; border-collapse: collapse; font-size: 12.5px;
+    border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+  }
+  .compare-table th {
+    background: var(--bg); color: var(--text-dim);
+    font-weight: 600; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    padding: 8px 10px; text-align: left;
+    border-bottom: 1px solid var(--border-strong);
+  }
+  .compare-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr.compare-row-diff td { background: rgba(239,68,68,0.06); color: var(--text); }
+  .compare-table tr.compare-row-diff td.compare-field { color: var(--err); font-weight: 600; }
+  .compare-table .compare-byte { font-family: 'JetBrains Mono', monospace; color: var(--text-dim); white-space: nowrap; }
+  .compare-table .compare-val-a, .compare-table .compare-val-b { font-family: 'JetBrains Mono', monospace; }
+  .compare-empty {
+    color: var(--text-dim); font-style: italic; padding: 14px 0;
+  }
+
   /* Byte breakdown */
   .byte-stack { display: flex; flex-direction: column; gap: 12px; }
   .byte {
@@ -427,6 +562,9 @@
     <div class="actions">
       <button id="copyBtn" class="btn">Copy hex</button>
       <button id="copyKVBtn" class="btn">Copy specs</button>
+      <button id="copyLinkBtn" class="btn" title="Copy a shareable link with this VPID encoded in the URL (e.g. ?vpid=89CA8001)">Copy link</button>
+      <button id="exportJsonBtn" class="btn" title="Download the fully-decoded VPID as a JSON file">Export JSON</button>
+      <button id="exportCsvBtn" class="btn" title="Download the per-field byte-by-byte breakdown as a CSV file">Export CSV</button>
       <button id="clearBtn" class="btn">Clear</button>
     </div>
   </div>
@@ -451,6 +589,14 @@
           <span id="hdrText">SDR</span>
         </div>
         <div class="spec-grid" id="specGrid"></div>
+        <details id="sdpDetails" class="sdp-details">
+          <summary>ST 2110-20 SDP <code>a=fmtp</code> (RFC 4175 + ST 2110-20)</summary>
+          <pre id="sdpFmtp" class="sdp-fmtp mono">—</pre>
+          <div class="sdp-actions">
+            <button id="copySdpBtn" class="btn btn-sm" type="button">Copy fmtp line</button>
+          </div>
+          <p class="form-hint" id="sdpNote" style="margin-top: 8px;"></p>
+        </details>
       </div>
     </div>
 
@@ -476,6 +622,57 @@
 
   </div>
 
+  <!--
+    "Power tools" panel: collapsible batch decoder + side-by-side comparator.
+    Both reuse decodeVpidBytes() so they always agree with the main view.
+  -->
+  <details class="tool-panel" id="batchPanel">
+    <summary>
+      <span class="tool-title">Batch decode</span>
+      <span class="tool-sub">Paste a list of VPIDs (one per line) — get a sortable table of every source.</span>
+    </summary>
+    <div class="tool-body">
+      <textarea id="batchInput" class="batch-input mono" rows="6" spellcheck="false" autocomplete="off"
+placeholder="89 CA 80 01    # 1080p59.94 SDR Rec.709
+85 06 20 01    # 1080i29.97
+A1 CA 00 01    # UHDTV1 4Kp59.94
+B0 0B 80 01    # VC-2 mezzanine 1080p60"></textarea>
+      <div class="tool-actions">
+        <button id="batchDecodeBtn" class="btn">Decode all</button>
+        <button id="batchExportJsonBtn" class="btn">Export JSON</button>
+        <button id="batchExportCsvBtn" class="btn">Export CSV</button>
+        <button id="batchClearBtn" class="btn">Clear</button>
+        <span id="batchStatus" class="tool-status"></span>
+      </div>
+      <div id="batchResults" class="batch-results"></div>
+    </div>
+  </details>
+
+  <details class="tool-panel" id="comparePanel">
+    <summary>
+      <span class="tool-title">Compare two VPIDs</span>
+      <span class="tool-sub">Diff the bit-by-bit decode of two VPIDs side-by-side — handy when a downstream device reports a mismatch.</span>
+    </summary>
+    <div class="tool-body">
+      <div class="compare-inputs">
+        <label class="compare-input-wrap">
+          <span class="compare-label">VPID A</span>
+          <input id="compareInputA" class="hex-input mono" type="text" spellcheck="false" autocomplete="off" placeholder="89 CA 80 01" maxlength="11">
+        </label>
+        <label class="compare-input-wrap">
+          <span class="compare-label">VPID B</span>
+          <input id="compareInputB" class="hex-input mono" type="text" spellcheck="false" autocomplete="off" placeholder="A1 CA 00 01" maxlength="11">
+        </label>
+        <div class="compare-actions">
+          <button id="compareBtn" class="btn">Compare</button>
+          <button id="compareSwapBtn" class="btn" title="Swap A and B">Swap</button>
+          <button id="compareUseCurrentBtn" class="btn" title="Copy the current VPID into A">Use current as A</button>
+        </div>
+      </div>
+      <div id="compareResults" class="compare-results"></div>
+    </div>
+  </details>
+
   <footer id="references">
     <strong>Authoritative references used by this tool:</strong>
     <ul class="ref-list">
@@ -497,6 +694,9 @@
       <li><code>SMPTE ST 2036-3:2018</code> / <code>ITU-R BT.2077-1</code> — UHDTV1 / UHDTV2 over single-, dual-, quad- and octa-link 10G-SDI Mode D (Byte 1 = 0xA1, 0xA2)</li>
       <li><code>SMPTE ST 2036-4:2019</code> / <code>ARIB STD-B58</code> / <code>ITU-R BT.2077-2</code> — UHDTV1 / UHDTV2 over multi-link 10G-SDI 12-bit container (Byte 1 = 0xA5, 0xA6) — note: colorimetry-bit polarity is INVERTED (1 = Rec. 709)</li>
       <li><code>SMPTE ST 2047-2:2010</code> — VC-2 mezzanine compressed 1080p over 1.5 Gb/s HD-SDI (Byte 1 = 0xB0)</li>
+      <li><code>SMPTE ST 2047-4:2011</code> — VC-2 Level 65 compressed HD over 270 Mb/s SD-SDI (Byte 1 = 0xB2; bytes 2-4 per §4.6 Tables 2 &amp; 3, including format-ID byte 4)</li>
+      <li><code>SMPTE ST 292-2:2011</code> — Stereoscopic 720/1080-line on dual 1.5 Gb/s HD-SDI (Byte 1 = 0xB1; bytes 2-4 share the same layout used by ST 425-2 / 0x8E / 0x8F)</li>
+      <li><code>SMPTE ST 2082-30:2017</code> — Multiplex of 2× 6G / 4× 3G / 8× HD onto a single 12G-SDI link (Byte 1 = 0xD9-0xDE). The standard explicitly delegates bytes 2-4 to the underlying single-stream standard (ST 2081-10 / ST 425-1 Level A / ST 292-1).</li>
       <li><code>SMPTE Payload ID Registry</code> — <a href="https://smpte-ra.org/registers/Payload-Identifier-Registry/" target="_blank" rel="noopener">smpte-ra.org Payload Identifier Registry</a> (used for full Byte&nbsp;1 coverage; codes without a bit-level decoder show their registered standard, description, and status)</li>
     </ul>
     <p style="margin-top: 12px;">Bit-level definitions cite their originating standard on each decoded field, so any value can be traced to its source. Fields decoded from 6G-SDI VPIDs are marked with the citation <code>ST 2081-10 (Tek)</code> to distinguish them from fields confirmed against the official SMPTE PDFs. Codes signalled in the SMPTE-RA registry but without a published bit layout in this tool are flagged as "Recognised by registry — bit-level decoder not yet implemented". Round-trip integrity is verified by automated tests against known-good VPIDs.</p>
@@ -769,8 +969,12 @@ function decodeStereoSingle3G(b2, b3, b4, layoutHex) {
   fields.push({ byte: 4, bits: "b1:b0", name: "Bit depth", value: BIT_DEPTH_ST292_2[depth], source: "ST 292-2 §6.1" });
   if (depth !== 1) warnings.push(`Byte 4 b1:b0 = ${depth.toString(16)}h is Reserved; only 1h (10-bit) is defined for ST 292-2 / ST 425-2.`);
 
-  // Resolution from byte 1 (720 vs 1080) and horizontal pixel count
-  const isLine720 = layoutHex === 0x8E;
+  // Resolution from byte 1 + horizontal pixel count.
+  //   0x8E (single-link 3G stereo): always 720-line (1280 only)
+  //   0x8F (single-link 3G stereo): always 1080-line (1920 / 2048)
+  //   0xB1 (dual-link 1.5G stereo, ST 292-2): can be either 720 (1280)
+  //         or 1080 (1920/2048) — disambiguated by byte 3 b7:b6.
+  const isLine720 = (layoutHex === 0x8E) || (layoutHex === 0xB1 && hSampCode === 2);
   const verticalLines = isLine720 ? 720 : 1080;
   const hpix = HSAMP_ST292_2[hSampCode] > 0 ? HSAMP_ST292_2[hSampCode] : (isLine720 ? 1280 : 1920);
   const resStr = `${hpix}×${verticalLines}`;
@@ -798,7 +1002,9 @@ function decodeStereoSingle3G(b2, b3, b4, layoutHex) {
 function encodeStereoSingle3G(c, layoutHex) {
   const { trans, pic } = encodeScanBits(c.scan, layoutHex);
   const b2 = (trans << 7) | (pic << 6) | ((c.rate ?? 0xA) & 0xF);
-  const isLine720 = layoutHex === 0x8E;
+  // 0x8E is fixed 720-line; 0x8F is fixed 1080-line; 0xB1 (ST 292-2 dual)
+  // can be either, so default to 1080 (most common dual-link 3D stream).
+  const isLine720 = layoutHex === 0x8E || (layoutHex === 0xB1 && c.horizontalActive === 1280);
   const hpix = c.horizontalActive ?? (isLine720 ? 1280 : 1920);
   const hSampCode = (hpix === 1920) ? 0 : (hpix === 2048) ? 1 : (hpix === 1280) ? 2 : 0;
   const aspect   = (c.aspect === "16:9") ? 1 : 0;
@@ -1777,6 +1983,25 @@ const VPID_LAYOUTS = {
     interface: "3 Gb/s SDI, ST 425-2 stereoscopic dual-stream",
     decode(b2, b3, b4) { return decodeStereoSingle3G(b2, b3, b4, 0x8F); },
     encode(c) { return encodeStereoSingle3G(c, 0x8F); }
+  },
+
+  // ============================================================
+  // 0xB1 — Stereoscopic 720-line / 1080-line on dual-link 1.5 Gb/s SDI
+  // SMPTE ST 292-2:2011 §6.1 — registers byte 1 = B1h and reuses the
+  // identical bytes 2/3/4 layout that ST 425-2 (single-link 3G) uses,
+  // i.e. the same decoder we wired to 0x8E/0x8F. The only difference is
+  // that here the same byte 1 covers both 720- and 1080-line streams,
+  // so the decoder picks vertical lines from byte 3 b7:b6.
+  // ============================================================
+  0xB1: {
+    id: "3D-DL-1.5G",
+    hex: 0xB1,
+    family: "Stereoscopic Dual-Link 1.5G",
+    label: "Stereoscopic 720/1080-line on dual 1.5 Gb/s (ST 292-2)",
+    citation: "SMPTE ST 292-2:2011 §6.1",
+    interface: "Dual 1.5 Gb/s HD-SDI, ST 292-2 stereoscopic dual-stream",
+    decode(b2, b3, b4) { return decodeStereoSingle3G(b2, b3, b4, 0xB1); },
+    encode(c)          { return encodeStereoSingle3G(c, 0xB1); }
   },
 
   // ============================================================
@@ -3122,7 +3347,215 @@ const VPID_LAYOUTS = {
     }
   },
 
+  // ============================================================
+  // 0xB2 — VC-2 Level 65 compressed HD source carried over 270 Mb/s SD-SDI
+  // SMPTE ST 2047-4:2011 §4.6 Tables 2 & 3
+  //
+  //   Byte 2 b7      Transport scan          (always 0 — SD-SDI carrier is interlaced)
+  //   Byte 2 b6      Picture scan (carrier)  (always 0 — SD-SDI carrier is interlaced)
+  //   Byte 2 b5:b4   Compression syntax      (00 = VC-2)
+  //   Byte 2 b3:b0   Picture rate            (per ST 352 Table 2)
+  //   Byte 3 b7      Aspect ratio            (always 1 = 16:9)
+  //   Byte 3 b6:b4   Reserved (0)
+  //   Byte 3 b3:b0   Sampling structure      (always 0h = 4:2:2 Y'CbCr)
+  //   Byte 4         Format ID per Table 3:
+  //                    0x01 = 1920x1080i 60/1.001 (rate=6h)
+  //                    0x02 = 1920x1080i 50       (rate=5h)
+  //                    0x03 = 1280x720p  60/1.001 (rate=Ah)
+  //                    0x04 = 1280x720p  50       (rate=9h)
+  //                    0x05 = 1440x1080i 60/1.001 (rate=6h)
+  //                    0x06 = 1440x1080i 50       (rate=5h)
+  //
+  // Note: Byte 2 reflects the SD-SDI *carrier* structure (always interlaced
+  // even for 720p sources), while Byte 4 carries the original source format
+  // and source scan (interlaced for 1080i, progressive for 720p).
+  // ============================================================
+  0xB2: (() => {
+    // Format-ID lookup: byte 4 -> { res, scan, hpix, lines, expectedRate (b3:b0 of byte 2) }
+    const FMT = {
+      0x01: { hpix: 1920, lines: 1080, scan: "Interlaced", expectedRate: 0x6, label: "1920x1080i 60/1.001" },
+      0x02: { hpix: 1920, lines: 1080, scan: "Interlaced", expectedRate: 0x5, label: "1920x1080i 50" },
+      0x03: { hpix: 1280, lines: 720,  scan: "Progressive", expectedRate: 0xA, label: "1280x720p 60/1.001" },
+      0x04: { hpix: 1280, lines: 720,  scan: "Progressive", expectedRate: 0x9, label: "1280x720p 50" },
+      0x05: { hpix: 1440, lines: 1080, scan: "Interlaced", expectedRate: 0x6, label: "1440x1080i 60/1.001 (RP 2047-3)" },
+      0x06: { hpix: 1440, lines: 1080, scan: "Interlaced", expectedRate: 0x5, label: "1440x1080i 50 (RP 2047-3)" }
+    };
+    return {
+      id: "VC2-L65-SD",
+      hex: 0xB2,
+      family: "VC-2 Level 65 over SD-SDI",
+      label: "VC-2 Level 65 compressed HD on 270 Mb/s SD-SDI",
+      citation: "SMPTE ST 2047-4:2011 §4.6 Tables 2 & 3",
+      interface: "270 Mb/s SD-SDI (SMPTE ST 259) carrying VC-2 Level 65 compressed 1080i/720p HD",
+      decode(b2, b3, b4) {
+        const fields = [];
+        const warnings = [];
+        const trans = (b2 >> 7) & 1;
+        const pic   = (b2 >> 6) & 1;
+        const compr = (b2 >> 4) & 0x3;
+        const rate  = b2 & 0xF;
+        fields.push({ byte: 2, bits: "b7",    name: "Transport scan",          value: trans ? "Progressive (invalid)" : "Interlaced (SD-SDI carrier)",                  source: "ST 2047-4 Table 2" });
+        fields.push({ byte: 2, bits: "b6",    name: "Picture scan (carrier)",  value: pic   ? "Progressive (invalid)" : "Interlaced (SD-SDI carrier)",                  source: "ST 2047-4 Table 2" });
+        fields.push({ byte: 2, bits: "b5:b4", name: "Compression syntax",      value: compr === 0 ? "VC-2 (Level 65)" : `Reserved (${compr.toString(16)}h)`,            source: "ST 2047-4 Table 2 (only 00 valid)" });
+        fields.push({ byte: 2, bits: "b3:b0", name: "Source picture rate",     value: PICTURE_RATE[rate].label,                                                          source: "ST 2047-4 Table 2 / ST 352 Table 2" });
+        if (trans !== 0) warnings.push("Byte 2 b7 must be 0 (interlaced transport on SD-SDI carrier) per ST 2047-4 Table 2.");
+        if (pic !== 0)   warnings.push("Byte 2 b6 must be 0 (interlaced carrier picture) per ST 2047-4 Table 2.");
+        if (compr !== 0) warnings.push(`Byte 2 b5:b4 = ${compr.toString(16)}h is Reserved per ST 2047-4 (only 00 = VC-2 valid).`);
+        if (![0x5, 0x6, 0x9, 0xA].includes(rate)) warnings.push(`Byte 2 b3:b0 = ${rate.toString(16)}h is invalid for ST 2047-4 (only 5h=25, 6h=30/1.001, 9h=50, Ah=60/1.001 are defined).`);
+
+        const aspect = (b3 >> 7) & 1;
+        const b3_64  = (b3 >> 4) & 0x7;
+        const samp   = b3 & 0xF;
+        fields.push({ byte: 3, bits: "b7",    name: "Image aspect ratio",      value: aspect ? "16:9 (always)" : "Invalid (must be 1)",                                  source: "ST 2047-4 Table 2" });
+        fields.push({ byte: 3, bits: "b6:b4", name: "Reserved",                value: b3_64 === 0 ? "0 (correct)" : `${b3_64.toString(16)}h (must be 0)`,                source: "ST 2047-4 Table 2" });
+        fields.push({ byte: 3, bits: "b3:b0", name: "Sampling structure",      value: samp === 0 ? "4:2:2 Y'CbCr (fixed)" : `Reserved/invalid (${samp.toString(16)}h)`,  source: "ST 2047-4 Table 2 (only 0h valid)" });
+        if (!aspect)     warnings.push("Byte 3 b7 must be 1 (16:9) per ST 2047-4 Table 2.");
+        if (b3_64 !== 0) warnings.push(`Byte 3 b6:b4 = ${b3_64.toString(16)}h is Reserved per ST 2047-4 Table 2.`);
+        if (samp !== 0)  warnings.push(`Byte 3 b3:b0 = ${samp.toString(16)}h is invalid; ST 2047-4 fixes the underlying sampling at 0h (4:2:2 Y'CbCr).`);
+
+        const fmt = FMT[b4];
+        if (fmt) {
+          fields.push({ byte: 4, bits: "b7:b0", name: "Source format ID",      value: `${fmt.label} (0x${b4.toString(16).padStart(2,"0").toUpperCase()})`,               source: "ST 2047-4 Table 3" });
+          // Cross-check: byte 2's picture-rate value must match the format's expected rate.
+          if (rate !== fmt.expectedRate) {
+            warnings.push(`Byte 4 = 0x${b4.toString(16).padStart(2,"0").toUpperCase()} (${fmt.label}) implies picture rate ${fmt.expectedRate.toString(16)}h, but byte 2 picture rate is ${rate.toString(16)}h.`);
+          }
+        } else {
+          fields.push({ byte: 4, bits: "b7:b0", name: "Source format ID",      value: `Reserved/invalid (0x${b4.toString(16).padStart(2,"0").toUpperCase()})`,           source: "ST 2047-4 Table 3 (only 0x01-0x06 valid)" });
+          warnings.push(`Byte 4 = 0x${b4.toString(16).padStart(2,"0").toUpperCase()} is Reserved per ST 2047-4 Table 3 (only 0x01-0x06 are defined).`);
+        }
+
+        const hpix = fmt ? fmt.hpix : 0;
+        const lines = fmt ? fmt.lines : 0;
+        const sourceScan = fmt ? fmt.scan : "Unknown";
+        return {
+          fields, warnings,
+          characteristics: {
+            resolution: fmt ? `${hpix}×${lines} (VC-2 Level 65 compressed)` : "Unknown (invalid format ID)",
+            horizontalActive: hpix,
+            frameRate: PICTURE_RATE[rate].hz,
+            frameRateLabel: PICTURE_RATE[rate].label,
+            scan: sourceScan + " (source); SD-SDI carrier interlaced",
+            aspect: "16:9",
+            sampling: "4:2:2 Y'CbCr (10-bit) — VC-2 Level 65 compressed",
+            bitDepth: "10-bit (VC-2 Level 65 encoded)",
+            colorimetry: "Rec. 709 (BT.709)",
+            transferChar: "SDR",
+            transferCharLabel: "SDR-TV (BT.709)",
+            interface: this.interface,
+            channel: null,
+            standard: "VC-2 Level 65 over SD-SDI (ST 2047-4 + RP 2047-3 + ST 2042-1)"
+          }
+        };
+      },
+      encode(c) {
+        // Honour rate + format ID; default to 1080i59.94 (b4=0x01, b2=0x06).
+        const rate = (c.rate ?? 0x6) & 0xF;
+        const b4   = (c.formatId ?? 0x01) & 0xFF;
+        const b2 = rate;
+        const b3 = 0x80;
+        return [b2, b3, b4];
+      }
+    };
+  })(),
+
+  // ============================================================
+  // 0xD9 / 0xDA / 0xDB / 0xDC / 0xDD / 0xDE — ST 2082-30 multiplexes on 12G-SDI
+  // SMPTE ST 2082-30:2017 §§4-6 Tables 1, 2, 3
+  //
+  // For all six of these mappings the standard says: "Byte 1 of the payload
+  // identifier for each data stream shall be set in accordance with [the
+  // table]. Bytes 2 through 4 of the payload identifier shall be set in
+  // accordance with the picture rate, sampling structure, dynamic range and
+  // bit-depth, etc., of the image format being carried on the interface as
+  // defined in [the underlying single-stream standard]."
+  //
+  //   0xD9  ->  bytes 2-4 are ST 2081-10 (single-link 6G-SDI 2160-line)
+  //   0xDA  ->  bytes 2-4 are ST 2081-10 (single-link 6G-SDI 1080-line)
+  //   0xDB  ->  bytes 2-4 are ST 425-1 Level A (3G-A 1080-line)
+  //   0xDC  ->  bytes 2-4 are ST 425-1 Level A (3G-A 720-line)
+  //   0xDD  ->  bytes 2-4 are ST 292-1 (HD-SDI 1080-line)
+  //   0xDE  ->  bytes 2-4 are ST 292-1 (HD-SDI 720-line)
+  //
+  // We delegate to the corresponding existing decoder/encoder, then patch the
+  // family / interface / channel labels so the user sees the right transport
+  // (8x HD muxed onto 12G, etc.).
+  // ============================================================
+
 };
+
+// 0xD9-0xDE: ST 2082-30 multiplex VPIDs reuse the byte 2/3/4 layout of the
+// underlying single-stream standard (ST 2081-10, ST 425-1 Level A, ST 292-1).
+// Build them as thin wrappers that delegate to the existing single-stream
+// decoders/encoders, then re-tag the channel/interface labels so the user
+// sees the correct multiplex transport context.
+function makeMuxLayout(opts) {
+  // opts: {hex, id, family, label, citation, interface, baseLayoutHex,
+  //        muxNomenclature, muxBitrate}
+  const base = VPID_LAYOUTS[opts.baseLayoutHex];
+  if (!base) throw new Error(`makeMuxLayout: base layout 0x${opts.baseLayoutHex.toString(16)} not registered`);
+  return {
+    id:        opts.id,
+    hex:       opts.hex,
+    family:    opts.family,
+    label:     opts.label,
+    citation:  opts.citation,
+    interface: opts.interface,
+    decode(b2, b3, b4) {
+      const inner = base.decode(b2, b3, b4);
+      // Patch the surfaced characteristics so the multiplex context is clear.
+      const c = Object.assign({}, inner.characteristics);
+      c.interface = opts.interface;
+      c.channel   = opts.muxNomenclature;
+      c.standard  = opts.label + " (" + (inner.characteristics.standard || base.label) + " sub-stream)";
+      return Object.assign({}, inner, { characteristics: c });
+    },
+    encode(c) { return base.encode(c); }
+  };
+}
+
+VPID_LAYOUTS[0xD9] = makeMuxLayout({
+  hex: 0xD9, id: "2x6G-2160-12G", family: "ST 2082-30 Mode 1",
+  label: "2× 6G-SDI 2160-line muxed on 12G-SDI",
+  citation: "SMPTE ST 2082-30:2017 §4 Table 1 (byte 1 = D9h, bytes 2-4 = ST 2081-10)",
+  interface: "12 Gb/s SDI (SMPTE ST 2082-1) carrying 2× ST 2081-10 6G-SDI 2160-line streams",
+  baseLayoutHex: 0xC0, muxNomenclature: "2× 6G-SDI dual-stream (ST 2082-30 Mode 1)"
+});
+VPID_LAYOUTS[0xDA] = makeMuxLayout({
+  hex: 0xDA, id: "2x6G-1080-12G", family: "ST 2082-30 Mode 1",
+  label: "2× 6G-SDI 1080-line muxed on 12G-SDI",
+  citation: "SMPTE ST 2082-30:2017 §4 Table 1 (byte 1 = DAh, bytes 2-4 = ST 2081-10)",
+  interface: "12 Gb/s SDI (SMPTE ST 2082-1) carrying 2× ST 2081-10 6G-SDI 1080-line streams",
+  baseLayoutHex: 0xC1, muxNomenclature: "2× 6G-SDI dual-stream (ST 2082-30 Mode 1)"
+});
+VPID_LAYOUTS[0xDB] = makeMuxLayout({
+  hex: 0xDB, id: "4x3G-1080-12G", family: "ST 2082-30 Mode 2",
+  label: "4× 3G-SDI 1080-line muxed on 12G-SDI",
+  citation: "SMPTE ST 2082-30:2017 §5 Table 2 (byte 1 = DBh, bytes 2-4 = ST 425-1 Level A)",
+  interface: "12 Gb/s SDI (SMPTE ST 2082-1) carrying 4× ST 425-1 Level A 3G-SDI 1080-line streams",
+  baseLayoutHex: 0x89, muxNomenclature: "4× 3G-SDI quad-stream (ST 2082-30 Mode 2)"
+});
+VPID_LAYOUTS[0xDC] = makeMuxLayout({
+  hex: 0xDC, id: "4x3G-720-12G", family: "ST 2082-30 Mode 2",
+  label: "4× 3G-SDI 720-line muxed on 12G-SDI",
+  citation: "SMPTE ST 2082-30:2017 §5 Table 2 (byte 1 = DCh, bytes 2-4 = ST 425-1 Level A)",
+  interface: "12 Gb/s SDI (SMPTE ST 2082-1) carrying 4× ST 425-1 Level A 3G-SDI 720-line streams",
+  baseLayoutHex: 0x88, muxNomenclature: "4× 3G-SDI quad-stream (ST 2082-30 Mode 2)"
+});
+VPID_LAYOUTS[0xDD] = makeMuxLayout({
+  hex: 0xDD, id: "8xHD-1080-12G", family: "ST 2082-30 Mode 3",
+  label: "8× HD-SDI 1080-line muxed on 12G-SDI",
+  citation: "SMPTE ST 2082-30:2017 §6 Table 3 (byte 1 = DDh, bytes 2-4 = ST 292-1)",
+  interface: "12 Gb/s SDI (SMPTE ST 2082-1) carrying 8× ST 292-1 1.5G HD-SDI 1080-line streams",
+  baseLayoutHex: 0x85, muxNomenclature: "8× HD-SDI octal-stream (ST 2082-30 Mode 3)"
+});
+VPID_LAYOUTS[0xDE] = makeMuxLayout({
+  hex: 0xDE, id: "8xHD-720-12G", family: "ST 2082-30 Mode 3",
+  label: "8× HD-SDI 720-line muxed on 12G-SDI",
+  citation: "SMPTE ST 2082-30:2017 §6 Table 3 (byte 1 = DEh, bytes 2-4 = ST 292-1)",
+  interface: "12 Gb/s SDI (SMPTE ST 2082-1) carrying 8× ST 292-1 1.5G HD-SDI 720-line streams",
+  baseLayoutHex: 0x84, muxNomenclature: "8× HD-SDI octal-stream (ST 2082-30 Mode 3)"
+});
 
 /* ---------- Convention sets ---------- */
 // Byte 1 layouts where the underlying raster is physically 16:9 (HD 1080-line and
@@ -3133,9 +3566,11 @@ const LAYOUTS_16x9_BY_CONVENTION = new Set([
   0x8F, 0x92, 0x93, 0x99, 0x9A, 0x9B,       // Stereoscopic 3D 1080/2160
   0x94, 0x95, 0x96, 0x97, 0x98,             // 3G dual/quad-link 1080/2160
   0xA1, 0xA2, 0xA5, 0xA6,                   // 10G-SDI UHDTV1/UHDTV2 (ST 2036-3 / ST 2036-4)
-  0xB0,                                     // VC-2 mezzanine 1080p over HD-SDI (ST 2047-2)
+  0xB0, 0xB2,                               // VC-2 mezzanine 1080p / VC-2 Level 65 HD (ST 2047-2 / ST 2047-4)
+  0xB1,                                     // ST 292-2 dual 1.5G stereo 1080-line
   0xC0, 0xC1,                               // 6G-SDI 1080/2160
-  0xCE, 0xCF, 0xD0, 0xD2                    // 12G-SDI 1080/2160/4320
+  0xCE, 0xCF, 0xD0, 0xD2,                   // 12G-SDI 1080/2160/4320
+  0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE        // ST 2082-30 muxes (sub-stream is 1080/2160)
 ]);
 
 /* ---------- SMPTE Byte 1 Payload Identifier Registry ---------- */
@@ -3580,7 +4015,14 @@ function runSelfTest() {
     // 0xB0: VC-2 mezzanine compressed 1080p (ST 2047-2)
     { hex: "B0 0B 80 01", b1: 0xB0 },   // VC-2 1080p60
     { hex: "B0 0A 80 01", b1: 0xB0 },   // VC-2 1080p59.94
-    { hex: "B0 09 80 01", b1: 0xB0 }    // VC-2 1080p50
+    { hex: "B0 09 80 01", b1: 0xB0 },   // VC-2 1080p50
+    // 0xB2: VC-2 Level 65 compressed HD over 270 Mb/s SD-SDI (ST 2047-4 Table 3)
+    { hex: "B2 06 80 01", b1: 0xB2 },   // 1920x1080i 60/1.001
+    { hex: "B2 05 80 02", b1: 0xB2 },   // 1920x1080i 50
+    { hex: "B2 0A 80 03", b1: 0xB2 },   // 1280x720p 60/1.001
+    { hex: "B2 09 80 04", b1: 0xB2 },   // 1280x720p 50
+    { hex: "B2 06 80 05", b1: 0xB2 },   // 1440x1080i 60/1.001
+    { hex: "B2 05 80 06", b1: 0xB2 }    // 1440x1080i 50
   ];
   for (const t of newLayoutTests) {
     const bytes = parseHex(t.hex);
@@ -3622,6 +4064,9 @@ function runSelfTest() {
       };
     } else if (t.b1 === 0xB0) {
       ch = { rate: bytes[1] & 0xF };
+    } else if (t.b1 === 0xB2) {
+      // ST 2047-4: byte 2 = rate (b3:b0), byte 3 = 0x80 fixed, byte 4 = format ID.
+      ch = { rate: bytes[1] & 0xF, formatId: bytes[3] };
     }
     const [b2, b3, b4] = layout.encode(ch);
     if (b2 !== bytes[1] || b3 !== bytes[2] || b4 !== bytes[3]) {
@@ -3670,6 +4115,50 @@ function runSelfTest() {
       failures.push(`ST 435-1 round-trip ${t.hex}: encode produced ${formatHexBytes([bytes[0], b2, b3, b4])}`);
     }
   }
+
+  // 0xB1 (ST 292-2 dual-link 1.5G stereoscopic): decoder is shared with
+  // 0x8E/0x8F so we only need to verify byte 1 is recognised and the
+  // family / resolution come out right (1080-line picked from b3 b7:b6).
+  // Round-trip: re-encode using the inner stereo encoder.
+  const b1Tests = [
+    { hex: "B1 CA 20 01", expectFamily: "Stereoscopic Dual-Link 1.5G", expectRes1080: true,  expectRate: "59.94" },
+    { hex: "B1 CA 80 01", expectFamily: "Stereoscopic Dual-Link 1.5G", expectRes1080: false, expectRate: "59.94" }, // 1280 -> 720
+    { hex: "B1 06 20 01", expectFamily: "Stereoscopic Dual-Link 1.5G", expectRes1080: true,  expectRate: "29.97" }
+  ];
+  for (const t of b1Tests) {
+    const bytes = parseHex(t.hex);
+    const r = decodeVpidBytes(...bytes);
+    if (!r.valid) { failures.push(`0xB1 ${t.hex}: decode failed`); continue; }
+    if (r.family !== t.expectFamily) failures.push(`0xB1 ${t.hex}: family ${r.family} (expected ${t.expectFamily})`);
+    if (r.characteristics.frameRateLabel !== t.expectRate) failures.push(`0xB1 ${t.hex}: rate ${r.characteristics.frameRateLabel} (expected ${t.expectRate})`);
+    const isLine1080 = r.characteristics.resolution.includes("1080");
+    if (isLine1080 !== t.expectRes1080) failures.push(`0xB1 ${t.hex}: resolution ${r.characteristics.resolution} (expected ${t.expectRes1080 ? "1080-line" : "720-line"})`);
+  }
+
+  // 0xD9-0xDE (ST 2082-30 multiplex VPIDs) delegate bytes 2-4 to an existing
+  // single-stream layout. Verify each byte 1 routes to the right base layout
+  // (so the channel/interface labels carry the multiplex context), and that
+  // the underlying byte-2/3/4 decode still succeeds with sensible values.
+  const muxTests = [
+    { hex: "D9 CA 00 01", expectFamily: "ST 2082-30 Mode 1", expectChannel: "2× 6G-SDI dual-stream" },
+    { hex: "DA CA 80 01", expectFamily: "ST 2082-30 Mode 1", expectChannel: "2× 6G-SDI dual-stream" },
+    { hex: "DB CA 80 01", expectFamily: "ST 2082-30 Mode 2", expectChannel: "4× 3G-SDI quad-stream" },
+    { hex: "DC CA 80 01", expectFamily: "ST 2082-30 Mode 2", expectChannel: "4× 3G-SDI quad-stream" },
+    { hex: "DD 06 20 01", expectFamily: "ST 2082-30 Mode 3", expectChannel: "8× HD-SDI octal-stream" },
+    { hex: "DE 06 80 01", expectFamily: "ST 2082-30 Mode 3", expectChannel: "8× HD-SDI octal-stream" }
+  ];
+  for (const t of muxTests) {
+    const bytes = parseHex(t.hex);
+    const r = decodeVpidBytes(...bytes);
+    if (!r.valid)  { failures.push(`0x${bytes[0].toString(16).toUpperCase()} mux ${t.hex}: decode failed`); continue; }
+    if (r.family !== t.expectFamily) {
+      failures.push(`0x${bytes[0].toString(16).toUpperCase()} mux ${t.hex}: family ${r.family} (expected ${t.expectFamily})`);
+    }
+    if (!r.characteristics.channel || !r.characteristics.channel.includes(t.expectChannel)) {
+      failures.push(`0x${bytes[0].toString(16).toUpperCase()} mux ${t.hex}: channel ${r.characteristics.channel} (expected to contain ${t.expectChannel})`);
+    }
+  }
+
   return failures;
 }
 
@@ -3856,8 +4345,481 @@ function render(decoded) {
     stack.appendChild(card);
   }
 
+  // ST 2110-20 SDP fmtp panel
+  renderSdpFmtp(decoded);
+
   // Builder dropdowns
   renderBuilder(decoded);
+}
+
+/* =====================================================================
+ *  S T   2 1 1 0 - 2 0   S D P   f m t p   G E N E R A T O R
+ *
+ *  Translates a decoded VPID into the matching `a=fmtp:96 ...` line
+ *  per RFC 4175 §6 + SMPTE ST 2110-20 §7. Only emits parameters that
+ *  the underlying VPID actually signals; non-signalled fields fall
+ *  back to the ST 2110-20 defaults (PAR=1:1, RANGE=NARROW, etc.).
+ *
+ *  Mappings:
+ *    sampling      <- characteristics.sampling string + colorimetry
+ *                     ("4:2:2 Y'CbCr"  -> "YCbCr-4:2:2",
+ *                      "4:4:4 R'G'B'"  -> "RGB",
+ *                      "ICtCp"          -> "YCbCr-..." with TCS=ICTCP-PQ etc.)
+ *    width/height  <- characteristics.horizontalActive + line count
+ *    exactframerate<- characteristics.frameRate (M/1.001 forms preserved)
+ *    depth         <- characteristics.bitDepth ("10-bit" -> "10")
+ *    colorimetry   <- characteristics.colorimetry ("Rec. 709" -> "BT709")
+ *    interlace/segmented <- characteristics.scan
+ *    TCS           <- characteristics.transferChar
+ *    RANGE         <- "FULL" if bitDepth label includes "Full Range",
+ *                     otherwise "NARROW"
+ *    PAR           <- "1:1" (production default)
+ * ===================================================================== */
+
+// ST 2110-20 §7.2 + RFC 4175 §6 — keyed by the human-readable label that
+// the VPID decoder emits (matches PICTURE_RATE[].label exactly, so we don't
+// rely on float equality with values like 60000/1001 = 59.940059940059946).
+const FRAME_RATE_FRACTIONS = {
+  "23.976":  "24000/1001",
+  "24":      "24",
+  "25":      "25",
+  "29.97":   "30000/1001",
+  "30":      "30",
+  "47.952":  "48000/1001",
+  "48":      "48",
+  "50":      "50",
+  "59.94":   "60000/1001",
+  "60":      "60",
+  "95.904":  "96000/1001",
+  "96":      "96",
+  "100":     "100",
+  "119.88":  "120000/1001",
+  "120":     "120"
+};
+
+function vpidSamplingToFmtp(samplingStr, colorimStr) {
+  // ST 2110-20 sampling values (§7.1):
+  //   YCbCr-4:4:4, YCbCr-4:2:2, YCbCr-4:2:0, ICtCp-4:2:2, ICtCp-4:4:4,
+  //   RGB, BGR, RGBA, BGRA, XYZ, KEY (+ ALPHA).
+  if (!samplingStr) return null;
+  const s = samplingStr.toUpperCase();
+  // ICtCp explicitly carries its own sampling label per ST 2110-20.
+  if (s.includes("ICTCP")) {
+    if (s.includes("4:2:2")) return "ICtCp-4:2:2";
+    if (s.includes("4:4:4")) return "ICtCp-4:4:4";
+  }
+  if (s.includes("X'Y'Z'") || s.includes("XYZ"))               return "XYZ";
+  if (s.includes("R'G'B'") && !s.includes("YCBCR"))            return "RGB";
+  if (s.includes("4:2:2"))                                     return "YCbCr-4:2:2";
+  if (s.includes("4:2:0"))                                     return "YCbCr-4:2:0";
+  if (s.includes("4:4:4") && s.includes("YCBCR"))              return "YCbCr-4:4:4";
+  if (s.includes("4:4:4"))                                     return "YCbCr-4:4:4";
+  return null;
+}
+
+function vpidColorimToFmtp(colorimStr) {
+  // ST 2110-20 §7.5 colorimetry values: BT601, BT709, BT2020, BT2100,
+  // ST2065-1, ST2065-3, XYZ, ICTCP, ALPHA, UNSPECIFIED.
+  if (!colorimStr) return "UNSPECIFIED";
+  const s = colorimStr.toUpperCase();
+  if (s.includes("BT.2100") || s.includes("REC. 2100"))         return "BT2100";
+  if (s.includes("BT.2020") || s.includes("REC. 2020"))         return "BT2020";
+  if (s.includes("BT.709")  || s.includes("REC. 709"))          return "BT709";
+  if (s.includes("BT.601")  || s.includes("REC. 601"))          return "BT601";
+  if (s.includes("X'Y'Z'")  || s.includes("XYZ"))               return "XYZ";
+  if (s.includes("ST 2065-1"))                                  return "ST2065-1";
+  if (s.includes("ST 2065-3"))                                  return "ST2065-3";
+  if (s.includes("ICTCP"))                                      return "ICTCP";
+  if (s.includes("UNSPEC"))                                     return "UNSPECIFIED";
+  return "UNSPECIFIED";
+}
+
+function vpidTcsToFmtp(transferChar, transferCharLabel) {
+  // ST 2110-20 §7.6 TCS values: SDR, PQ, HLG, LINEAR, BT2100LINPQ,
+  // BT2100LINHLG, ST428-1, DENSITY, ST2065-1, ST2065-3, UNSPECIFIED.
+  if (!transferChar) return "SDR";
+  const s = transferChar.toUpperCase();
+  if (s === "PQ"  || (transferCharLabel || "").toUpperCase().includes("PQ"))  return "PQ";
+  if (s === "HLG" || (transferCharLabel || "").toUpperCase().includes("HLG")) return "HLG";
+  if (s === "SDR") return "SDR";
+  if (s === "UNSPEC") return "UNSPECIFIED";
+  return "SDR";
+}
+
+function vpidDepthToFmtp(bitDepthStr) {
+  if (!bitDepthStr) return "10";
+  const m = String(bitDepthStr).match(/(\d+)\s*-?\s*bit/i);
+  return m ? m[1] : "10";
+}
+
+function vpidLinesFromResolution(c) {
+  // Pull the vertical line count from the resolution string ("3840×2160 (UHDTV1 / 4K)").
+  if (!c.resolution) return null;
+  const m = String(c.resolution).match(/[\d]+\s*[×x]\s*([\d]+)/);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+function vpidExactFrameRate(label, num) {
+  // Prefer label-based lookup so /1.001 rates emit the canonical fraction
+  // (e.g. "59.94" -> "60000/1001") instead of the float representation.
+  if (label != null && FRAME_RATE_FRACTIONS[label] != null) return FRAME_RATE_FRACTIONS[label];
+  if (num == null) return null;
+  // Fall back: integer rate emits the integer; fractional emits a 3-digit
+  // decimal so we never leak the JS float (59.940059940059946 etc.) into SDP.
+  return Number.isInteger(num) ? String(num) : num.toFixed(3).replace(/\.?0+$/, "");
+}
+
+function buildSdpFmtp(decoded) {
+  if (!decoded.valid) return null;
+  const c = decoded.characteristics;
+  const sampling   = vpidSamplingToFmtp(c.sampling, c.colorimetry);
+  const width      = c.horizontalActive || null;
+  const height     = vpidLinesFromResolution(c);
+  const efr        = vpidExactFrameRate(c.frameRateLabel, c.frameRate);
+  const depth      = vpidDepthToFmtp(c.bitDepth);
+  const colorim    = vpidColorimToFmtp(c.colorimetry);
+  const tcs        = vpidTcsToFmtp(c.transferChar, c.transferCharLabel);
+  const range      = (String(c.bitDepth || "").toLowerCase().includes("full range")) ? "FULL" : "NARROW";
+  // Scan -> interlace / segmented (ST 2110-20 §7.7).
+  const isInterlaced = (c.scan === "Interlaced");
+  const isPsF        = (c.scan === "PsF");
+  const parts = [];
+  if (sampling) parts.push(`sampling=${sampling}`);
+  if (width)    parts.push(`width=${width}`);
+  if (height)   parts.push(`height=${height}`);
+  if (efr)      parts.push(`exactframerate=${efr}`);
+  parts.push(`depth=${depth}`);
+  parts.push("TCS=" + tcs);
+  parts.push("colorimetry=" + colorim);
+  parts.push("PM=2110GPM");
+  parts.push("SSN=ST2110-20:2017");
+  if (range !== "NARROW") parts.push("RANGE=" + range);
+  if (isInterlaced || isPsF) parts.push("interlace");
+  if (isPsF)                 parts.push("segmented");
+  parts.push("PAR=1:1");
+  return parts;
+}
+
+/* =====================================================================
+ *  B A T C H   D E C O D E
+ *
+ *  Take a multi-line text input, parse each line as a VPID, decode them,
+ *  and emit a sortable table. Lines starting with `#` are treated as
+ *  comments; trailing `# whatever` is also stripped so engineers can
+ *  paste an annotated capture log directly. Empty lines are skipped.
+ * ===================================================================== */
+function batchSplitLines(text) {
+  const lines = String(text || "").split(/\r?\n/);
+  const out = [];
+  for (const raw of lines) {
+    let line = raw.replace(/#.*$/, "").trim();
+    if (!line) continue;
+    out.push({ raw: raw.trim(), payload: line });
+  }
+  return out;
+}
+
+function batchDecodeAll(text) {
+  const items = batchSplitLines(text);
+  const results = [];
+  for (const { raw, payload } of items) {
+    const bytes = parseHex(payload);
+    if (!bytes) {
+      results.push({ raw, bytes: null, hex: payload, decoded: null, error: "Could not parse 4 hex bytes" });
+      continue;
+    }
+    const r = decodeVpidBytes(...bytes);
+    results.push({ raw, bytes, hex: formatHexBytes(bytes), decoded: r });
+  }
+  return results;
+}
+
+function renderBatchResults(results) {
+  const host = $('#batchResults');
+  host.innerHTML = "";
+  if (!results.length) {
+    host.innerHTML = '<div class="compare-empty">Paste one or more VPIDs above and click <strong>Decode all</strong>.</div>';
+    return;
+  }
+  const tbl = document.createElement('table');
+  tbl.className = "batch-table";
+  tbl.innerHTML = `
+    <thead>
+      <tr>
+        <th style="width: 110px;">VPID</th>
+        <th>Source</th>
+        <th style="width: 130px;">Format</th>
+        <th style="width: 110px;">Frame</th>
+        <th style="width: 90px;">Scan</th>
+        <th style="width: 110px;">Sampling</th>
+        <th style="width: 90px;">Bit depth</th>
+        <th style="width: 130px;">Colorimetry</th>
+        <th style="width: 110px;">Transfer</th>
+        <th>Standard</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+  const tbody = tbl.querySelector('tbody');
+  for (const item of results) {
+    const tr = document.createElement('tr');
+    const decoded = item.decoded;
+    if (!item.bytes || !decoded) {
+      tr.className = "batch-row-invalid";
+      tr.innerHTML = `<td class="batch-hex">${item.hex}</td><td colspan="10">${item.error || 'Invalid'}</td>`;
+    } else if (decoded.valid) {
+      const c = decoded.characteristics;
+      const friendly = buildFriendlyLabel(c);
+      const warnings = (decoded.warnings || []).join("; ");
+      tr.innerHTML = `
+        <td class="batch-hex">${item.hex}</td>
+        <td class="batch-friendly">${friendly}</td>
+        <td>${c.resolution || '—'}</td>
+        <td>${(c.frameRateLabel || '—') + (c.frameRateLabel ? ' Hz' : '')}</td>
+        <td>${c.scan || '—'}</td>
+        <td>${c.sampling || '—'}</td>
+        <td>${c.bitDepth || '—'}</td>
+        <td>${c.colorimetry || '—'}</td>
+        <td>${c.transferCharLabel || c.transferChar || '—'}</td>
+        <td><code style="font-size: 11px;">${decoded.citation || c.standard || '—'}</code></td>
+        <td class="batch-warns">${warnings}</td>
+      `;
+    } else if (decoded.registered) {
+      tr.className = "batch-row-registry";
+      tr.innerHTML = `
+        <td class="batch-hex">${item.hex}</td>
+        <td colspan="8"><em>Registry-only:</em> ${decoded.registry.description}</td>
+        <td><code style="font-size: 11px;">${decoded.registry.standard}</code></td>
+        <td class="batch-warns">${decoded.registry.status}</td>
+      `;
+    } else {
+      tr.className = "batch-row-invalid";
+      tr.innerHTML = `<td class="batch-hex">${item.hex}</td><td colspan="10">${decoded.error || 'Unassigned VPID'}</td>`;
+    }
+    tbody.appendChild(tr);
+  }
+  host.appendChild(tbl);
+}
+
+function batchExportRows(results, mode) {
+  if (mode === "json") {
+    const arr = results.map(item => {
+      if (!item.bytes || !item.decoded) {
+        return { input: item.raw, hex: item.hex, error: item.error || 'Invalid VPID' };
+      }
+      return decodeToJsonObject(item.bytes, item.decoded);
+    });
+    return JSON.stringify(arr, null, 2);
+  }
+  // CSV: one row per VPID with the headline characteristics; this is the
+  // most useful shape for an engineer doing a router crosspoint sweep.
+  const rows = [["VPID", "Friendly", "Resolution", "Frame Rate", "Scan", "Aspect", "Sampling", "Bit Depth", "Colorimetry", "Transfer", "Interface", "Channel/Link", "Standard", "Citation", "Warnings"]];
+  for (const item of results) {
+    if (!item.bytes || !item.decoded) {
+      rows.push([item.hex, item.error || 'Invalid', "", "", "", "", "", "", "", "", "", "", "", "", ""]);
+    } else if (item.decoded.valid) {
+      const c = item.decoded.characteristics;
+      rows.push([
+        item.hex,
+        buildFriendlyLabel(c),
+        c.resolution || "",
+        (c.frameRateLabel || "") + (c.frameRateLabel ? " Hz" : ""),
+        c.scan || "",
+        c.aspect || "",
+        c.sampling || "",
+        c.bitDepth || "",
+        c.colorimetry || "",
+        c.transferCharLabel || c.transferChar || "",
+        c.interface || "",
+        c.channel || "",
+        c.standard || "",
+        item.decoded.citation || "",
+        (item.decoded.warnings || []).join("; ")
+      ]);
+    } else if (item.decoded.registered) {
+      const r = item.decoded.registry;
+      rows.push([item.hex, "(registry-only)", "", "", "", "", "", "", "", "", "", "", "", r.standard, r.status]);
+    } else {
+      rows.push([item.hex, item.decoded.error || "Unassigned", "", "", "", "", "", "", "", "", "", "", "", "", ""]);
+    }
+  }
+  return rowsToCsv(rows);
+}
+
+/* =====================================================================
+ *  C O M P A R E   T W O   V P I D S
+ *
+ *  Side-by-side decode of two VPIDs. The diff is computed at the byte
+ *  level (which bytes differ?), at the bit level (which bit positions
+ *  flipped?), and at the field level (which decoded characteristic
+ *  changed?) — engineers usually want all three views.
+ * ===================================================================== */
+function compareDescribe(decoded) {
+  if (!decoded) return { valid: false, kind: "none", title: "—", sub: "" };
+  if (decoded.valid) {
+    return { valid: true, kind: "decoded", title: buildFriendlyLabel(decoded.characteristics), sub: decoded.citation || decoded.label };
+  }
+  if (decoded.registered) {
+    return { valid: false, kind: "registry", title: decoded.registry.standard, sub: decoded.registry.description };
+  }
+  return { valid: false, kind: "invalid", title: "Unassigned VPID", sub: decoded.error || "" };
+}
+
+function compareFieldsOf(decoded) {
+  // Returns an array of {byte, bits, name, value, source, key} for the
+  // decoded fields. For registry-only / invalid we synthesise a minimal
+  // entry so the table still has something to compare.
+  if (decoded && decoded.valid && Array.isArray(decoded.fields)) {
+    return decoded.fields.map(f => ({ byte: f.byte, bits: f.bits, name: f.name, value: f.value, source: f.source, key: `${f.byte}:${f.bits}:${f.name}` }));
+  }
+  return [];
+}
+
+function renderCompareResults(hexA, hexB) {
+  const host = $('#compareResults');
+  host.innerHTML = "";
+  const bytesA = parseHex(hexA);
+  const bytesB = parseHex(hexB);
+  if (!bytesA || !bytesB) {
+    host.innerHTML = '<div class="compare-empty">Both fields need to be 4-byte VPIDs (e.g. <code>89 CA 80 01</code>).</div>';
+    return;
+  }
+  const decA = decodeVpidBytes(...bytesA);
+  const decB = decodeVpidBytes(...bytesB);
+  const descA = compareDescribe(decA);
+  const descB = compareDescribe(decB);
+
+  // Summary cards
+  const summary = document.createElement('div');
+  summary.className = "compare-summary";
+  summary.innerHTML = `
+    <div class="compare-summary-card">
+      <div class="label">VPID A · ${formatHexBytes(bytesA)}</div>
+      <div class="value">${descA.title}</div>
+      <div class="sub">${descA.sub || ''}</div>
+    </div>
+    <div class="compare-summary-card">
+      <div class="label">VPID B · ${formatHexBytes(bytesB)}</div>
+      <div class="value">${descB.title}</div>
+      <div class="sub">${descB.sub || ''}</div>
+    </div>
+  `;
+  host.appendChild(summary);
+
+  // Byte-level diff (always present, 4 rows)
+  const byteTable = document.createElement('table');
+  byteTable.className = "compare-table";
+  byteTable.innerHTML = `
+    <thead><tr>
+      <th>Byte</th>
+      <th>Hex (A)</th>
+      <th>Hex (B)</th>
+      <th>Bin (A)</th>
+      <th>Bin (B)</th>
+      <th>XOR</th>
+      <th>Differing bits</th>
+    </tr></thead>
+    <tbody></tbody>
+  `;
+  const bbody = byteTable.querySelector('tbody');
+  for (let i = 0; i < 4; i++) {
+    const a = bytesA[i], b = bytesB[i];
+    const xor = a ^ b;
+    const tr = document.createElement('tr');
+    if (xor !== 0) tr.className = "compare-row-diff";
+    const diffBits = [];
+    for (let bit = 7; bit >= 0; bit--) if ((xor >> bit) & 1) diffBits.push(`b${bit}`);
+    tr.innerHTML = `
+      <td class="compare-field">Byte ${i+1}</td>
+      <td class="compare-val-a">0x${a.toString(16).toUpperCase().padStart(2,'0')}</td>
+      <td class="compare-val-b">0x${b.toString(16).toUpperCase().padStart(2,'0')}</td>
+      <td class="compare-byte">${a.toString(2).padStart(8,'0')}</td>
+      <td class="compare-byte">${b.toString(2).padStart(8,'0')}</td>
+      <td class="compare-byte">${xor.toString(2).padStart(8,'0')}</td>
+      <td>${diffBits.join(", ") || '<em style="color:var(--text-faint);">— same —</em>'}</td>
+    `;
+    bbody.appendChild(tr);
+  }
+  host.appendChild(byteTable);
+
+  // Field-level diff (per decoded characteristic)
+  const fieldsA = compareFieldsOf(decA);
+  const fieldsB = compareFieldsOf(decB);
+  // If neither side has decoded fields (e.g. both registry-only or both
+  // invalid), don't render the field-level table at all.
+  if (fieldsA.length === 0 && fieldsB.length === 0) {
+    return;
+  }
+  // Align by (byte, bits, name): when decoders for A and B differ in
+  // structure (e.g. comparing a 0x90 quad-link VPID to a 0xA0 octa-link
+  // VPID, which have different field layouts), surface the union.
+  const order = [];
+  const indexA = new Map(); fieldsA.forEach((f, i) => indexA.set(f.key, { f, i }));
+  const indexB = new Map(); fieldsB.forEach((f, i) => indexB.set(f.key, { f, i }));
+  for (const f of fieldsA) order.push(f.key);
+  for (const f of fieldsB) if (!indexA.has(f.key)) order.push(f.key);
+  const fieldTable = document.createElement('table');
+  fieldTable.className = "compare-table";
+  fieldTable.style.marginTop = "12px";
+  fieldTable.innerHTML = `
+    <thead><tr>
+      <th>Byte/Bits</th>
+      <th>Field</th>
+      <th>Value (A)</th>
+      <th>Value (B)</th>
+      <th>Source</th>
+    </tr></thead>
+    <tbody></tbody>
+  `;
+  const fbody = fieldTable.querySelector('tbody');
+  for (const key of order) {
+    const a = indexA.get(key), b = indexB.get(key);
+    const fa = a ? a.f : null, fb = b ? b.f : null;
+    const valA = fa ? fa.value : '—';
+    const valB = fb ? fb.value : '—';
+    const source = (fa && fa.source) || (fb && fb.source) || '';
+    const diff = valA !== valB;
+    const tr = document.createElement('tr');
+    if (diff) tr.className = "compare-row-diff";
+    const ref = fa || fb;
+    tr.innerHTML = `
+      <td class="compare-byte">B${ref.byte} ${ref.bits}</td>
+      <td class="compare-field">${ref.name}</td>
+      <td class="compare-val-a">${valA}</td>
+      <td class="compare-val-b">${valB}</td>
+      <td><code style="font-size: 10.5px; color: var(--text-faint);">${source}</code></td>
+    `;
+    fbody.appendChild(tr);
+  }
+  host.appendChild(fieldTable);
+}
+
+function renderSdpFmtp(decoded) {
+  const pre = $('#sdpFmtp');
+  const note = $('#sdpNote');
+  if (!pre) return;
+  if (!decoded.valid) {
+    pre.textContent = "—";
+    note.textContent = decoded.registered
+      ? "Registry-only entry: bytes 2-4 are not bit-decoded in this build, so the ST 2110-20 fmtp parameters cannot be auto-generated. Decode the SDP manually against the cited SMPTE standard."
+      : "VPID is invalid or unassigned; no fmtp line generated.";
+    return;
+  }
+  const parts = buildSdpFmtp(decoded);
+  if (!parts || parts.length === 0) {
+    pre.textContent = "—";
+    note.textContent = "Could not derive fmtp parameters for this VPID.";
+    return;
+  }
+  // Pretty-print as a wrapped fmtp line. Payload type 96 is the ST 2110-20
+  // dynamic PT convention; consumers can swap it for whatever PT they bind.
+  const line = "a=fmtp:96 " + parts.join("; ");
+  pre.textContent = line;
+  // Surface a friendly note about defaults that we filled in (PM/SSN/PAR/RANGE)
+  // so the engineer knows which params are signalled vs assumed.
+  const sigList = ["sampling", "width", "height", "exactframerate", "depth", "colorimetry", "TCS"];
+  note.innerHTML = `Parameters <code>${sigList.join("</code>, <code>")}</code> come straight from the decoded VPID. <code>PM</code>, <code>SSN</code>, <code>PAR</code> and <code>RANGE</code> are filled in with ST 2110-20:2017 production defaults — adjust them if your stream uses different SMPTE 2110-20 conformance modes (e.g. <code>RANGE=FULL</code> for full-range Y'CbCr, <code>PM=2110BPM</code> for the block-mode profile).`;
 }
 
 /* ---------- Builder (reverse: characteristics -> hex) ---------- */
@@ -3941,6 +4903,14 @@ function renderBuilder(decoded) {
     else if (newB1 === 0xA5)                        { defB2 = 0xCB; defB3 = 0x02; defB4 = 0x01; }  // ST 2036-4 UHDTV1 multi-link 4K p60 SDR Rec.709 4:2:2 10-bit Ch1 link 1
     else if (newB1 === 0xA6)                        { defB2 = 0xCB; defB3 = 0x02; defB4 = 0x01; }  // ST 2036-4 UHDTV2 multi-link 8K p60 SDR Rec.709 link 1 ch1
     else if (newB1 === 0xB0)                        { defB2 = 0x0B; defB3 = 0x80; defB4 = 0x01; }  // ST 2047-2 VC-2 mezzanine 1080p60 (matches Table 3)
+    else if (newB1 === 0xB1)                        { defB2 = 0xCA; defB3 = 0x20; defB4 = 0x01; }  // ST 292-2 dual-link 1.5G stereo 1080p59.94 16:9 4:2:2 Le 10-bit
+    else if (newB1 === 0xB2)                        { defB2 = 0x06; defB3 = 0x80; defB4 = 0x01; }  // ST 2047-4 VC-2 Level 65 1920x1080i 60/1.001 (Table 3 row 1)
+    else if (newB1 === 0xD9)                        { defB2 = 0xCA; defB3 = 0x00; defB4 = 0x01; }  // ST 2082-30 Mode 1: bytes from 0xC0 default (UHDTV1 4Kp59.94 SDR Rec.709 Ch1)
+    else if (newB1 === 0xDA)                        { defB2 = 0xCA; defB3 = 0x80; defB4 = 0x01; }  // ST 2082-30 Mode 1: bytes from 0xC1 default (1080p59.94)
+    else if (newB1 === 0xDB)                        { defB2 = 0xCA; defB3 = 0x80; defB4 = 0x01; }  // ST 2082-30 Mode 2: bytes from 0x89 default (3G-A 1080p59.94)
+    else if (newB1 === 0xDC)                        { defB2 = 0xCA; defB3 = 0x80; defB4 = 0x01; }  // ST 2082-30 Mode 2: bytes from 0x88 default (3G-A 720p59.94)
+    else if (newB1 === 0xDD)                        { defB2 = 0x06; defB3 = 0x20; defB4 = 0x01; }  // ST 2082-30 Mode 3: bytes from 0x85 default (HD 1080i29.97)
+    else if (newB1 === 0xDE)                        { defB2 = 0x4A; defB3 = 0x80; defB4 = 0x01; }  // ST 2082-30 Mode 3: bytes from 0x84 default (HD 720p59.94)
     else if (newB1 === 0x90)                        { defB2 = 0xCA; defB3 = 0x20; defB4 = 0x01; }  // ST 435-1 quad-link 1080p59.94 1920 16:9 4:2:2 Ch1 10-bit
     else if (newB1 === 0xA0)                        { defB2 = 0xC6; defB3 = 0x20; defB4 = 0x01; }  // ST 435-1 octa-link 2160p29.97 3840 16:9 4:2:2 Ch1 10-bit
     $('#hexInput').value = formatHexBytes([newB1, defB2, defB3, defB4]);
@@ -4047,6 +5017,11 @@ function renderBuilder(decoded) {
     } else if (layout.hex === 0xB0) {
       // ST 2047-2 (VC-2 mezzanine over HD-SDI) — only the picture rate is variable.
       ch = { rate: b2 & 0xF };
+    } else if (layout.hex === 0xB2) {
+      // ST 2047-4 (VC-2 Level 65 over SD-SDI) — picture rate AND format ID
+      // are user-selectable. The encoder will keep them consistent, but if
+      // they don't match Table 3 the decoder surfaces a warning.
+      ch = { rate: b2 & 0xF, formatId: b4 };
     } else if (layout.hex === 0x90) {
       // ST 435-1 Table 6 (quad-link 1080).
       ch = {
@@ -4128,7 +5103,7 @@ function renderBuilder(decoded) {
   // Reserved (no transfer-characteristic / HDR signalling) — pre-HDR spec.
   const STEREO_NO_HDR = new Set([0x8E, 0x8F, 0x91, 0x92, 0x93, 0x99, 0x9A, 0x9B]);
   const ST435_NO_HDR = new Set([0x90, 0xA0]);
-  if (b1 >= 0x85 && b1 !== 0x86 && b1 !== 0x84 && b1 !== 0x8B && b1 !== 0xB0 && !STEREO_NO_HDR.has(b1) && !ST435_NO_HDR.has(b1)) {
+  if (b1 >= 0x85 && b1 !== 0x86 && b1 !== 0x84 && b1 !== 0x8B && b1 !== 0xB0 && b1 !== 0xB1 && b1 !== 0xB2 && !STEREO_NO_HDR.has(b1) && !ST435_NO_HDR.has(b1)) {
     f.appendChild(makeSelectFor('Transfer characteristics (HDR)', Object.keys(TRANSFER_CHAR).map(k => {
       const v = parseInt(k); return { value: v, label: TRANSFER_CHAR[v].label };
     }), (b2 >> 4) & 0x3, val => update(ch => { ch.transferChar = val; })).wrap);
@@ -4147,8 +5122,8 @@ function renderBuilder(decoded) {
       { value: "4:3",     label: "4:3 (SD only)" },
       { value: "Unknown", label: "Unknown" }
     ], c.aspect, val => update(ch => { ch.aspect = val; })).wrap);
-  } else if ([0xA1, 0xA2, 0xA5, 0xA6, 0xB0].includes(b1)) {
-    // ST 2036-3 / ST 2036-4 / ST 2047-2: aspect is fixed at 16:9 (no signalling).
+  } else if ([0xA1, 0xA2, 0xA5, 0xA6, 0xB0, 0xB2].includes(b1)) {
+    // ST 2036-3 / ST 2036-4 / ST 2047-2 / ST 2047-4: aspect is fixed at 16:9 (no signalling).
     const info = document.createElement('p');
     info.className = 'form-hint';
     info.textContent = `Aspect ratio is fixed at 16:9 for ${layout.label} (no aspect bit is signalled — picture is UHDTV/HD by spec).`;
@@ -4231,7 +5206,7 @@ function renderBuilder(decoded) {
   // but the only valid value is 0h — exposing a dropdown would be misleading. Skip it.
   // ST 2036-4 (0xA5/0xA6) only uses 2 bits for sampling (b3:b2 of byte 3) — its dedicated
   // selector is rendered below; the generic 4-bit selector would re-encode the wrong field.
-  if (b1 !== 0xB0 && ![0xA5, 0xA6].includes(b1)) {
+  if (b1 !== 0xB0 && b1 !== 0xB2 && ![0xA5, 0xA6].includes(b1)) {
     f.appendChild(makeSelectFor('Sampling structure', Object.keys(SAMPLING).map(k => {
       const v = parseInt(k); return { value: v, label: `${v.toString(16).toUpperCase()}h — ${SAMPLING[v]}`, disabled: layout.allowedSamplings && !layout.allowedSamplings.includes(v) };
     }), b3 & 0xF, val => update(ch => { ch.samp = val; })).wrap);
@@ -4254,8 +5229,8 @@ function renderBuilder(decoded) {
   } else {
     depthTable = BIT_DEPTH_2BIT_FULL;
   }
-  // Hide bit depth dropdown for 0xB0 (always 10-bit VC-2 mezzanine, no bit-level choice).
-  if (b1 !== 0xB0) {
+  // Hide bit depth dropdown for 0xB0 / 0xB2 (always 10-bit VC-2; byte 4 of 0xB2 is the format ID, not depth).
+  if (b1 !== 0xB0 && b1 !== 0xB2) {
     f.appendChild(makeSelectFor('Bit depth', Object.keys(depthTable).map(k => ({ value: parseInt(k), label: depthTable[parseInt(k)] })), b4 & (Object.keys(depthTable).length > 2 ? 0x3 : 1), val => update(ch => { ch.bitDepth = val; })).wrap);
   }
 
@@ -4326,6 +5301,23 @@ function renderBuilder(decoded) {
     const note = document.createElement('p');
     note.className = 'form-hint';
     note.innerHTML = `Bytes 3 and 4 are fixed by SMPTE ST 2047-2 Tables 2 &amp; 3 (Byte 3 = 0x80 = 16:9 + 4:2:2 Y'CbCr; Byte 4 = 0x01 = VC-2 mezzanine compressed payload). Only the picture rate (50 / 59.94 / 60 Hz) is selectable.`;
+    f.appendChild(note);
+  } else if (b1 === 0xB2) {
+    // ST 2047-4: byte 4 is a format ID (0x01..0x06). Each format implies a
+    // specific picture rate per Table 3, so when the user changes the format
+    // we also auto-update the rate to keep the output canonical.
+    const FMT_TO_RATE = { 0x01: 0x6, 0x02: 0x5, 0x03: 0xA, 0x04: 0x9, 0x05: 0x6, 0x06: 0x5 };
+    f.appendChild(makeSelectFor('VC-2 Level 65 source format', [
+      { value: 0x01, label: "1920×1080i 60/1.001 (ST 274 system 5)" },
+      { value: 0x02, label: "1920×1080i 50 (ST 274 system 6)" },
+      { value: 0x03, label: "1280×720p 60/1.001 (ST 296 system 2)" },
+      { value: 0x04, label: "1280×720p 50 (ST 296 system 3)" },
+      { value: 0x05, label: "1440×1080i 60/1.001 (RP 2047-3)" },
+      { value: 0x06, label: "1440×1080i 50 (RP 2047-3)" }
+    ], b4, val => update(ch => { ch.formatId = val; ch.rate = FMT_TO_RATE[val]; })).wrap);
+    const note = document.createElement('p');
+    note.className = 'form-hint';
+    note.innerHTML = `Bytes 2 and 3 are fixed by SMPTE ST 2047-4 Tables 2 &amp; 3 (Byte 3 = 0x80 = 16:9 + 4:2:2 Y'CbCr; Byte 2's b7:b4 = 0 since the SD-SDI carrier is interlaced regardless of source). Byte 4 selects the original HD source format (1080i / 720p / 1440x1080i); changing it also re-pins the picture rate per Table 3.`;
     f.appendChild(note);
   } else if (b1 === 0x90) {
     // ST 435-1 §7.3: byte 4 b7:b6 = channel/link (2 bits) — Ch1..Ch4
@@ -4437,13 +5429,75 @@ function handleHexChange() {
 
 /* ---------- Init ---------- */
 
+/* ---------- Helpers used by URL-share + export + batch ---------- */
+// Compact 8-hex-digit form for URL params (no spaces): "89CA8001".
+function compactHex(bytes) { return bytes.map(b => b.toString(16).toUpperCase().padStart(2, '0')).join(''); }
+// Trigger a browser file download with the given name and contents.
+function downloadFile(name, mime, contents) {
+  const blob = new Blob([contents], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+}
+// Build a JSON-friendly serialisation of a decode result (or the registry-only case).
+function decodeToJsonObject(bytes, r) {
+  const base = {
+    vpid: { hex: formatHexBytes(bytes), bytes: bytes.map(b => "0x" + b.toString(16).toUpperCase().padStart(2, '0')) },
+    valid: !!r.valid,
+    registered: !!r.registered
+  };
+  if (r.valid) {
+    base.family = r.family;
+    base.citation = r.citation;
+    base.interface = r.interface || (r.characteristics && r.characteristics.interface);
+    base.characteristics = r.characteristics;
+    base.fields = r.fields;
+    base.warnings = r.warnings || [];
+  } else if (r.registered) {
+    base.registry = r.registry;
+  } else {
+    base.error = r.error || "Unknown VPID";
+  }
+  return base;
+}
+// Flatten the per-field breakdown into CSV rows (Byte, Bits, Field, Value, Source).
+function decodeToCsvRows(bytes, r) {
+  const rows = [["VPID", "Byte", "Bits", "Field", "Value", "Source"]];
+  const hex = formatHexBytes(bytes);
+  if (r.valid && Array.isArray(r.fields)) {
+    for (const f of r.fields) {
+      rows.push([hex, f.byte, f.bits, f.name, f.value, f.source || ""]);
+    }
+  } else if (r.registered) {
+    rows.push([hex, 1, "—", "Registered standard", r.registry.standard, "SMPTE-RA registry"]);
+    rows.push([hex, 1, "—", "Registered description", r.registry.description, "SMPTE-RA registry"]);
+    rows.push([hex, 1, "—", "Registered status", r.registry.status, "SMPTE-RA registry"]);
+  } else {
+    rows.push([hex, "—", "—", "Error", r.error || "Unknown VPID", ""]);
+  }
+  return rows;
+}
+function csvEscape(v) {
+  const s = String(v == null ? "" : v);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+function rowsToCsv(rows) { return rows.map(r => r.map(csvEscape).join(",")).join("\n") + "\n"; }
+// Briefly flash a button label on success/failure feedback.
+function flashBtn(btn, text, original, ms) {
+  btn.textContent = text;
+  setTimeout(() => { btn.textContent = original; }, ms || 1500);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   renderPresetChips();
   $('#hexInput').addEventListener('input', handleHexChange);
   $('#hexInput').addEventListener('blur', handleHexChange);
   $('#clearBtn').addEventListener('click', () => { $('#hexInput').value = ''; handleHexChange(); });
   $('#copyBtn').addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText($('#hexInput').value); $('#copyBtn').textContent = 'Copied!'; setTimeout(() => { $('#copyBtn').textContent = 'Copy hex'; }, 1500); }
+    try { await navigator.clipboard.writeText($('#hexInput').value); flashBtn($('#copyBtn'), 'Copied!', 'Copy hex'); }
     catch(e) { /* ignored */ }
   });
   $('#copyKVBtn').addEventListener('click', async () => {
@@ -4468,12 +5522,126 @@ document.addEventListener('DOMContentLoaded', () => {
       `Channel/Link: ${c.channel || '—'}`,
       `Reference: ${r.citation}`
     ].join('\n');
-    try { await navigator.clipboard.writeText(text); $('#copyKVBtn').textContent = 'Copied!'; setTimeout(() => { $('#copyKVBtn').textContent = 'Copy specs'; }, 1500); }
+    try { await navigator.clipboard.writeText(text); flashBtn($('#copyKVBtn'), 'Copied!', 'Copy specs'); }
     catch(e) { /* ignored */ }
   });
+  // Copy a shareable link with the current VPID encoded in the URL (?vpid=XXXXXXXX).
+  $('#copyLinkBtn').addEventListener('click', async () => {
+    const bytes = parseHex($('#hexInput').value);
+    if (!bytes) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('vpid', compactHex(bytes));
+    const link = url.toString();
+    history.replaceState(null, '', link);
+    try { await navigator.clipboard.writeText(link); flashBtn($('#copyLinkBtn'), 'Link copied!', 'Copy link'); }
+    catch(e) { /* ignored */ }
+  });
+  // Download the decoded VPID as a JSON file (decoder output + characteristics + warnings).
+  $('#exportJsonBtn').addEventListener('click', () => {
+    const bytes = parseHex($('#hexInput').value);
+    if (!bytes) return;
+    const r = decodeVpidBytes(...bytes);
+    const obj = decodeToJsonObject(bytes, r);
+    const fname = `vpid-${compactHex(bytes)}.json`;
+    downloadFile(fname, 'application/json', JSON.stringify(obj, null, 2));
+    flashBtn($('#exportJsonBtn'), 'Saved!', 'Export JSON');
+  });
+  // Download the per-field byte breakdown as a CSV file (one row per decoded field).
+  $('#exportCsvBtn').addEventListener('click', () => {
+    const bytes = parseHex($('#hexInput').value);
+    if (!bytes) return;
+    const r = decodeVpidBytes(...bytes);
+    const rows = decodeToCsvRows(bytes, r);
+    const fname = `vpid-${compactHex(bytes)}.csv`;
+    downloadFile(fname, 'text/csv;charset=utf-8', rowsToCsv(rows));
+    flashBtn($('#exportCsvBtn'), 'Saved!', 'Export CSV');
+  });
+  // Copy the generated ST 2110-20 fmtp line.
+  $('#copySdpBtn').addEventListener('click', async () => {
+    const text = $('#sdpFmtp').textContent;
+    if (!text || text === "—") return;
+    try { await navigator.clipboard.writeText(text); flashBtn($('#copySdpBtn'), 'Copied!', 'Copy fmtp line'); }
+    catch (e) { /* ignored */ }
+  });
 
-  // Default to first preset
-  $('#hexInput').value = COMMON_PRESETS[0].hex;
+  // Batch decode wiring
+  let lastBatchResults = [];
+  function runBatchDecode() {
+    const text = $('#batchInput').value;
+    lastBatchResults = batchDecodeAll(text);
+    renderBatchResults(lastBatchResults);
+    const valid = lastBatchResults.filter(r => r.decoded && r.decoded.valid).length;
+    const reg   = lastBatchResults.filter(r => r.decoded && !r.decoded.valid && r.decoded.registered).length;
+    const bad   = lastBatchResults.length - valid - reg;
+    $('#batchStatus').textContent = lastBatchResults.length
+      ? `Decoded ${valid} valid · ${reg} registry-only · ${bad} invalid (${lastBatchResults.length} total)`
+      : "";
+  }
+  $('#batchDecodeBtn').addEventListener('click', runBatchDecode);
+  // Enter or Tab in the textarea also triggers decode (but only on Ctrl/Cmd-Enter
+  // so plain Enter still adds a new line — this matches engineer muscle memory).
+  $('#batchInput').addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); runBatchDecode(); }
+  });
+  $('#batchClearBtn').addEventListener('click', () => {
+    $('#batchInput').value = "";
+    lastBatchResults = [];
+    renderBatchResults([]);
+    $('#batchStatus').textContent = "";
+  });
+  $('#batchExportJsonBtn').addEventListener('click', () => {
+    if (!lastBatchResults.length) runBatchDecode();
+    if (!lastBatchResults.length) return;
+    downloadFile(`vpid-batch-${new Date().toISOString().replace(/[:.]/g,'-')}.json`,
+                 'application/json', batchExportRows(lastBatchResults, 'json'));
+    flashBtn($('#batchExportJsonBtn'), 'Saved!', 'Export JSON');
+  });
+  $('#batchExportCsvBtn').addEventListener('click', () => {
+    if (!lastBatchResults.length) runBatchDecode();
+    if (!lastBatchResults.length) return;
+    downloadFile(`vpid-batch-${new Date().toISOString().replace(/[:.]/g,'-')}.csv`,
+                 'text/csv;charset=utf-8', batchExportRows(lastBatchResults, 'csv'));
+    flashBtn($('#batchExportCsvBtn'), 'Saved!', 'Export CSV');
+  });
+  // Initial empty-state render
+  renderBatchResults([]);
+
+  // Compare two VPIDs wiring
+  function runCompare() {
+    renderCompareResults($('#compareInputA').value, $('#compareInputB').value);
+  }
+  $('#compareBtn').addEventListener('click', runCompare);
+  $('#compareInputA').addEventListener('input', runCompare);
+  $('#compareInputB').addEventListener('input', runCompare);
+  $('#compareInputA').addEventListener('blur', () => {
+    const b = parseHex($('#compareInputA').value);
+    if (b) $('#compareInputA').value = formatHexBytes(b);
+  });
+  $('#compareInputB').addEventListener('blur', () => {
+    const b = parseHex($('#compareInputB').value);
+    if (b) $('#compareInputB').value = formatHexBytes(b);
+  });
+  $('#compareSwapBtn').addEventListener('click', () => {
+    const a = $('#compareInputA').value, b = $('#compareInputB').value;
+    $('#compareInputA').value = b; $('#compareInputB').value = a;
+    runCompare();
+  });
+  $('#compareUseCurrentBtn').addEventListener('click', () => {
+    $('#compareInputA').value = $('#hexInput').value;
+    runCompare();
+  });
+
+  // URL-share entry point: ?vpid=89CA8001 (hex bytes, optional 0x prefix and spaces).
+  // If present, hydrate the input from the URL; otherwise default to the first preset.
+  const urlParam = (() => {
+    try { return new URLSearchParams(window.location.search).get('vpid'); }
+    catch (e) { return null; }
+  })();
+  if (urlParam && parseHex(urlParam)) {
+    $('#hexInput').value = formatHexBytes(parseHex(urlParam));
+  } else {
+    $('#hexInput').value = COMMON_PRESETS[0].hex;
+  }
   handleHexChange();
 
   // Run self-test, log to console

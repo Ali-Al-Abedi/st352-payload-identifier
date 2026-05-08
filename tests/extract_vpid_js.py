@@ -126,6 +126,47 @@ def extract(src_path: str, out_path: str) -> None:
       console.log(`${hex}  UNKNOWN: ${r.error}`);
     }
   }
+
+  // ---- Batch decoder smoke test ----
+  // Verifies: line splitting, comment stripping, blank-line skipping,
+  // valid + registry + invalid all coexist in one batch.
+  if (typeof batchDecodeAll === 'function') {
+    const batchInput = [
+      '89 CA 80 01    # 1080p59.94 SDR Rec.709',
+      '85 06 20 01    # 1080i29.97',
+      '',
+      '# This is a comment-only line',
+      'A1 CA 00 01',
+      'B0 0B 80 01',
+      '90 CA 20 01',
+      'A0 C7 20 E1',
+      '86 06 00 01    # registry-only ST 349',
+      'FF FF FF FF    # invalid'
+    ].join('\n');
+    const results = batchDecodeAll(batchInput);
+    const valid    = results.filter(r => r.decoded && r.decoded.valid).length;
+    const registry = results.filter(r => r.decoded && !r.decoded.valid && r.decoded.registered).length;
+    const invalid  = results.filter(r => !r.bytes || (r.decoded && !r.decoded.valid && !r.decoded.registered)).length;
+    console.log(`\n--- Batch decode smoke test ---`);
+    console.log(`  total=${results.length}, valid=${valid}, registry=${registry}, invalid=${invalid}`);
+    if (results.length !== 8) { console.error('FAIL: expected 8 entries (after stripping blanks/comments), got ' + results.length); process.exit(2); }
+    if (valid    !== 6) { console.error('FAIL: expected 6 valid entries (3G-A, HD, A1, B0, ST435 quad, ST435 octa), got ' + valid); process.exit(2); }
+    if (registry !== 1) { console.error('FAIL: expected 1 registry-only entry, got ' + registry); process.exit(2); }
+    if (invalid  !== 1) { console.error('FAIL: expected 1 invalid entry, got ' + invalid); process.exit(2); }
+    console.log('  OK');
+
+    // CSV / JSON export shape
+    const csv = batchExportRows(results, 'csv');
+    if (!csv.startsWith('VPID,Friendly,')) { console.error('FAIL: batch CSV header mismatch'); process.exit(2); }
+    const lines = csv.trim().split(/\n/);
+    if (lines.length !== 9) { console.error('FAIL: expected 9 CSV rows (1 header + 8 data), got ' + lines.length); process.exit(2); }
+    const json = JSON.parse(batchExportRows(results, 'json'));
+    if (!Array.isArray(json) || json.length !== 8) { console.error('FAIL: batch JSON should be 8-element array'); process.exit(2); }
+    console.log(`  CSV/JSON export shape OK (${lines.length} CSV rows, ${json.length} JSON entries)`);
+  } else {
+    console.error('FAIL: batchDecodeAll is not exported to global scope');
+    process.exit(2);
+  }
 })();
 '''
 

@@ -30,6 +30,16 @@ open http://localhost:8765/vpid.html
 Or just open `vpid.html` directly in any modern browser — there is no build
 step, no bundler, no `node_modules`.
 
+### Power features
+
+| Feature | What it does |
+|---------|--------------|
+| **URL share**     | `?vpid=89CA8001` in the URL auto-loads and decodes that VPID. The "Copy link" button rewrites the address bar so engineers can paste decoded VPIDs into Slack / email / tickets. |
+| **Batch decode**  | Paste any number of VPIDs (one per line, `#` comments allowed) and get a sortable table back. Useful for sweeping a router crosspoint or grepping a vendor capture log. |
+| **Compare two VPIDs** | Side-by-side decode + byte / bit XOR diff + per-field diff. The exact view you want when a downstream device reports a mismatch and you need to see which bit flipped. |
+| **JSON / CSV export** | Single-VPID and batch exports of the decoded characteristics + per-field byte breakdown. Drop straight into your monitoring or test-rig pipeline. |
+| **ST 2110-20 SDP fmtp** | Generates the matching `a=fmtp:96 sampling=…; width=…; height=…; exactframerate=…; depth=…; TCS=…; colorimetry=…; PM=2110GPM; SSN=ST2110-20:2017; PAR=1:1` line per RFC 4175 + ST 2110-20 §7. Copyable in one click for SDP authoring / validation. |
+
 ## What it covers
 
 ### Fully bit-decoded VPID families (Byte 1 → SMPTE standard)
@@ -54,10 +64,15 @@ step, no bundler, no `node_modules`.
 | **`0xA1 / 0xA2`** | **ST 2036-3 / BT.2077-1** | **UHDTV1 / UHDTV2 over 10G-SDI Mode D** |
 | **`0xA5 / 0xA6`** | **ST 2036-4 / ARIB STD-B58 / BT.2077-2** | **UHDTV1 / UHDTV2 over multi-link 10G-SDI 12-bit container** (note: colorimetry-bit polarity is INVERTED) |
 | **`0xB0`** | **ST 2047-2** | **VC-2 mezzanine compressed 1080p over 1.5G HD-SDI** |
+| **`0xB1`** | **ST 292-2** | **Stereoscopic 720/1080-line on dual 1.5G HD-SDI** (shares ST 425-2's bytes 2-4 layout) |
+| **`0xB2`** | **ST 2047-4 / RP 2047-3** | **VC-2 Level 65 compressed HD on 270 Mb/s SD-SDI** (1080i / 720p / 1440x1080i format-ID byte 4) |
 | `0xC0 / 0xC1` | ST 2081-10 (Tek) | 6G-SDI 4K / 1080p HFR |
 | `0xCE / 0xCF` | ST 2082-10 | 12G-SDI 4K / 1080p HFR |
 | `0xD0` | ST 2082-11 | Dual-link 12G-SDI 8K |
 | `0xD2` | ST 2082-12 | Quad-link 12G-SDI 8K |
+| **`0xD9 / 0xDA`** | **ST 2082-30 Mode 1** | **2× 6G-SDI muxed on 12G-SDI** (delegates bytes 2-4 to ST 2081-10) |
+| **`0xDB / 0xDC`** | **ST 2082-30 Mode 2** | **4× 3G-SDI muxed on 12G-SDI** (delegates bytes 2-4 to ST 425-1 Level A) |
+| **`0xDD / 0xDE`** | **ST 2082-30 Mode 3** | **8× HD-SDI muxed on 12G-SDI** (delegates bytes 2-4 to ST 292-1) |
 
 ### Registry-only fallback
 
@@ -65,8 +80,26 @@ Every Byte 1 in the [SMPTE-RA Payload Identifier Registry][smpte-ra]
 that doesn't have a bit-level decoder above is still recognised and
 displayed with its registered `standard`, `description`, and `status` —
 deprecated or in-force — by routing through the embedded registry
-mirror. This includes ST 259, ST 294, ST 274 (legacy), ST 296 (legacy),
-ST 347, and ST 349.
+mirror.
+
+**Codes that remain registry-only** because their byte-2-4 layout
+isn't (or can't be) bit-decoded in this build:
+
+* `0x01-0x06` — deprecated SD/HD legacy codes (superseded by their
+  `0x8x` modern equivalents). Most have no published byte-2-4 layout.
+* `0x83` (ST 347 — 540 Mb/s SDI), `0x86` (ST 349 — SD over 1.5G HD-SDI):
+  niche, no PDF dropped into `docs/smpte/` yet.
+* `0xB3` (ST 2048-3 — DCI 4K / 4096×2160 over 10G), `0xB4 / 0xB5`
+  (RDD 22 — Film Transfer 2048×1556): no PDFs available yet.
+* `0xC2-0xC5`, `0xCB-0xCD` (ST 2081-11 / -12 / -30 — 6G-SDI multiplexes
+  and dual/quad-link variants): no PDFs available yet.
+* `0xD1`, `0xD3` (ST 2082-11 / -12 Mode 2 — 2160-line HFR variants):
+  PDFs available but mode-2 byte layouts are not published in the
+  same explicit form as the existing single-link codes.
+* `0xDF-0xF9` — 24G-SDI codes per ITU-R BT.2077-3 Part 4, all
+  Provisionally Assigned. No SMPTE PDF.
+
+Drop the corresponding PDF into `docs/smpte/` and these can be wired up.
 
 [smpte-ra]: https://smpte-ra.org/registers/Payload-Identifier-Registry/
 
@@ -110,6 +143,41 @@ node /tmp/vpid_test.js
 
 The same test fires automatically every time the page loads in a browser
 and logs the result to the developer console.
+
+## Deploying to GitHub Pages
+
+This repo ships with a [`.github/workflows/pages.yml`](.github/workflows/pages.yml)
+workflow that publishes `vpid.html` to GitHub Pages on every push to `main`.
+
+To enable it, do this once in the repo's GitHub UI:
+
+1. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
+2. Either:
+   * Make the repo **public** (free Pages — recommended unless the SMPTE
+     PDFs in `docs/smpte/` need to stay private), **or**
+   * Stay private and ensure the GitHub account/org is on a **paid plan**
+     (Pro / Team / Enterprise) — Pages is supported on private repos
+     only on paid tiers.
+
+Once those are set the next push to `main` will deploy automatically.
+The published URL is `https://<owner>.github.io/<repo>/` (which redirects
+to `vpid.html`).
+
+The workflow deliberately skips `docs/smpte/*.pdf` from the published
+bundle — those PDFs are SMPTE copyrighted material and are intended to
+ride along with the source repo for engineering reference, not for
+redistribution via the public web.
+
+## Vortex integration
+
+The same `vpid.html` is also wired into the parent
+[`st2110-monitoring`](https://github.com/...) Vortex frontend at
+`/tools/vpid` — engineers in the dashboard can hit the **VPID** button
+in the top bar and the calculator opens inline with a
+"back to dashboard" affordance. The standalone HTML is served from the
+React app's `public/tools/vpid.html`, so changes in this repo
+auto-propagate the next time the Vortex frontend is rebuilt and
+deployed.
 
 ## License
 
