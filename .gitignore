@@ -13,3 +13,10 @@ __pycache__/
 # Local-only debug files
 /tmp/
 *.log
+
+# SMPTE source-of-truth PDFs are SMPTE-copyrighted and must NOT be
+# committed to a public repo. They live in docs/smpte/ on engineers'
+# local clones (downloaded individually from the SMPTE store) but are
+# never tracked by git. Only docs/smpte/README.md is tracked.
+docs/smpte/*
+!docs/smpte/README.md

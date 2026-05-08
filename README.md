@@ -8,11 +8,15 @@ characteristics back into a canonical VPID hex value.
 Built for the **Fox broadcast engineering team** to verify ST 2110 sources
 during commissioning, fault diagnosis, and contribution-feed analysis.
 
-> **No guessing.** Every bit-level decoded field cites the SMPTE standard it
-> originates from. Every byte-2/3/4 mapping is verbatim from the relevant
-> SMPTE PDF (the source-of-truth PDFs ship in [`docs/smpte/`](docs/smpte/)).
-> Codes registered in the SMPTE-RA Payload Identifier Registry but without a
-> published bit-level layout in this build are surfaced through the
+> **No guessing.** Every bit-level decoded field cites the SMPTE standard
+> it originates from. Every byte-2/3/4 mapping is verbatim from the
+> relevant SMPTE PDF — see [`docs/smpte/README.md`](docs/smpte/README.md)
+> for the full list of source documents and where to obtain them. (The
+> PDFs themselves are SMPTE copyrighted material and are intentionally
+> **not** committed to this repository.)
+>
+> Codes registered in the SMPTE-RA Payload Identifier Registry but without
+> a published bit-level layout in this build are surfaced through the
 > registry-only fallback path with their full standard, description, and
 > status — never with synthesised content.
 
@@ -88,7 +92,7 @@ isn't (or can't be) bit-decoded in this build:
 * `0x01-0x06` — deprecated SD/HD legacy codes (superseded by their
   `0x8x` modern equivalents). Most have no published byte-2-4 layout.
 * `0x83` (ST 347 — 540 Mb/s SDI), `0x86` (ST 349 — SD over 1.5G HD-SDI):
-  niche, no PDF dropped into `docs/smpte/` yet.
+  niche, source PDF not yet referenced in `docs/smpte/`.
 * `0xB3` (ST 2048-3 — DCI 4K / 4096×2160 over 10G), `0xB4 / 0xB5`
   (RDD 22 — Film Transfer 2048×1556): no PDFs available yet.
 * `0xC2-0xC5`, `0xCB-0xCD` (ST 2081-11 / -12 / -30 — 6G-SDI multiplexes
@@ -99,7 +103,8 @@ isn't (or can't be) bit-decoded in this build:
 * `0xDF-0xF9` — 24G-SDI codes per ITU-R BT.2077-3 Part 4, all
   Provisionally Assigned. No SMPTE PDF.
 
-Drop the corresponding PDF into `docs/smpte/` and these can be wired up.
+Drop the corresponding PDF into `docs/smpte/` (locally only — see that
+folder's README) and these can be wired up.
 
 [smpte-ra]: https://smpte-ra.org/registers/Payload-Identifier-Registry/
 
@@ -124,9 +129,13 @@ The implementation has zero dependencies. The repository carries:
 
 ```
 vpid.html            ← the tool itself
-docs/smpte/          ← source-of-truth SMPTE PDFs that the bit
-                       layouts are derived from
-tests/               ← Node.js self-test extractor
+.github/workflows/
+  pages.yml          ← GitHub Pages auto-deploy
+docs/smpte/
+  README.md          ← which SMPTE PDFs the decoders reference
+                       (PDFs themselves are gitignored — local only)
+tests/
+  extract_vpid_js.py ← Node.js self-test extractor
 README.md
 .gitignore
 ```
@@ -152,21 +161,18 @@ workflow that publishes `vpid.html` to GitHub Pages on every push to `main`.
 To enable it, do this once in the repo's GitHub UI:
 
 1. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
-2. Either:
-   * Make the repo **public** (free Pages — recommended unless the SMPTE
-     PDFs in `docs/smpte/` need to stay private), **or**
-   * Stay private and ensure the GitHub account/org is on a **paid plan**
-     (Pro / Team / Enterprise) — Pages is supported on private repos
-     only on paid tiers.
+2. Make sure the repo is **public** (free Pages tier). Private repos
+   need a paid GitHub plan (Pro / Team / Enterprise) — keeping it
+   public is the simpler path now that the SMPTE PDFs are gitignored.
 
 Once those are set the next push to `main` will deploy automatically.
 The published URL is `https://<owner>.github.io/<repo>/` (which redirects
 to `vpid.html`).
 
-The workflow deliberately skips `docs/smpte/*.pdf` from the published
-bundle — those PDFs are SMPTE copyrighted material and are intended to
-ride along with the source repo for engineering reference, not for
-redistribution via the public web.
+The workflow only publishes `vpid.html`, the README, and a redirect
+`index.html`. Nothing under `docs/smpte/` is in the repo at all (it's
+all gitignored — see `docs/smpte/README.md` for what to download
+locally if you want the source PDFs).
 
 ## Vortex integration
 
@@ -181,6 +187,13 @@ deployed.
 
 ## License
 
-Internal to Fox / Vortex broadcast engineering. The SMPTE PDFs in
-`docs/smpte/` are subject to SMPTE's own copyright; consult the SMPTE
-Standards page before redistributing.
+The VPID Calculator source (`vpid.html` and friends in this repo) is
+provided as-is for the Fox / Vortex broadcast engineering team and the
+broader broadcast community to use freely.
+
+The **SMPTE standards** the decoders are derived from are SMPTE
+copyrighted material and are **not** redistributed by this repository
+in any form. Engineers must obtain their own copies through
+[SMPTE](https://www.smpte.org/standards) — see
+[`docs/smpte/README.md`](docs/smpte/README.md) for the list of relevant
+documents.
