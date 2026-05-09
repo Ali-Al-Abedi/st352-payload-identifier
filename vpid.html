@@ -24,6 +24,18 @@
     --hdr-hlg: #f59e0b;
     --hdr-pq: #a855f7;
     --hdr-unspec: #475569;
+    /* SDI transport tier tokens used by the level chip in the batch table. */
+    --level-sd:          #78716c;
+    --level-hd:          #94a3b8;
+    --level-3g-a:        #00d4ff;
+    --level-3g-b:        #14b8a6;
+    --level-3g-quad:     #38bdf8;
+    --level-6g:          #22c55e;
+    --level-10g:         #3b82f6;
+    --level-12g:         #a855f7;
+    --level-12g-quad:    #d946ef;
+    --level-12g-mux:     #f472b6;
+    --level-compressed:  #f59e0b;
     --bit-1: #00d4ff;
     --bit-0: #475569;
     --bit-x: #f59e0b;
@@ -205,19 +217,81 @@
     padding: 1px 6px; border-radius: 4px; font-size: 11.5px;
   }
 
+  /* Full-width HDR banner — sits at the top of the Decoded Source card body
+     so the SDR / HLG / PQ identity is the loudest single visual element on
+     the page. Colour, ref text and label are all driven by the decoded
+     transferChar field; no values are hard-coded for any specific VPID. */
   .hdr-banner {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 6px 12px; border-radius: 6px;
-    font-size: 12px; font-weight: 700; letter-spacing: 0.05em;
-    text-transform: uppercase;
-    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
     border: 1px solid currentColor;
+    margin-bottom: 16px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
   }
-  .hdr-banner.sdr { color: var(--hdr-sdr); background: rgba(100,116,139,0.1); }
-  .hdr-banner.hlg { color: var(--hdr-hlg); background: rgba(245,158,11,0.1); }
-  .hdr-banner.pq { color: var(--hdr-pq); background: rgba(168,85,247,0.1); }
-  .hdr-banner.unspec { color: var(--hdr-unspec); background: rgba(71,85,105,0.1); }
-  .hdr-banner .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .hdr-banner .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: currentColor; flex-shrink: 0;
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.04);
+  }
+  .hdr-banner .label {
+    font-size: 13px; text-transform: uppercase;
+    letter-spacing: 0.08em; font-weight: 700;
+  }
+  .hdr-banner .ref {
+    font-size: 11px; color: var(--text-dim);
+    font-weight: 500; letter-spacing: 0.02em;
+    text-transform: none;
+    margin-left: auto;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  .hdr-banner.sdr    { color: var(--hdr-sdr);    background: rgba(100,116,139,0.10); }
+  .hdr-banner.hlg    { color: var(--hdr-hlg);    background: rgba(245,158,11,0.10); }
+  .hdr-banner.pq     { color: var(--hdr-pq);     background: rgba(168,85,247,0.10); }
+  .hdr-banner.unspec { color: var(--hdr-unspec); background: rgba(71,85,105,0.10); }
+
+  /* Compact chip variants used inside the batch decode table. The two
+     dimensions are HDR transfer (SDR / HLG / PQ / unspec) and the SDI
+     transport level (HD / 3G-A / 3G-B / 6G / 10G / 12G ... and link
+     multiplicities). Colours come from the same --hdr-* / --level-*
+     tokens so the page reads consistently. */
+  .row-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+    line-height: 1.6;
+  }
+  .row-chip .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: currentColor; flex-shrink: 0;
+  }
+  .row-chip.hdr-sdr    { color: var(--hdr-sdr);    background: rgba(100,116,139,0.10); }
+  .row-chip.hdr-hlg    { color: var(--hdr-hlg);    background: rgba(245,158,11,0.10); }
+  .row-chip.hdr-pq     { color: var(--hdr-pq);     background: rgba(168,85,247,0.10); }
+  .row-chip.hdr-unspec { color: var(--hdr-unspec); background: rgba(71,85,105,0.10); }
+
+  .row-chip.lvl-sd          { color: var(--level-sd);          background: rgba(120,113,108,0.10); }
+  .row-chip.lvl-hd          { color: var(--level-hd);          background: rgba(148,163,184,0.10); }
+  .row-chip.lvl-hd-dual     { color: var(--level-hd);          background: rgba(148,163,184,0.10); border-style: dashed; }
+  .row-chip.lvl-3g-a        { color: var(--level-3g-a);        background: rgba(0,212,255,0.10); }
+  .row-chip.lvl-3g-b        { color: var(--level-3g-b);        background: rgba(20,184,166,0.10); }
+  .row-chip.lvl-3g-dual     { color: var(--level-3g-a);        background: rgba(0,212,255,0.10); border-style: dashed; }
+  .row-chip.lvl-3g-quad     { color: var(--level-3g-quad);     background: rgba(56,189,248,0.10); border-style: dashed; }
+  .row-chip.lvl-6g          { color: var(--level-6g);          background: rgba(34,197,94,0.10); }
+  .row-chip.lvl-10g         { color: var(--level-10g);         background: rgba(59,130,246,0.10); }
+  .row-chip.lvl-12g         { color: var(--level-12g);         background: rgba(168,85,247,0.10); }
+  .row-chip.lvl-12g-dual    { color: var(--level-12g);         background: rgba(168,85,247,0.10); border-style: dashed; }
+  .row-chip.lvl-12g-quad    { color: var(--level-12g-quad);    background: rgba(217,70,239,0.10); border-style: dashed; }
+  .row-chip.lvl-12g-mux     { color: var(--level-12g-mux);     background: rgba(244,114,182,0.10); }
+  .row-chip.lvl-compressed  { color: var(--level-compressed);  background: rgba(245,158,11,0.10); }
+  .row-chip.lvl-unknown     { color: var(--text-faint);        background: rgba(71,85,105,0.10); }
 
   .spec-grid {
     display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px;
@@ -626,12 +700,13 @@
         <span id="hdrBadgeMini" class="badge">—</span>
       </div>
       <div class="card-body">
-        <div id="friendlyLabel" class="friendly-label">—</div>
-        <div id="standardLine" class="standard-line"></div>
         <div id="hdrBanner" class="hdr-banner sdr" style="display:none;">
           <span class="dot"></span>
-          <span id="hdrText">SDR</span>
+          <span class="label" id="hdrText">SDR</span>
+          <span class="ref" id="hdrRef"></span>
         </div>
+        <div id="friendlyLabel" class="friendly-label">—</div>
+        <div id="standardLine" class="standard-line"></div>
         <div class="spec-grid" id="specGrid"></div>
         <details id="sdpDetails" class="sdp-details">
           <summary>ST 2110-20 SDP <code>a=fmtp</code> (RFC 4175 + ST 2110-20)</summary>
@@ -6350,6 +6425,111 @@ function decodeVpidBytes(b1, b2, b3, b4) {
   };
 }
 
+// Pre-built lookup: TCS code (the value the decoder writes into
+// characteristics.transferChar — "SDR" / "HLG" / "PQ" / "UNSPEC")
+// → the standard reference string already declared in TRANSFER_CHAR.
+// Single source of truth; renders below the HDR banner label as the
+// authoritative spec citation for that transfer characteristic.
+const TCS_REF_BY_CODE = (() => {
+  const out = {};
+  for (const v of Object.values(TRANSFER_CHAR)) {
+    if (v && v.code) out[v.code] = v.ref || "";
+  }
+  return out;
+})();
+
+// Derive an SDI transport "level" classification from already-decoded
+// data. The function is purely a function of:
+//   - decoded.characteristics.interface  (set by every layout's decoder)
+//   - decoded.citation                   (set by every layout's decoder)
+// No VPID hex values are matched here; the rules describe SMPTE family
+// taxonomy as it appears in the existing decoder text. Returns
+//   { code, label, family }   or   null  for non-SDI / unknown layouts.
+function deriveSdiLevel(decoded) {
+  if (!decoded || !decoded.valid || !decoded.characteristics) return null;
+  const iface = String(decoded.characteristics.interface || "").toLowerCase();
+  const cite  = String(decoded.citation || "").toLowerCase();
+  const has = (s) => iface.includes(s) || cite.includes(s);
+
+  // VC-2 mezzanine compressed transport (ST 2042 / ST 2047 family)
+  if (cite.includes("2047") || cite.includes("2042")) {
+    return { code: "VC-2", label: "VC-2 mezzanine", family: "compressed" };
+  }
+
+  // 12G family (ST 2082-10 / -11 / -12 / -30)
+  if (iface.includes("12 gb/s") || cite.includes("2082")) {
+    if (iface.includes("quad-link") || cite.includes("2082-12"))
+      return { code: "12G×4", label: "Quad-link 12G-SDI", family: "12g-quad" };
+    if (iface.includes("dual-link") || cite.includes("2082-11"))
+      return { code: "12G×2", label: "Dual-link 12G-SDI", family: "12g-dual" };
+    if (cite.includes("2082-30") || iface.includes("multiplex"))
+      return { code: "12G mux", label: "12G-SDI multiplex", family: "12g-mux" };
+    return { code: "12G", label: "12G-SDI", family: "12g" };
+  }
+
+  // 10G family (ST 435-1, ST 2036-3, ST 2036-4, BT.2077)
+  if (iface.includes("10 gb/s") || cite.includes("435") || cite.includes("2036-3") || cite.includes("2036-4") || cite.includes("2077")) {
+    return { code: "10G", label: "10G-SDI", family: "10g" };
+  }
+
+  // 6G family (ST 2081-10)
+  if (iface.includes("6 gb/s") || cite.includes("2081-10")) {
+    return { code: "6G", label: "6G-SDI", family: "6g" };
+  }
+
+  // 3G family (ST 425-1 .. -6)
+  if (iface.includes("3 gb/s") || cite.includes("425")) {
+    if (iface.includes("quad-link") || cite.includes("425-5") || cite.includes("425-6"))
+      return { code: "3G×4", label: "Quad-link 3G-SDI", family: "3g-quad" };
+    if (iface.includes("dual-link") || cite.includes("425-3") || cite.includes("425-4"))
+      return { code: "3G×2", label: "Dual-link 3G-SDI", family: "3g-dual" };
+    if (iface.includes("level b-dl"))
+      return { code: "3G-B DL", label: "3G-B Dual-Link mapping", family: "3g-b" };
+    if (iface.includes("level b-ds"))
+      return { code: "3G-B DS", label: "3G-B Dual-Stream mapping", family: "3g-b" };
+    if (iface.includes("level b"))
+      return { code: "3G-B", label: "3G-B", family: "3g-b" };
+    if (iface.includes("level a"))
+      return { code: "3G-A", label: "3G-A", family: "3g-a" };
+    return { code: "3G", label: "3G-SDI", family: "3g-a" };
+  }
+
+  // Dual-link 1.5G HD (ST 372)
+  if (iface.includes("dual 1.5 gb/s") || cite.includes("372")) {
+    return { code: "HD×2", label: "Dual-link 1.5G HD-SDI", family: "hd-dual" };
+  }
+
+  // 1.5G HD-SDI (ST 292-1 / ST 292-2 stereoscopic)
+  if (iface.includes("1.5 gb/s") || cite.includes("292")) {
+    return { code: "HD", label: "1.5G HD-SDI", family: "hd" };
+  }
+
+  // SD-SDI / 540 Mb/s ST 347 / ST 349 540 Mb/s SDI
+  if (iface.includes("270 mb/s") || iface.includes("360 mb/s") || iface.includes("540 mb/s") ||
+      iface.includes("sd-sdi") || cite.includes("259") || cite.includes("347") || cite.includes("349")) {
+    return { code: "SD", label: "SD-SDI", family: "sd" };
+  }
+
+  return null;
+}
+
+// Chip markup helpers — both pure-data → markup, no parallel state.
+function hdrChipHtml(c) {
+  if (!c || !c.transferChar) return '<span class="row-chip hdr-unspec"><span class="dot"></span>—</span>';
+  const code = String(c.transferChar).toLowerCase();
+  const cls  = (code === "sdr" || code === "hlg" || code === "pq") ? code : "unspec";
+  const text = c.transferChar === "UNSPEC" ? "UNSPEC" : c.transferChar;
+  return `<span class="row-chip hdr-${cls}" title="${escapeAttr(c.transferCharLabel || c.transferChar)}"><span class="dot"></span>${text}</span>`;
+}
+function levelChipHtml(decoded) {
+  const lvl = deriveSdiLevel(decoded);
+  if (!lvl) return '<span class="row-chip lvl-unknown"><span class="dot"></span>—</span>';
+  return `<span class="row-chip lvl-${lvl.family}" title="${escapeAttr(lvl.label)}"><span class="dot"></span>${lvl.code}</span>`;
+}
+function escapeAttr(s) {
+  return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 function buildFriendlyLabel(c) {
   if (!c) return "—";
   const parts = [];
@@ -7152,17 +7332,25 @@ function render(decoded) {
     $('#standardLine').innerHTML = `<span class="invalid-state">${decoded.error || "Decode failed."}</span>`;
   }
 
-  // HDR banner
+  // HDR banner — full-width strip at the top of the card. Label + colour
+  // come from the decoded transferChar; the ref text is looked up in the
+  // existing TRANSFER_CHAR table (single source of truth — same data the
+  // decoder used). No values are hard-coded for any specific VPID.
   const banner = $('#hdrBanner');
   const hdrTextEl = $('#hdrText');
+  const hdrRefEl = $('#hdrRef');
   const hdrBadgeMini = $('#hdrBadgeMini');
   if (decoded.valid && decoded.characteristics.transferChar) {
+    const tc = decoded.characteristics.transferChar;
     banner.style.display = '';
-    banner.className = 'hdr-banner ' + (decoded.characteristics.transferChar.toLowerCase() === 'unspec' ? 'unspec' : decoded.characteristics.transferChar.toLowerCase());
-    hdrTextEl.textContent = decoded.characteristics.transferCharLabel || decoded.characteristics.transferChar;
-    hdrBadgeMini.textContent = decoded.characteristics.transferChar;
+    banner.className = 'hdr-banner ' + (tc.toLowerCase() === 'unspec' ? 'unspec' : tc.toLowerCase());
+    hdrTextEl.textContent = decoded.characteristics.transferCharLabel || tc;
+    const ref = TCS_REF_BY_CODE[tc] || '';
+    hdrRefEl.textContent = (ref && ref !== '—') ? ref : '';
+    hdrBadgeMini.textContent = tc;
   } else {
     banner.style.display = 'none';
+    hdrRefEl.textContent = '';
     hdrBadgeMini.textContent = '—';
   }
 
@@ -7462,10 +7650,16 @@ function renderBatchResults(results) {
   }
   const tbl = document.createElement('table');
   tbl.className = "batch-table";
+  // Two new chip columns (HDR + Level) sit right after the VPID hex so an
+  // engineer scanning a 30-row dump from a stream monitor can spot
+  // mismatches by colour, not by reading text. Both chips are derived from
+  // existing decoder output (transferChar + interface/citation strings).
   tbl.innerHTML = `
     <thead>
       <tr>
         <th style="width: 110px;">VPID</th>
+        <th style="width: 78px;">HDR</th>
+        <th style="width: 100px;">Level</th>
         <th>Source</th>
         <th style="width: 130px;">Format</th>
         <th style="width: 110px;">Frame</th>
@@ -7473,26 +7667,30 @@ function renderBatchResults(results) {
         <th style="width: 110px;">Sampling</th>
         <th style="width: 90px;">Bit depth</th>
         <th style="width: 130px;">Colorimetry</th>
-        <th style="width: 110px;">Transfer</th>
         <th>Standard</th>
         <th>Notes</th>
       </tr>
     </thead>
     <tbody></tbody>
   `;
+  const COL_COUNT = 12;
+  const SPAN_AFTER_HEX = COL_COUNT - 1;        // for "Invalid" rows after the VPID cell
+  const SPAN_REGISTRY  = COL_COUNT - 3;        // VPID + description spans, then standard + status
   const tbody = tbl.querySelector('tbody');
   for (const item of results) {
     const tr = document.createElement('tr');
     const decoded = item.decoded;
     if (!item.bytes || !decoded) {
       tr.className = "batch-row-invalid";
-      tr.innerHTML = `<td class="batch-hex">${item.hex}</td><td colspan="10">${item.error || 'Invalid'}</td>`;
+      tr.innerHTML = `<td class="batch-hex">${item.hex}</td><td colspan="${SPAN_AFTER_HEX}">${item.error || 'Invalid'}</td>`;
     } else if (decoded.valid) {
       const c = decoded.characteristics;
       const friendly = buildFriendlyLabel(c);
       const warnings = (decoded.warnings || []).join("; ");
       tr.innerHTML = `
         <td class="batch-hex">${item.hex}</td>
+        <td>${hdrChipHtml(c)}</td>
+        <td>${levelChipHtml(decoded)}</td>
         <td class="batch-friendly">${friendly}</td>
         <td>${c.resolution || '—'}</td>
         <td>${(c.frameRateLabel || '—') + (c.frameRateLabel ? ' Hz' : '')}</td>
@@ -7500,7 +7698,6 @@ function renderBatchResults(results) {
         <td>${c.sampling || '—'}</td>
         <td>${c.bitDepth || '—'}</td>
         <td>${c.colorimetry || '—'}</td>
-        <td>${c.transferCharLabel || c.transferChar || '—'}</td>
         <td><code style="font-size: 11px;">${decoded.citation || c.standard || '—'}</code></td>
         <td class="batch-warns">${warnings}</td>
       `;
@@ -7508,13 +7705,13 @@ function renderBatchResults(results) {
       tr.className = "batch-row-registry";
       tr.innerHTML = `
         <td class="batch-hex">${item.hex}</td>
-        <td colspan="8"><em>Registry-only:</em> ${decoded.registry.description}</td>
+        <td colspan="${SPAN_REGISTRY}"><em>Registry-only:</em> ${decoded.registry.description}</td>
         <td><code style="font-size: 11px;">${decoded.registry.standard}</code></td>
         <td class="batch-warns">${decoded.registry.status}</td>
       `;
     } else {
       tr.className = "batch-row-invalid";
-      tr.innerHTML = `<td class="batch-hex">${item.hex}</td><td colspan="10">${decoded.error || 'Unassigned VPID'}</td>`;
+      tr.innerHTML = `<td class="batch-hex">${item.hex}</td><td colspan="${SPAN_AFTER_HEX}">${decoded.error || 'Unassigned VPID'}</td>`;
     }
     tbody.appendChild(tr);
   }
@@ -7838,7 +8035,13 @@ function renderImportResults(extracted) {
     let standardCell = '—';
     if (d && d.valid) {
       const c = d.characteristics;
-      decodedCell = buildFriendlyLabel(c);
+      // Inline HDR + Level chips with the friendly label so an engineer
+      // scanning a long telemetry dump sees the operational dimensions
+      // (HDR identity + transport level) at a glance, without needing
+      // extra columns. Both chips come from the same dynamic decoder
+      // output used everywhere else.
+      const chips = `${hdrChipHtml(c)} ${levelChipHtml(d)}`;
+      decodedCell = `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">${chips}<span style="font-weight:500;">${buildFriendlyLabel(c)}</span></div>`;
       standardCell = `<code style="font-size: 11px;">${d.citation || c.standard || '—'}</code>`;
     } else if (d && d.registered) {
       tr.className = "batch-row-registry";
