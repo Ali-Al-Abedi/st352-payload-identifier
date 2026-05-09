@@ -289,6 +289,20 @@
   .batch-table .batch-friendly { font-weight: 500; }
   .batch-table .batch-warns { color: var(--warn); font-size: 11px; font-style: italic; }
 
+  /* Receiver telemetry importer */
+  .import-source {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--text-dim); background: rgba(0,0,0,0.15);
+    border-radius: 4px; padding: 1px 6px; margin-right: 6px;
+  }
+  .import-source-list {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .batch-table .import-count {
+    text-align: center; color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  }
+
   /* Compare two VPIDs */
   .compare-inputs {
     display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap;
@@ -612,6 +626,45 @@ B0 0B 80 01    # VC-2 mezzanine 1080p60"></textarea>
         <span id="batchStatus" class="tool-status"></span>
       </div>
       <div id="batchResults" class="batch-results"></div>
+    </div>
+  </details>
+
+  <!-- Receiver-telemetry importer.
+       Paste a JSON dump from a stream monitor / NMOS receiver / ANC parser
+       (Tektronix Prism, EBU LIST, Imagine Selenio, Cinegy Air, Nevion VideoIPath, etc.)
+       and the tool will extract every recognizable VPID and feed them into
+       the batch decode panel.  We reuse the same decodeVpidBytes() pipeline
+       so the importer can never disagree with the main view. -->
+  <details class="tool-panel" id="importPanel">
+    <summary>
+      <span class="tool-title">Import receiver telemetry</span>
+      <span class="tool-sub">Paste a JSON / log dump from a stream monitor or ANC parser — extract every VPID and decode them all.</span>
+    </summary>
+    <div class="tool-body">
+      <textarea id="importInput" class="batch-input mono" rows="8" spellcheck="false" autocomplete="off"
+placeholder='Paste JSON or log dump. Recognized:
+  - Hex strings: 89CA8001, 0x89CA8001, 89 CA 80 01, 89:CA:80:01, 89-CA-80-01
+  - JSON keys: vpid, payloadId, payload_id, payload_identifier, videoPayloadId(entifier)
+  - 10-bit ANC user-data words (parity bits stripped automatically)
+  - Free-form logs (ignores text outside hex matches)
+
+Example:
+{
+  "receiver": "FOX-NY-MCR-RX-12",
+  "sdp": "...",
+  "anc": [
+    { "did": "0x41", "sdid": "0x01", "vpid": "0x89CA8001", "label": "PGM-1" },
+    { "did": "0x41", "sdid": "0x01", "vpid": "0xC1CA8001", "label": "PGM-2" }
+  ]
+}'></textarea>
+      <div class="tool-actions">
+        <button id="importExtractBtn" class="btn">Extract &amp; decode</button>
+        <label class="btn" for="importFileInput" style="cursor:pointer;">Load file...</label>
+        <input id="importFileInput" type="file" accept=".json,.log,.txt,.csv,.yaml,.yml,application/json,text/plain" style="display:none;">
+        <button id="importClearBtn" class="btn">Clear</button>
+        <span id="importStatus" class="tool-status"></span>
+      </div>
+      <div id="importResults" class="batch-results"></div>
     </div>
   </details>
 
@@ -7447,6 +7500,302 @@ function batchExportRows(results, mode) {
 }
 
 /* =====================================================================
+ *  R E C E I V E R   T E L E M E T R Y   I M P O R T E R
+ *
+ *  Glue between real-world stream-monitor / NMOS / ANC-parser output and
+ *  the decoder.  Engineers paste a JSON / log dump from devices like
+ *  Tektronix Prism, EBU LIST, Imagine Selenio, Cinegy Air, Nevion
+ *  VideoIPath, etc., and we extract every recognizable VPID, dedupe,
+ *  preserve a short source-line snippet for each occurrence, and feed
+ *  the unique hex values through batchDecodeAll() so the importer can
+ *  never disagree with the main view.
+ *
+ *  Recognized shapes (in priority order):
+ *
+ *    1. Structured JSON keys.  If the input parses as JSON, walk the
+ *       tree and capture string/number/array values whose key matches
+ *       /payload[_-]?id|vpid/i.  Also capture 4-byte int arrays.
+ *    2. Hex literals.  Any 4-byte hex run, with optional separators
+ *       (space / colon / dot / dash / underscore) and an optional 0x
+ *       prefix.  Hex literals embedded inside a JSON value are caught
+ *       here too as a fall-back if the key heuristic missed them.
+ *    3. 10-bit ANC user-data words.  ST 291 wraps each VPID byte in a
+ *       10-bit user word with parity bits.  When we see four
+ *       consecutive 10-bit values (>= 0x100) we strip parity to recover
+ *       the 8-bit VPID.
+ *
+ *  Each extracted occurrence carries: { hex, bytes, source, key }.
+ *  Sources are deduped by hex; the table preserves the first three
+ *  source contexts so the engineer can see *where* the VPID came from
+ *  without us having to render thousands of identical rows.
+ * ===================================================================== */
+// Three patterns, in priority order, designed to keep the false-positive
+// rate manageable on real telemetry dumps:
+//
+//   (a) Packed with explicit hex prefix:  0x89CA8001, 0X89CA8001, #89CA8001.
+//   (b) Packed *without* prefix:           89CA8001 (post-filtered to require
+//       at least one a-f character so decimal ints like "3234947073"
+//       don't collide).
+//   (c) Separated by one or more of [\s:.\-_]: "89 CA 80 01", "89:CA:80:01",
+//       "89-CA-80-01", "89.CA.80.01", "89_CA_80_01".
+//
+// We also require Byte 1 to be a *registered* SMPTE code (member of
+// SMPTE_BYTE1_REGISTRY).  The 0x07..0x80 reserved range is rejected because
+// in practice those bytes never appear in the wild and accepting them
+// produces a lot of false positives from MAC addresses, IPv6 fragments,
+// debug magic numbers (DEADBEEF, CAFEBABE, …) and similar noise.
+const VPID_HEX_PATTERNS = [
+  { kind: 'prefix',    re: /(?:0x|0X|#)([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})(?![0-9a-fA-F])/g },
+  { kind: 'packed',    re: /(?:^|[^0-9a-fA-FxX#])([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})(?![0-9a-fA-F])/g },
+  { kind: 'separated', re: /(?:^|[^0-9a-fA-F])([0-9a-fA-F]{2})[\s:.\-_]+([0-9a-fA-F]{2})[\s:.\-_]+([0-9a-fA-F]{2})[\s:.\-_]+([0-9a-fA-F]{2})(?![0-9a-fA-F])/g },
+];
+
+// Trim a snippet around an offset to ~80 chars, stripping newlines so the
+// table cell stays compact.  This is what we show under "Source" so an
+// engineer can verify the VPID came from a sane place in the dump.
+function importMakeSnippet(text, idx, len) {
+  const window = 36;
+  const start = Math.max(0, idx - window);
+  const end   = Math.min(text.length, idx + len + window);
+  let snippet = text.slice(start, end).replace(/\s+/g, ' ').trim();
+  if (start > 0) snippet = '…' + snippet;
+  if (end < text.length) snippet = snippet + '…';
+  return snippet;
+}
+
+// Walk a parsed JSON tree and pull anything that looks like a VPID out of
+// keys named vpid / payload_id / videoPayloadIdentifier / etc.
+//
+// IMPORTANT: we deliberately *skip* string-valued matches here.  Stringified
+// VPIDs (`"vpid": "0x89CA8001"`, `"vpid": "89 CA 80 01"`, ...) are already
+// present verbatim in the raw text passed to the regex sweep.  Letting the
+// JSON walker also capture them would double-count every occurrence.  The
+// regex sweep does its own JSON-key lookback so the source-key hint is
+// preserved either way.
+//
+// What we capture here are forms that the regex *can't* catch:
+//   - integer values ("vpid": 0xC0CAE001 → JSON.stringify writes "3234947073"),
+//   - 4-byte arrays of decimal ints ("vpid": [161, 202, 0, 1]).
+function importWalkJson(value, key, path, out) {
+  if (value === null || value === undefined) return;
+  const keyHints = /^(vpid|payload[_-]?id(entifier)?|video[_-]?payload[_-]?id(entifier)?|st352[_-]?id)$/i;
+  const hintMatch = key && keyHints.test(key);
+  if (typeof value === 'string') {
+    // Skip — handled by the regex sweep over the raw source text.
+    return;
+  } else if (typeof value === 'number' && Number.isFinite(value)) {
+    if (hintMatch && value >= 0 && value <= 0xFFFFFFFF && Number.isInteger(value)) {
+      const bytes = [
+        (value >>> 24) & 0xFF,
+        (value >>> 16) & 0xFF,
+        (value >>> 8)  & 0xFF,
+        value & 0xFF
+      ];
+      out.push({ bytes, key: path.join('.'), source: '0x' + value.toString(16).toUpperCase().padStart(8, '0') });
+    }
+  } else if (Array.isArray(value)) {
+    if (hintMatch && value.length === 4 && value.every(v => Number.isInteger(v) && v >= 0 && v < 0x400)) {
+      // 4 bytes (or 4 ten-bit ANC words) packed as an int array.
+      const bytes = value.map(v => v >= 0x100 ? (v & 0xFF) : v);
+      out.push({ bytes, key: path.join('.'), source: '[' + value.map(v => '0x' + v.toString(16).toUpperCase()).join(', ') + ']' });
+    } else {
+      value.forEach((v, i) => importWalkJson(v, key, path.concat(String(i)), out));
+    }
+  } else if (typeof value === 'object') {
+    for (const k of Object.keys(value)) {
+      importWalkJson(value[k], k, path.concat(k), out);
+    }
+  }
+}
+
+// Strip ST 291 user-data parity bits from a sequence of 10-bit values.
+// Each ANC user-data word stores the 8-bit VPID byte in bits 0-7, even
+// parity in bit 8, and the inverse of bit 8 in bit 9.  We don't enforce
+// the parity itself (devices we've seen ship malformed parity all the
+// time) — we just recover the lower 8 bits.
+function importTry10BitAncWindow(text) {
+  const out = [];
+  // Match runs of 4 hexadecimal numbers in [0x100, 0x3FF] separated by
+  // commas / spaces — that's the recognizable shape of "ANC user data
+  // words" exported by tools like Tektronix Sentry / EBU LIST.
+  const re = /(?:0x|0X)?([1-3][0-9a-fA-F]{2})[\s,]+(?:0x|0X)?([1-3][0-9a-fA-F]{2})[\s,]+(?:0x|0X)?([1-3][0-9a-fA-F]{2})[\s,]+(?:0x|0X)?([1-3][0-9a-fA-F]{2})/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    const w = m.slice(1, 5).map(s => parseInt(s, 16));
+    if (w.every(v => v >= 0x100 && v <= 0x3FF)) {
+      const bytes = w.map(v => v & 0xFF);
+      out.push({
+        bytes,
+        key: '10-bit ANC user data',
+        source: importMakeSnippet(text, m.index, m[0].length)
+      });
+    }
+  }
+  return out;
+}
+
+function extractVpidsFromText(text) {
+  const found = [];
+
+  // 1. Try to parse the whole input as JSON first.  If it works, walk
+  //    the tree before doing any regex sweeps so structured key matches
+  //    win.  We also tolerate JSON with trailing junk (some loggers
+  //    concatenate JSON objects) by trying line-by-line if the full
+  //    parse fails.
+  const tryJson = (s) => { try { return JSON.parse(s); } catch (e) { return undefined; } };
+  let parsed = tryJson(text);
+  if (parsed === undefined) {
+    // Try concatenated objects: {...}{...}{...}
+    const matches = text.match(/\{[\s\S]*?\}(?=\s*[\{\[]|\s*$)/g);
+    if (matches) {
+      const objs = [];
+      for (const m of matches) {
+        const p = tryJson(m);
+        if (p !== undefined) objs.push(p);
+      }
+      if (objs.length) parsed = objs;
+    }
+  }
+  if (parsed !== undefined) importWalkJson(parsed, null, [], found);
+
+  // 2. Hex literal sweep — captures both raw text dumps and any hex
+  //    that JSON walking missed (e.g. embedded inside a string value).
+  //    We track byte offsets and dedupe overlapping matches, so a single
+  //    "0x89CA8001" doesn't get found by both the prefix and packed
+  //    patterns and counted twice.
+  const usedRanges = [];
+  const overlaps = (start, end) => usedRanges.some(([s, e]) => start < e && end > s);
+  for (const { kind, re } of VPID_HEX_PATTERNS) {
+    re.lastIndex = 0;
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      const bytes = [m[1], m[2], m[3], m[4]].map(s => parseInt(s, 16));
+      // The leading non-hex char (or BOL) is captured as a non-group via
+      // the lookbehind-emulation in the regex, so the match position we
+      // care about is the start of m[1].  Compute it from m.index +
+      // length-of-match-prefix:
+      const prefixLen = m[0].length - (m[1].length + m[2].length + m[3].length + m[4].length + (m[0].match(/[\s:.\-_]/g) || []).length);
+      const matchStart = m.index + prefixLen;
+      const matchEnd   = m.index + m[0].length;
+      if (overlaps(matchStart, matchEnd)) continue;
+
+      // Reject runs that are obviously not VPIDs:
+      //   - all-zero (placeholder)
+      //   - all 0xFF (idle)
+      //   - byte 1 not in the SMPTE registry — in practice telemetry
+      //     never carries reserved-range Byte 1 values and accepting
+      //     them produces too many false positives.
+      const allSame = bytes.every(b => b === bytes[0]);
+      if (allSame && (bytes[0] === 0x00 || bytes[0] === 0xFF)) continue;
+      const b1 = bytes[0];
+      if (!SMPTE_BYTE1_REGISTRY[b1]) continue;
+
+      // For the unprefixed packed pattern, require at least one a-f letter
+      // somewhere in the 8 hex chars — guards against decimal numbers
+      // that happen to be exactly 8 digits long.
+      if (kind === 'packed' && !/[a-fA-F]/.test(m[1] + m[2] + m[3] + m[4])) continue;
+
+      const ctx = importMakeSnippet(text, matchStart, matchEnd - matchStart);
+      // Look back up to ~40 chars to see if there's a JSON-style key
+      // hint right before — preserves "vpid": "89CA8001" as the source
+      // key even when found via the regex sweep.
+      const back = text.slice(Math.max(0, matchStart - 40), matchStart);
+      const km = back.match(/(payload[_-]?id(?:entifier)?|video[_-]?payload[_-]?id(?:entifier)?|vp[_-]?id|st352[_-]?id)\s*["'\s]*[:=]/i);
+      const key = km ? km[1] : '';
+      usedRanges.push([matchStart, matchEnd]);
+      found.push({ bytes, key, source: ctx });
+    }
+  }
+
+  // 3. 10-bit ANC sweep
+  found.push(...importTry10BitAncWindow(text));
+
+  // Deduplicate by hex.  Each unique VPID keeps a count and up to 3
+  // source snippets so we don't overwhelm the table when a dump has a
+  // thousand identical lines (a router with a hundred receivers all
+  // tuned to the same flow is a real shape).
+  const dedup = new Map();
+  for (const f of found) {
+    const hex = formatHexBytes(f.bytes);
+    let entry = dedup.get(hex);
+    if (!entry) {
+      entry = { hex, bytes: f.bytes, count: 0, sources: [], keys: [] };
+      dedup.set(hex, entry);
+    }
+    entry.count++;
+    if (entry.sources.length < 3 && !entry.sources.includes(f.source)) entry.sources.push(f.source);
+    if (f.key && !entry.keys.includes(f.key)) entry.keys.push(f.key);
+  }
+
+  // Sort by Byte 1 then Byte 2 — same convention as the SMPTE registry.
+  return Array.from(dedup.values()).sort((a, b) => {
+    for (let i = 0; i < 4; i++) {
+      if (a.bytes[i] !== b.bytes[i]) return a.bytes[i] - b.bytes[i];
+    }
+    return 0;
+  });
+}
+
+function renderImportResults(extracted) {
+  const host = $('#importResults');
+  host.innerHTML = "";
+  if (!extracted.length) {
+    host.innerHTML = '<div class="compare-empty">Paste a telemetry dump above and click <strong>Extract &amp; decode</strong>.</div>';
+    return;
+  }
+  // Decode each unique VPID via batchDecodeAll() (one line per hex)
+  const text = extracted.map(e => e.hex).join('\n');
+  const decoded = batchDecodeAll(text);
+  // Build a richer table that overlays count + sources on top of the
+  // standard batch output.
+  const tbl = document.createElement('table');
+  tbl.className = "batch-table";
+  tbl.innerHTML = `
+    <thead>
+      <tr>
+        <th style="width: 110px;">VPID</th>
+        <th style="width: 60px;" title="Number of times this VPID was found in the input">Count</th>
+        <th>Source key / context</th>
+        <th>Decoded</th>
+        <th>Standard</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+  const tbody = tbl.querySelector('tbody');
+  for (let i = 0; i < extracted.length; i++) {
+    const e = extracted[i];
+    const d = decoded[i].decoded;
+    const tr = document.createElement('tr');
+    let decodedCell = '<em style="color:var(--text-dim);">Could not decode</em>';
+    let standardCell = '—';
+    if (d && d.valid) {
+      const c = d.characteristics;
+      decodedCell = buildFriendlyLabel(c);
+      standardCell = `<code style="font-size: 11px;">${d.citation || c.standard || '—'}</code>`;
+    } else if (d && d.registered) {
+      tr.className = "batch-row-registry";
+      decodedCell = `<em>Registry-only:</em> ${d.registry.description}`;
+      standardCell = `<code style="font-size: 11px;">${d.registry.standard}</code>`;
+    } else {
+      tr.className = "batch-row-invalid";
+      decodedCell = (d && d.error) || 'Unassigned VPID';
+    }
+    const sourceList = e.sources.map(s => `<span class="import-source">${s.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`).join('');
+    const keyHints = e.keys.length ? `<div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">key: <code>${e.keys.join(', ')}</code></div>` : '';
+    tr.innerHTML = `
+      <td class="batch-hex">${e.hex}</td>
+      <td class="import-count">${e.count}</td>
+      <td>${keyHints}<div class="import-source-list">${sourceList}</div></td>
+      <td>${decodedCell}</td>
+      <td>${standardCell}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+  host.appendChild(tbl);
+}
+
+/* =====================================================================
  *  C O M P A R E   T W O   V P I D S
  *
  *  Side-by-side decode of two VPIDs. The diff is computed at the byte
@@ -8574,6 +8923,41 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   // Initial empty-state render
   renderBatchResults([]);
+
+  // Receiver telemetry importer wiring
+  function runImportExtract() {
+    const text = $('#importInput').value;
+    const extracted = extractVpidsFromText(text);
+    renderImportResults(extracted);
+    const inputBytes = text.length;
+    $('#importStatus').textContent = extracted.length
+      ? `Found ${extracted.length} unique VPID${extracted.length === 1 ? '' : 's'} in ${inputBytes.toLocaleString()} char${inputBytes === 1 ? '' : 's'} of input.`
+      : (text.trim() ? 'No VPIDs recognised in the input.' : '');
+    if (extracted.length) {
+      // Auto-populate the Batch decode panel so the user gets the full
+      // characteristic table + JSON/CSV export of the extracted VPIDs
+      // without having to copy-paste between panels.
+      $('#batchInput').value = extracted.map(e => `${e.hex}    # found ${e.count}× ` + (e.keys.join(', ') || 'in raw text')).join('\n');
+    }
+  }
+  $('#importExtractBtn').addEventListener('click', runImportExtract);
+  $('#importClearBtn').addEventListener('click', () => {
+    $('#importInput').value = "";
+    renderImportResults([]);
+    $('#importStatus').textContent = "";
+  });
+  $('#importFileInput').addEventListener('change', e => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      $('#importInput').value = String(ev.target.result || '');
+      runImportExtract();
+    };
+    reader.onerror = () => { $('#importStatus').textContent = `Could not read ${file.name}.`; };
+    reader.readAsText(file);
+  });
+  renderImportResults([]);
 
   // Compare two VPIDs wiring
   function runCompare() {

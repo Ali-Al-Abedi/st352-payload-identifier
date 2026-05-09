@@ -312,6 +312,77 @@ def extract(src_path: str, out_path: str) -> None:
     console.error('FAIL: batchDecodeAll is not exported to global scope');
     process.exit(2);
   }
+
+  // ---- Receiver telemetry importer smoke tests ----
+  if (typeof extractVpidsFromText === 'function') {
+    console.log(`\n--- Telemetry importer smoke test ---`);
+
+    // 1. Tektronix Prism / generic JSON receiver telemetry
+    const teleA = JSON.stringify({
+      receiver: 'FOX-NY-MCR-RX-12',
+      anc: [
+        { did: '0x41', sdid: '0x01', vpid: '0x89CA8001', label: 'PGM-1' },
+        { did: '0x41', sdid: '0x01', vpid: '0x89CA8001', label: 'PGM-1-bkp' },
+        { did: '0x41', sdid: '0x01', vpid: '0xC1CA8001', label: 'PGM-2' }
+      ]
+    });
+    const ea = extractVpidsFromText(teleA);
+    if (ea.length !== 2) { console.error('FAIL: expected 2 unique VPIDs from JSON dump, got ' + ea.length); process.exit(2); }
+    const ea0 = ea.find(e => e.hex.startsWith('89'));
+    if (!ea0 || ea0.count !== 2) { console.error('FAIL: 89CA8001 should appear 2x, got ' + (ea0 && ea0.count)); process.exit(2); }
+    if (!ea0.keys.some(k => /vpid|payload/i.test(k))) { console.error('FAIL: JSON key hint missing for 89CA8001'); process.exit(2); }
+
+    // 2. EBU LIST style key (snake case + nested array)
+    const teleB = JSON.stringify({
+      streams: [
+        { name: 'cam1', payload_id: '85 06 20 01' },
+        { name: 'cam2', payload_identifier: [0xA1, 0xCA, 0x00, 0x01] },
+        { name: 'cam3', videoPayloadIdentifier: 0xC0CAE001 }
+      ]
+    });
+    const eb = extractVpidsFromText(teleB);
+    if (eb.length !== 3) { console.error('FAIL: EBU-style importer expected 3 unique, got ' + eb.length); process.exit(2); }
+    if (!eb.find(e => e.hex.replace(/\s/g,'') === 'C0CAE001')) { console.error('FAIL: int key value 0xC0CAE001 not extracted'); process.exit(2); }
+    if (!eb.find(e => e.hex.replace(/\s/g,'') === 'A1CA0001')) { console.error('FAIL: byte-array key value [A1,CA,00,01] not extracted'); process.exit(2); }
+
+    // 3. Free-form log dump with mixed VPIDs and noise
+    const teleC = `2026-05-09T18:30:00Z RX-12 PRGM-A vpid=0x89CA8001 src=10.10.5.1
+2026-05-09T18:30:00Z RX-12 PRGM-B vpid=89:CA:80:01 src=10.10.5.2
+2026-05-09T18:30:01Z RX-13 GUID a1b2-c3d4-e5f6-0789 (should not match VPID)
+2026-05-09T18:30:01Z MAC=89:CA:80:01:DE:AD:BE:EF (extra bytes -- still trips the regex; tool reports the first 4 as 89CA8001)
+2026-05-09T18:30:01Z RX-14 SECONDARY 85 06 20 01`;
+    const ec = extractVpidsFromText(teleC);
+    if (ec.length < 2) { console.error('FAIL: free-form log should yield at least 2 unique VPIDs, got ' + ec.length); process.exit(2); }
+    if (!ec.find(e => e.hex.replace(/\s/g,'') === '89CA8001')) { console.error('FAIL: 89CA8001 not extracted from log'); process.exit(2); }
+    if (!ec.find(e => e.hex.replace(/\s/g,'') === '85062001')) { console.error('FAIL: 85062001 not extracted from log'); process.exit(2); }
+    // Negative: GUIDs should not produce false-positive byte 1 in {valid registry}
+    const guidMatches = ec.filter(e => /^a1b2/i.test(e.hex.replace(/\s/g,'')));
+    if (guidMatches.length) { console.error('FAIL: GUID falsely extracted as VPID'); process.exit(2); }
+
+    // 4. Sort order: byte 1 ascending
+    if (ec[0].bytes[0] > ec[ec.length - 1].bytes[0]) {
+      console.error('FAIL: importer output not sorted by byte 1 ascending');
+      process.exit(2);
+    }
+
+    // 5. 10-bit ANC user-data words (parity stripped)
+    const teleD = '0x289 0x2CA 0x180 0x101'; // bytes 89 CA 80 01 with parity bits set
+    const ed = extractVpidsFromText(teleD);
+    if (!ed.find(e => e.hex.replace(/\s/g,'') === '89CA8001')) {
+      console.error('FAIL: 10-bit ANC parity stripping failed; got ' + JSON.stringify(ed.map(e => e.hex)));
+      process.exit(2);
+    }
+
+    // 6. Idle/zero placeholders should not show up
+    const teleE = 'something 00 00 00 00 something FF FF FF FF something 89 CA 80 01';
+    const ee = extractVpidsFromText(teleE);
+    if (ee.length !== 1) { console.error('FAIL: zero/idle placeholders should be dropped, got ' + ee.length + ' (' + ee.map(e=>e.hex).join(', ') + ')'); process.exit(2); }
+
+    console.log('  OK');
+  } else {
+    console.error('FAIL: extractVpidsFromText is not exported to global scope');
+    process.exit(2);
+  }
 })();
 '''
 
