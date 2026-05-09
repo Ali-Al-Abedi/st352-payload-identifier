@@ -34,31 +34,18 @@ jobs:
       - uses: actions/checkout@v4
 
       # Build a tiny site directory containing exactly the files we want
-      # to publish: the calculator, an index that redirects to it, and
-      # the README rendered as a homepage. We deliberately skip docs/
-      # because the SMPTE PDFs referenced there are SMPTE copyrighted
-      # material and aren't checked into the repo at all (they're
-      # gitignored — engineers grab their own copies locally).
+      # to publish: the calculator, the README, and a thin index.html
+      # that forwards the root URL (with any ?vpid=... query / hash
+      # preserved) to vpid.html. We deliberately skip docs/ because the
+      # SMPTE PDFs referenced there are SMPTE copyrighted material and
+      # aren't checked into the repo at all (they're gitignored —
+      # engineers grab their own copies locally).
       - name: Stage site
         run: |
           mkdir -p _site
           cp vpid.html _site/vpid.html
           cp README.md _site/README.md
-          # index.html: redirect to vpid.html (Pages serves index.html by
-          # default, and we want the root URL to land on the calculator).
-          cat > _site/index.html <<'EOF'
-          <!doctype html>
-          <html lang="en">
-          <head>
-            <meta charset="utf-8">
-            <meta http-equiv="refresh" content="0; url=vpid.html">
-            <title>VPID Calculator</title>
-          </head>
-          <body>
-            <p>Redirecting to <a href="vpid.html">vpid.html</a>&hellip;</p>
-          </body>
-          </html>
-          EOF
+          cp index.html _site/index.html
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
