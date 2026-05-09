@@ -50,6 +50,7 @@ Methodology is documented in `audit/README.md`. Each individual finding is in
 | ✅ | 0xD9-0xDE | ST 2082-30:2017 | 0 | 0 | 0 | 0 | `findings/0xD9-DE-st2082-30.md` |
 | ✅ | 0xDF-0xF1 | ITU-R BT.2077-2 | 0 | 0 | 1 | 0 | `findings/0xDF-F1-bt2077-2.md` |
 | ✅ | 0xF4-0xF9 | ITU-R BT.2077-3 | 2 | 0 | 0 | 0 | `findings/0xF4-F9-bt2077-3.md` |
+| ✅ | Registry refresh 2026-05-09 | smpte-ra.org spreadsheet | 0 | 0 | 0 | 0 | `findings/registry-refresh-2026-05.md` |
 
 **Totals across all audits:** 22 P0, 88 P1, 30 P2, 1 P3.
 
@@ -96,9 +97,12 @@ either:
 - Reserved (0x07–0x80): no semantics defined; calculator already reports "Reserved".
 - Unregistered (0xFA–0xFF): calculator already reports "Not registered".
 
-No new Byte 1 codes appear in the SMPTE Payload ID Registry as of the version pulled into
-`docs/registry/byte1-payload-id.csv`. If/when SMPTE publishes new codes, the audit framework
-in `audit/README.md` provides a repeatable procedure to extend coverage.
+No new Byte 1 codes appear in the SMPTE Payload ID Registry as of the most recent refresh
+(2026-05-09 — see `findings/registry-refresh-2026-05.md`). If/when SMPTE publishes new
+codes, the audit framework in `audit/README.md` provides a repeatable procedure to extend
+coverage. Notably, that refresh confirmed the tool's `0xCB`/`0xCC` descriptions follow ST
+2081-30:2017 Tables 1 & 2 directly and are *more accurate than the live SMPTE-RA
+spreadsheet*, which currently swaps those two rows.
 
 ## Repro
 
