@@ -655,8 +655,8 @@ B0 0B 80 01    # VC-2 mezzanine 1080p60"></textarea>
       <li><code>SMPTE ST 425-6:2014</code> — Stereoscopic 1080-line / 2160-line on quad-link 3G-SDI (Byte 1 = 0x99, 0x9A, 0x9B)</li>
       <li><code>SMPTE ST 2081-10:2015</code> — 6G-SDI 4K/HFR (Byte 1 = 0xC0, 0xC1) — <em>via Tektronix "Creating 4K/UHD Content" poster, not from the original SMPTE PDF</em></li>
       <li><code>SMPTE ST 2082-10:2018</code> — 12G-SDI 4K/HFR (Byte 1 = 0xCE, 0xCF)</li>
-      <li><code>SMPTE ST 2082-11:2019</code> — Dual-link 12G-SDI 8K (Byte 1 = 0xD0)</li>
-      <li><code>SMPTE ST 2082-12:2019</code> — Quad-link 12G-SDI 8K (Byte 1 = 0xD2)</li>
+      <li><code>SMPTE ST 2082-11:2019</code> — Dual-link 12G-SDI 8K (Byte 1 = 0xD0) and 4K extended over dual-link (Byte 1 = 0xD1, Mode 2/3)</li>
+      <li><code>SMPTE ST 2082-12:2019</code> — Quad-link 12G-SDI 8K (Byte 1 = 0xD2) and 4K extended over quad-link (Byte 1 = 0xD3, Mode 2)</li>
       <li><code>SMPTE ST 435-1:2012</code> — 10 Gb/s SDI Basic Stream Derivation; defines quad-link 1080-line and octa-link 2160-line VPID byte 2/3/4 layouts (Byte 1 = 0x90, 0xA0). ST 435-2 (Mode A/B/C/D multiplexing) and ST 435-3 (optical fibre interface) are physical-layer companions and don't affect VPID bytes 2-4.</li>
       <li><code>SMPTE ST 2036-3:2018</code> / <code>ITU-R BT.2077-1</code> — UHDTV1 / UHDTV2 over single-, dual-, quad- and octa-link 10G-SDI Mode D (Byte 1 = 0xA1, 0xA2)</li>
       <li><code>SMPTE ST 2036-4:2019</code> / <code>ARIB STD-B58</code> / <code>ITU-R BT.2077-2</code> — UHDTV1 / UHDTV2 over multi-link 10G-SDI 12-bit container (Byte 1 = 0xA5, 0xA6) — note: colorimetry-bit polarity is INVERTED (1 = Rec. 709)</li>
@@ -2810,6 +2810,109 @@ const VPID_LAYOUTS = {
   },
 
   // ============================================================
+  // 0xD1 — Dual-link 12G-SDI 2160-line (extended chroma/bit-depth/HFR)
+  // ST 2082-11:2019 §5.8 Table 9 (Mode 2: 4:4:4(:4) 10/12-bit @ ≤60p)
+  //               + §6.9 Table 17 (Mode 3: 4:2:2/4:2:0 10-bit HFR ≤120p)
+  // Both modes share byte 1 = D1h; the mode is implied by byte 3 sampling
+  // bits b3:b0 and byte 4 b1:b0 bit-depth combination.
+  //
+  // Byte 2 b7:        Transport scan (always 1 = Progressive)
+  // Byte 2 b6:        Picture scan   (always 1 = Progressive)
+  // Byte 2 b5:b4:     Transfer characteristics (SDR / HLG / PQ / Unspec)
+  // Byte 2 b3:b0:     Picture rate            (Table 4)
+  // Byte 3 b7:        Aspect ratio   (1=16:9, 0=Unknown)
+  // Byte 3 b6:        Sub-image H sampling (0=1920, 1=2048)
+  // Byte 3 b5:b4:     Colorimetry            (Rec.709 / Color VANC / UHDTV / Unknown)
+  // Byte 3 b3:b0:     Sampling structure      (Table 5)
+  // Byte 4 b7:b5:     Link assignment        (0h=Link 1, 1h=Link 2; others reserved)
+  // Byte 4 b4:        Luma signal interpretation (0=Y'CbCr, 1=ICtCp)
+  // Byte 4 b3:        Reserved (0)
+  // Byte 4 b2:        Audio copy status (DS 5-16 only; reserved for DS 1-4)
+  // Byte 4 b1:b0:     Bit depth — Mode 2: 0..3 (10FR / 10 / 12 / 12FR);
+  //                                Mode 3: only 0/1 (others reserved)
+  // ============================================================
+  0xD1: {
+    id: "DL-12G-2160",
+    hex: 0xD1,
+    family: "Dual-Link 12G",
+    label: "Dual-link 12G-SDI 2160-line (4K extended — ST 2082-11 Mode 2/3)",
+    citation: "SMPTE ST 2082-11:2019 §5.8 Table 9 (Mode 2) / §6.9 Table 17 (Mode 3)",
+    interface: "Dual 12 Gb/s SDI (SMPTE ST 2082-11 Mode 2/3)",
+    decode(b2, b3, b4) {
+      const fields = [];
+      const trans = (b2 >> 7) & 1;
+      const pic   = (b2 >> 6) & 1;
+      const tc    = (b2 >> 4) & 0x3;
+      const rate  = b2 & 0xF;
+      fields.push({ byte: 2, bits: "b7",    name: "Transport scan",         value: trans ? "Progressive (always)" : "Interlaced (invalid)", source: "ST 2082-11 §5.8.2/§6.9.2" });
+      fields.push({ byte: 2, bits: "b6",    name: "Picture scan",           value: pic   ? "Progressive (always)" : "Interlaced (invalid)", source: "ST 2082-11 §5.8.2/§6.9.2" });
+      fields.push({ byte: 2, bits: "b5:b4", name: "Transfer characteristics", value: TRANSFER_CHAR[tc].label,                                  source: "ST 2082-11 §5.8.2/§6.9.2" });
+      fields.push({ byte: 2, bits: "b3:b0", name: "Picture rate",           value: PICTURE_RATE[rate].label,                                  source: "ST 2082-11 Table 4" });
+      const aspect  = (b3 >> 7) & 1;
+      const hSamp   = (b3 >> 6) & 1;
+      const colorim = (b3 >> 4) & 0x3;
+      const samp    = b3 & 0xF;
+      fields.push({ byte: 3, bits: "b7",    name: "Aspect ratio",           value: aspect ? "16:9" : "Unknown",       source: "ST 2082-11 §5.8.3/§6.9.3" });
+      fields.push({ byte: 3, bits: "b6",    name: "Sub-image H sampling",   value: hSamp ? "2048" : "1920",          source: "ST 2082-11 §5.8.3/§6.9.3" });
+      fields.push({ byte: 3, bits: "b5:b4", name: "Colorimetry",            value: COLORIMETRY_2BIT[colorim].label,  source: "ST 2082-11 §5.8.3/§6.9.3" });
+      fields.push({ byte: 3, bits: "b3:b0", name: "Sampling structure",     value: SAMPLING[samp], source: "ST 2082-11 Table 5" });
+      const link = (b4 >> 5) & 0x7;
+      const lumIctcp = (b4 >> 4) & 1;
+      const audCpy = (b4 >> 2) & 1;
+      const depth = b4 & 0x3;
+      fields.push({ byte: 4, bits: "b7:b5", name: "Link assignment", value: link === 0 ? "12G Link 1" : (link === 1 ? "12G Link 2" : `Reserved (${link})`), source: "ST 2082-11 §5.8.4/§6.9.4" });
+      fields.push({ byte: 4, bits: "b4",    name: "Luma/Color signal", value: lumIctcp ? "ICtCp" : "Y'CbCr",       source: "ST 2082-11 §5.8.4/§6.9.4" });
+      fields.push({ byte: 4, bits: "b2",    name: "Audio copy (DS 5-16)", value: audCpy ? "Copied" : "Additional",  source: "ST 2082-11 §5.8.4/§6.9.4" });
+      fields.push({ byte: 4, bits: "b1:b0", name: "Bit depth",         value: BIT_DEPTH_2BIT_FULL[depth],         source: "ST 2082-11 §5.8.4/§6.9.4" });
+      // Mode 2 vs Mode 3 inference (informative — not signalled by a bit).
+      // Mode 2 sampling = 4:4:4 / 4:4:4:4 / etc.: byte 3 b3:b0 ∈ {1, 2, 5, 6, 8-Ah, Eh}
+      // Mode 3 sampling = 4:2:2 / 4:2:0 / 4:2:2:4: byte 3 b3:b0 ∈ {0, 3, 4}
+      const MODE2_SAMP = new Set([0x1, 0x2, 0x5, 0x6, 0x8, 0x9, 0xA, 0xE]);
+      const MODE3_SAMP = new Set([0x0, 0x3, 0x4]);
+      let mode = "?";
+      if (MODE2_SAMP.has(samp)) mode = "Mode 2";
+      else if (MODE3_SAMP.has(samp)) mode = "Mode 3";
+      const warnings = [];
+      if (link >= 2)         warnings.push(`Byte 4 b7:b5 = ${link.toString(16)}h is Reserved per ST 2082-11 §5.8.4 (only 0h/1h are valid).`);
+      if (mode === "Mode 3" && depth >= 0x2) warnings.push(`Byte 4 b1:b0 = ${depth.toString(16)}h (12-bit) is Reserved when sampling indicates Mode 3 per ST 2082-11 §6.9.4.`);
+      if (mode === "?")      warnings.push(`Byte 3 b3:b0 = ${samp.toString(16)}h is Reserved or not assigned to either Mode 2 or Mode 3 per ST 2082-11 Table 5.`);
+      const hpix = hSamp ? 4096 : 3840;
+      return {
+        fields, warnings,
+        characteristics: {
+          resolution: `${hpix}×2160 (UHDTV1 / 4K)`,
+          horizontalActive: hpix,
+          frameRate: PICTURE_RATE[rate].hz,
+          frameRateLabel: PICTURE_RATE[rate].label,
+          scan: "Progressive",
+          aspect: aspect ? "16:9" : "Unknown",
+          sampling: lumIctcp ? SAMPLING[samp].replace("Y'CbCr", "ICtCp") : SAMPLING[samp],
+          bitDepth: BIT_DEPTH_2BIT_FULL[depth],
+          colorimetry: COLORIMETRY_2BIT[colorim].label,
+          transferChar: TRANSFER_CHAR[tc].code,
+          transferCharLabel: TRANSFER_CHAR[tc].label,
+          interface: this.interface,
+          channel: link === 0 ? "12G Link 1" : (link === 1 ? "12G Link 2" : `Reserved (${link})`),
+          standard: `2160-line dual-link 12G-SDI ${mode === "?" ? "Mode 2/3" : mode} (ST 2082-11)`
+        }
+      };
+    },
+    encode(c) {
+      const tc = c.transferChar ?? 0x0;
+      const b2 = (1 << 7) | (1 << 6) | ((tc & 0x3) << 4) | ((c.rate ?? 0xA) & 0xF);
+      const aspect  = c.aspect === "16:9" ? 1 : 0;
+      const hSamp   = c.hSamp === 4096 ? 1 : 0;
+      const cm      = c.colorim ?? 0x0;
+      const samp    = c.samp ?? 0x0;
+      const b3 = (aspect << 7) | (hSamp << 6) | ((cm & 0x3) << 4) | (samp & 0xF);
+      const link = c.linkAssignment ?? 0;
+      const ictcp = c.signalType === "ICtCp" ? 1 : 0;
+      const b4 = ((link & 0x7) << 5) | (ictcp << 4) | ((c.bitDepth ?? 0x1) & 0x3);
+      return [b2, b3, b4];
+    }
+  },
+
+  // ============================================================
   // 0xD2 — Quad-link 12G-SDI 4320-line UHD2
   // ST 2082-12:2019 §4.6
   // ============================================================
@@ -2872,6 +2975,98 @@ const VPID_LAYOUTS = {
       const b2 = (1 << 7) | (1 << 6) | ((tc & 0x3) << 4) | ((c.rate ?? 0xA) & 0xF);
       const aspect  = c.aspect === "16:9" ? 1 : 0;
       const hSamp   = c.hSamp === 8192 ? 1 : 0;
+      const cm      = c.colorim ?? 0x0;
+      const samp    = c.samp ?? 0x0;
+      const b3 = (aspect << 7) | (hSamp << 6) | ((cm & 0x3) << 4) | (samp & 0xF);
+      const link = c.linkAssignment ?? 0;
+      const ictcp = c.signalType === "ICtCp" ? 1 : 0;
+      const b4 = ((link & 0x7) << 5) | (ictcp << 4) | ((c.bitDepth ?? 0x1) & 0x3);
+      return [b2, b3, b4];
+    }
+  },
+
+  // ============================================================
+  // 0xD3 — Quad-link 12G-SDI 2160-line (4K extended over 4× 12G)
+  // ST 2082-12:2019 §5.9 Table 16 (Mode 2: 2160-line R'G'B'/YCbCr/ICtCp
+  //                                4:4:4(:4) 10/12-bit + HFR 4:2:2/4:2:0)
+  // Same byte 2/3/4 structure as 0xD2, but resolution is 2160-line and
+  // link assignment uses 2 bits (4 links) per §5.9.4.
+  //
+  // Byte 2 b7:        Transport scan (always 1 = Progressive)
+  // Byte 2 b6:        Picture scan   (always 1 = Progressive)
+  // Byte 2 b5:b4:     Transfer characteristics (SDR / HLG / PQ / Unspec)
+  // Byte 2 b3:b0:     Picture rate            (Table 4)
+  // Byte 3 b7:        Aspect ratio   (1=16:9, 0=Unknown)
+  // Byte 3 b6:        Sub-image H sampling (0=1920, 1=2048)
+  // Byte 3 b5:b4:     Colorimetry
+  // Byte 3 b3:b0:     Sampling structure      (Table 5)
+  // Byte 4 b7:b5:     Link assignment        (0..3 = Link 1..4; 4..7 reserved)
+  // Byte 4 b4:        Luma signal interpretation (0=Y'CbCr, 1=ICtCp)
+  // Byte 4 b3:        Reserved (0)
+  // Byte 4 b2:        Audio copy status (DS 9-32 only; reserved for DS 1-8)
+  // Byte 4 b1:b0:     Bit depth (10FR / 10 / 12 / 12FR — full set per §5.9.4)
+  // ============================================================
+  0xD3: {
+    id: "QL-12G-2160",
+    hex: 0xD3,
+    family: "Quad-Link 12G",
+    label: "Quad-link 12G-SDI 2160-line (4K extended — ST 2082-12 Mode 2)",
+    citation: "SMPTE ST 2082-12:2019 §5.9 Table 16",
+    interface: "Quad 12 Gb/s SDI (SMPTE ST 2082-12 Mode 2)",
+    decode(b2, b3, b4) {
+      const fields = [];
+      const trans = (b2 >> 7) & 1;
+      const pic   = (b2 >> 6) & 1;
+      const tc    = (b2 >> 4) & 0x3;
+      const rate  = b2 & 0xF;
+      fields.push({ byte: 2, bits: "b7",    name: "Transport scan",         value: trans ? "Progressive (always)" : "Interlaced (invalid)", source: "ST 2082-12 §5.9.2" });
+      fields.push({ byte: 2, bits: "b6",    name: "Picture scan",           value: pic   ? "Progressive (always)" : "Interlaced (invalid)", source: "ST 2082-12 §5.9.2" });
+      fields.push({ byte: 2, bits: "b5:b4", name: "Transfer characteristics", value: TRANSFER_CHAR[tc].label,                                  source: "ST 2082-12 §5.9.2" });
+      fields.push({ byte: 2, bits: "b3:b0", name: "Picture rate",           value: PICTURE_RATE[rate].label,                                  source: "ST 2082-12 Table 4" });
+      const aspect  = (b3 >> 7) & 1;
+      const hSamp   = (b3 >> 6) & 1;
+      const colorim = (b3 >> 4) & 0x3;
+      const samp    = b3 & 0xF;
+      fields.push({ byte: 3, bits: "b7",    name: "Aspect ratio",           value: aspect ? "16:9" : "Unknown",       source: "ST 2082-12 §5.9.3" });
+      fields.push({ byte: 3, bits: "b6",    name: "Sub-image H sampling",   value: hSamp ? "2048" : "1920",          source: "ST 2082-12 §5.9.3" });
+      fields.push({ byte: 3, bits: "b5:b4", name: "Colorimetry",            value: COLORIMETRY_2BIT[colorim].label,  source: "ST 2082-12 §5.9.3" });
+      fields.push({ byte: 3, bits: "b3:b0", name: "Sampling structure",     value: SAMPLING[samp], source: "ST 2082-12 Table 5" });
+      const link = (b4 >> 5) & 0x7;
+      const lumIctcp = (b4 >> 4) & 1;
+      const audCpy = (b4 >> 2) & 1;
+      const depth = b4 & 0x3;
+      fields.push({ byte: 4, bits: "b7:b5", name: "Link assignment", value: link <= 3 ? `12G Link ${link+1}` : `Reserved (${link})`, source: "ST 2082-12 §5.9.4" });
+      fields.push({ byte: 4, bits: "b4",    name: "Luma/Color signal", value: lumIctcp ? "ICtCp" : "Y'CbCr",       source: "ST 2082-12 §5.9.4" });
+      fields.push({ byte: 4, bits: "b2",    name: "Audio copy (DS 9-32)", value: audCpy ? "Copied" : "Additional",  source: "ST 2082-12 §5.9.4" });
+      fields.push({ byte: 4, bits: "b1:b0", name: "Bit depth",         value: BIT_DEPTH_2BIT_FULL[depth],          source: "ST 2082-12 §5.9.4" });
+      const warnings = [];
+      if (link >= 4) warnings.push(`Byte 4 b7:b5 = ${link.toString(16)}h is Reserved per ST 2082-12 §5.9.4 (only 0h-3h are valid).`);
+      const hpix = hSamp ? 4096 : 3840;
+      return {
+        fields, warnings,
+        characteristics: {
+          resolution: `${hpix}×2160 (UHDTV1 / 4K)`,
+          horizontalActive: hpix,
+          frameRate: PICTURE_RATE[rate].hz,
+          frameRateLabel: PICTURE_RATE[rate].label,
+          scan: "Progressive",
+          aspect: aspect ? "16:9" : "Unknown",
+          sampling: lumIctcp ? SAMPLING[samp].replace("Y'CbCr", "ICtCp") : SAMPLING[samp],
+          bitDepth: BIT_DEPTH_2BIT_FULL[depth],
+          colorimetry: COLORIMETRY_2BIT[colorim].label,
+          transferChar: TRANSFER_CHAR[tc].code,
+          transferCharLabel: TRANSFER_CHAR[tc].label,
+          interface: this.interface,
+          channel: link <= 3 ? `12G Link ${link+1}` : `Reserved (${link})`,
+          standard: "2160-line quad-link 12G-SDI Mode 2 (ST 2082-12)"
+        }
+      };
+    },
+    encode(c) {
+      const tc = c.transferChar ?? 0x0;
+      const b2 = (1 << 7) | (1 << 6) | ((tc & 0x3) << 4) | ((c.rate ?? 0xA) & 0xF);
+      const aspect  = c.aspect === "16:9" ? 1 : 0;
+      const hSamp   = c.hSamp === 4096 ? 1 : 0;
       const cm      = c.colorim ?? 0x0;
       const samp    = c.samp ?? 0x0;
       const b3 = (aspect << 7) | (hSamp << 6) | ((cm & 0x3) << 4) | (samp & 0xF);
@@ -3536,7 +3731,7 @@ const LAYOUTS_16x9_BY_CONVENTION = new Set([
   0xB0, 0xB2,                               // VC-2 mezzanine 1080p / VC-2 Level 65 HD (ST 2047-2 / ST 2047-4)
   0xB1,                                     // ST 292-2 dual 1.5G stereo 1080-line
   0xC0, 0xC1,                               // 6G-SDI 1080/2160
-  0xCE, 0xCF, 0xD0, 0xD2,                   // 12G-SDI 1080/2160/4320
+  0xCE, 0xCF, 0xD0, 0xD1, 0xD2, 0xD3,       // 12G-SDI 1080/2160/4320 (single + dual + quad)
   0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE        // ST 2082-30 muxes (sub-stream is 1080/2160)
 ]);
 
@@ -3900,6 +4095,9 @@ function runSelfTest() {
     "85 4A 80 01", // HD-SDI 1080PsF (split colorimetry)
     "84 CA 00 01", // HD-SDI 720p
     "CE CA C0 01", // 12G 4K
+    "D1 CA C0 02", // ST 2082-11 Mode 2 — 4K dual-link 12G, p59.94, 4:4:4 R'G'B' 12-bit Link 1
+    "D1 CA C0 01", // ST 2082-11 Mode 3 — 4K dual-link 12G, p59.94, 4:2:2 Y'CbCr 10-bit Link 1
+    "D3 CA C0 22", // ST 2082-12 Mode 2 — 4K quad-link 12G, p59.94 Link 2 of 4 4:4:4 R'G'B' 12-bit
     "C0 C6 A0 01", // 6G 4K (Tek-derived)
     "C1 CA A0 01", // 6G 1080p HFR
     "97 CA A0 01", // Quad 3G-A 4K
@@ -4837,7 +5035,7 @@ function renderBuilder(decoded) {
     // Special defaults
     if ([0x81, 0x82, 0x8D].includes(newB1)) { defB2 = 0x06; defB3 = 0x00; defB4 = 0x01; }
     else if (newB1 === 0x84 || newB1 === 0x88 || newB1 === 0x8B) { defB2 = 0xCA; defB3 = 0x00; defB4 = 0x01; }
-    else if ([0xCE, 0xCF, 0xD0, 0xD2, 0x97, 0x98, 0x96, 0x94, 0x95].includes(newB1)) { defB2 = 0xCA; defB3 = 0xC0; defB4 = 0x01; }
+    else if ([0xCE, 0xCF, 0xD0, 0xD1, 0xD2, 0xD3, 0x97, 0x98, 0x96, 0x94, 0x95].includes(newB1)) { defB2 = 0xCA; defB3 = 0xC0; defB4 = 0x01; }
     // Stereoscopic (3D) defaults — byte 2 b5:b4 must be 0 (Reserved per ST 425-2/4/6).
     // Default: progressive, 59.94, 16:9, 1920, Le, 10-bit. For 0x8E (3D 720), default to 1280.
     else if (newB1 === 0x8E)                        { defB2 = 0xCA; defB3 = 0xA0; defB4 = 0x01; }  // 720, 16:9, 1280
@@ -5065,7 +5263,7 @@ function renderBuilder(decoded) {
       { value: "16:9",    label: "16:9" },
       { value: "Unknown", label: "Unknown" }
     ], c.aspect, val => update(ch => { ch.aspect = val; })).wrap);
-  } else if ([0x81, 0x82, 0x85, 0x87, 0x89, 0x8A, 0x8C, 0x8E, 0x8F, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9A, 0x9B, 0xC0, 0xC1, 0xCE, 0xCF, 0xD0, 0xD2].includes(b1)) {
+  } else if ([0x81, 0x82, 0x85, 0x87, 0x89, 0x8A, 0x8C, 0x8E, 0x8F, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9A, 0x9B, 0xC0, 0xC1, 0xCE, 0xCF, 0xD0, 0xD1, 0xD2, 0xD3].includes(b1)) {
     f.appendChild(makeSelectFor('Aspect ratio', [
       { value: "16:9",    label: "16:9" },
       { value: "4:3",     label: "4:3 (SD only)" },
@@ -5087,7 +5285,10 @@ function renderBuilder(decoded) {
       { value: 1920, label: "1920 (SMPTE 274)" },
       { value: 2048, label: "2048 (SMPTE 2048-2)" }
     ], c.horizontalActive, val => update(ch => { ch.hSamp = val; })).wrap);
-  } else if ([0x96, 0x97, 0x98, 0x9B, 0xA0, 0xC0, 0xCE].includes(b1)) {
+  } else if ([0x96, 0x97, 0x98, 0x9B, 0xA0, 0xC0, 0xCE, 0xD1, 0xD3].includes(b1)) {
+    // 0xD1 / 0xD3: 2160-line over dual/quad-link 12G-SDI extended chroma/depth/HFR.
+    // Byte 3 b6 maps to 1920 sub-image (3840 picture) vs 2048 sub-image (4096 picture)
+    // per ST 2082-11 §5.8.3 / ST 2082-12 §5.9.3.
     f.appendChild(makeSelectFor('Horizontal pixels', [
       { value: 3840, label: "3840 (UHDTV1)" },
       { value: 4096, label: "4096 (DCI-4K)" }
@@ -5114,7 +5315,7 @@ function renderBuilder(decoded) {
   // Stereoscopic Level A (modern 2-bit colorim, like 0x88/0x89/0x94): 0x91, 0x92, 0x99
   // Stereoscopic Level B-DL/DS (split colorim, like 0x87/0x95): 0x93, 0x9A, 0x9B
   // Stereoscopic ST 292-2 (single-link 3G, ST 425-2 — 0x8E, 0x8F): no colorim signalled
-  if ([0x89, 0x88, 0x8B, 0x91, 0x92, 0x94, 0x97, 0x99, 0xC0, 0xC1, 0xCE, 0xCF, 0xD0, 0xD2].includes(b1)) {
+  if ([0x89, 0x88, 0x8B, 0x91, 0x92, 0x94, 0x97, 0x99, 0xC0, 0xC1, 0xCE, 0xCF, 0xD0, 0xD1, 0xD2, 0xD3].includes(b1)) {
     f.appendChild(makeSelectFor('Colorimetry', Object.keys(COLORIMETRY_2BIT).map(k => {
       const v = parseInt(k); return { value: v, label: COLORIMETRY_2BIT[v].label };
     }), (b3 >> 4) & 0x3, val => update(ch => { ch.colorim = val; })).wrap);
@@ -5200,12 +5401,16 @@ function renderBuilder(decoded) {
     f.appendChild(makeSelectFor('Link', [0,1,2,3].map(i => ({ value: i, label: `3G Link ${i+1}` })), (b4 >> 6) & 0x3, val => update(ch => { ch.linkAssignment = val; })).wrap);
   } else if (b1 === 0x98) {
     f.appendChild(makeSelectFor('Data stream', [0,1,2,3,4,5,6,7].map(i => ({ value: i, label: `Data stream ${i}` })), extractDataStream(b4, layout), val => update(ch => { ch.dataStream = val; })).wrap);
-  } else if (b1 === 0xD0) {
+  } else if (b1 === 0xD0 || b1 === 0xD1) {
+    // 0xD0 (4320-line dual) and 0xD1 (2160-line dual) both use byte 4 b7:b5 = 0h/1h
+    // for Link 1/2 per ST 2082-11 §4.7.4 / §5.8.4 / §6.9.4.
     f.appendChild(makeSelectFor('Link', [
       { value: 0, label: "12G Link 1" },
       { value: 1, label: "12G Link 2" }
     ], (b4 >> 5) & 0x7, val => update(ch => { ch.linkAssignment = val; })).wrap);
-  } else if (b1 === 0xD2) {
+  } else if (b1 === 0xD2 || b1 === 0xD3) {
+    // 0xD2 (4320-line quad) and 0xD3 (2160-line quad) both use byte 4 b7:b5 = 0h..3h
+    // for Link 1..4 per ST 2082-12 §4.6.4 / §5.9.4.
     f.appendChild(makeSelectFor('Link', [0,1,2,3].map(i => ({ value: i, label: `12G Link ${i+1}` })), (b4 >> 5) & 0x7, val => update(ch => { ch.linkAssignment = val; })).wrap);
   } else if (b1 === 0xA1) {
     // ST 2036-3: byte 3 b4 = 1-bit link (Single/first vs Link 2 of dual)
@@ -5296,7 +5501,7 @@ function extractDataStream(b4, layout) {
 function extractLinkAssignment(b4, layout) {
   if (!layout) return 0;
   if (layout.hex === 0x97) return (b4 >> 6) & 0x3;
-  if (layout.hex === 0xD0 || layout.hex === 0xD2) return (b4 >> 5) & 0x7;
+  if (layout.hex === 0xD0 || layout.hex === 0xD1 || layout.hex === 0xD2 || layout.hex === 0xD3) return (b4 >> 5) & 0x7;
   if (layout.hex === 0x93) return (b4 >> 6) & 1; // Stereo Level B-DL: Link A/B
   return 0;
 }

@@ -72,8 +72,10 @@ step, no bundler, no `node_modules`.
 | **`0xB2`** | **ST 2047-4 / RP 2047-3** | **VC-2 Level 65 compressed HD on 270 Mb/s SD-SDI** (1080i / 720p / 1440x1080i format-ID byte 4) |
 | `0xC0 / 0xC1` | ST 2081-10 (Tek) | 6G-SDI 4K / 1080p HFR |
 | `0xCE / 0xCF` | ST 2082-10 | 12G-SDI 4K / 1080p HFR |
-| `0xD0` | ST 2082-11 | Dual-link 12G-SDI 8K |
-| `0xD2` | ST 2082-12 | Quad-link 12G-SDI 8K |
+| `0xD0` | ST 2082-11 §4.7 | Dual-link 12G-SDI 4320-line (8K) |
+| **`0xD1`** | **ST 2082-11 §5.8 / §6.9** | **Dual-link 12G-SDI 2160-line (4K extended)** — Mode 2 (4:4:4(:4) 10/12-bit) and Mode 3 (4:2:2/4:2:0 10-bit HFR). Mode is implied by sampling + bit-depth combination; reserved-bit warnings per §5.8.4 / §6.9.4 fire on out-of-spec values. |
+| `0xD2` | ST 2082-12 §4.6 | Quad-link 12G-SDI 4320-line (8K) |
+| **`0xD3`** | **ST 2082-12 §5.9** | **Quad-link 12G-SDI 2160-line (4K extended)** — Mode 2: 4-link assignment, full bit-depth set, sampling structures per Table 5. |
 | **`0xD9 / 0xDA`** | **ST 2082-30 Mode 1** | **2× 6G-SDI muxed on 12G-SDI** (delegates bytes 2-4 to ST 2081-10) |
 | **`0xDB / 0xDC`** | **ST 2082-30 Mode 2** | **4× 3G-SDI muxed on 12G-SDI** (delegates bytes 2-4 to ST 425-1 Level A) |
 | **`0xDD / 0xDE`** | **ST 2082-30 Mode 3** | **8× HD-SDI muxed on 12G-SDI** (delegates bytes 2-4 to ST 292-1) |
@@ -97,11 +99,11 @@ isn't (or can't be) bit-decoded in this build:
   (RDD 22 — Film Transfer 2048×1556): no PDFs available yet.
 * `0xC2-0xC5`, `0xCB-0xCD` (ST 2081-11 / -12 / -30 — 6G-SDI multiplexes
   and dual/quad-link variants): no PDFs available yet.
-* `0xD1`, `0xD3` (ST 2082-11 / -12 Mode 2 — 2160-line HFR variants):
-  PDFs available but mode-2 byte layouts are not published in the
-  same explicit form as the existing single-link codes.
-* `0xDF-0xF9` — 24G-SDI codes per ITU-R BT.2077-3 Part 4, all
-  Provisionally Assigned. No SMPTE PDF.
+* `0xF3` (ST 2081-11 Mode 2): no PDF available yet.
+* `0xDF-0xF9` — 24G-SDI codes per ITU-R BT.2077-2/-3 Parts 3/4, all
+  Provisionally Assigned. These are ITU-R recommendations rather than
+  SMPTE standards, so they're not in `docs/smpte/`; obtaining ITU-R
+  BT.2077 would unlock them.
 
 Drop the corresponding PDF into `docs/smpte/` (locally only — see that
 folder's README) and these can be wired up.

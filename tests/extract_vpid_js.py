@@ -107,6 +107,12 @@ def extract(src_path: str, out_path: str) -> None:
     ['A5 CB 02 01', 'ST 2036-4 UHDTV1 multi-link 4K p60 (INVERTED color bit)'],
     ['A6 CB 02 01', 'ST 2036-4 UHDTV2 multi-link 8K p60'],
     ['B0 0B 80 01', 'ST 2047-2 VC-2 mezzanine 1080p60'],
+    ['D1 CA 82 02', 'ST 2082-11 Mode 2 -- 4K dual-link 12G p59.94 4:4:4 RGB 12-bit Link 1'],
+    ['D1 CA C0 01', 'ST 2082-11 Mode 3 -- 4K dual-link 12G p59.94 4:2:2 YCbCr 10-bit Link 1'],
+    ['D3 CA 82 22', 'ST 2082-12 Mode 2 -- 4K quad-link 12G p59.94 4:4:4 RGB 12-bit Link 2'],
+    ['D3 CA C0 41', 'ST 2082-12 Mode 2 -- 4K quad-link 12G p59.94 4:2:2 YCbCr 10-bit Link 3'],
+    ['D1 CA C0 02', 'ST 2082-11 INVALID -- 4:2:2 (Mode 3) with 12-bit (Mode 2 only) -- expect WARN'],
+    ['D1 CA 82 41', 'ST 2082-11 INVALID -- Link 010 (Reserved) -- expect WARN'],
     ['86 06 00 01', 'ST 349 (registry-only fallback)']
   ];
   console.log('\n--- Smoke decode samples ---');
@@ -119,6 +125,9 @@ def extract(src_path: str, out_path: str) -> None:
       console.log(`           ${c.standard}`);
       console.log(`           ${c.resolution} ${c.frameRateLabel}Hz ${c.scan} ${c.aspect} ${c.sampling} ${c.bitDepth} ${c.colorimetry}`);
       console.log(`           Link/Channel: ${c.channel || '-'}`);
+      if (r.warnings && r.warnings.length) {
+        for (const w of r.warnings) console.log(`           WARN: ${w}`);
+      }
     } else if (r.registered) {
       console.log(`${hex}  ${label} (registry-only)`);
       console.log(`           ${r.registry.standard} - ${r.registry.description}`);

@@ -48,8 +48,8 @@ need to verify a particular code's behaviour.
 | `st2036-3-2018.pdf` | ST 2036-3 | `0xA1 / 0xA2` UHDTV1/2 over single/multi 10G |
 | `st2036-4-2019.pdf` | ST 2036-4 | `0xA5 / 0xA6` UHDTV1/2 multi-link 10G 12-bit |
 | `st2082-10-2018.pdf` | ST 2082-10 | `0xCE / 0xCF` 12G-SDI 4K / 1080p HFR |
-| `st2082-11-2019.pdf` | ST 2082-11 | `0xD0` Dual-link 12G-SDI 8K |
-| `st2082-12-2019.pdf` | ST 2082-12 | `0xD2` Quad-link 12G-SDI 8K |
+| `st2082-11-2019.pdf` | ST 2082-11 | `0xD0` Dual-link 12G-SDI 4320-line (8K) §4.7; `0xD1` Dual-link 12G-SDI 2160-line (4K extended) Mode 2/3 §5.8 / §6.9 |
+| `st2082-12-2019.pdf` | ST 2082-12 | `0xD2` Quad-link 12G-SDI 4320-line (8K) §4.6; `0xD3` Quad-link 12G-SDI 2160-line (4K extended) Mode 2 §5.9 |
 | `st2082-30-2017.pdf` | ST 2082-30 | `0xD9 - 0xDE` Mode 1/2/3 muxes on 12G-SDI |
 
 ### VC-2 mezzanine compression
