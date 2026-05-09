@@ -9084,8 +9084,11 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#hexInput').addEventListener('input', handleHexChange);
   $('#hexInput').addEventListener('blur', handleHexChange);
   $('#clearBtn').addEventListener('click', () => { $('#hexInput').value = ''; handleHexChange(); });
-  // Quick-start chip row: one-click load of a known-good VPID into the hex input.
-  // Scrolls the hex input into view so the user sees the chip's effect immediately.
+  // Quick-start chip row: one-click load of a known-good VPID into the hex
+  // input. We deliberately do NOT scroll the page — the chip row sits
+  // directly below the hex input and directly above the decoded source
+  // card, so the user already sees both the cause and the effect without
+  // any movement under their cursor.
   const quickRow = $('#quickRow');
   if (quickRow) {
     quickRow.addEventListener('click', (ev) => {
@@ -9095,7 +9098,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!hex) return;
       $('#hexInput').value = formatHexBytes(parseHex(hex) || []);
       handleHexChange();
-      $('#hexInput').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }
   $('#copyBtn').addEventListener('click', async () => {
