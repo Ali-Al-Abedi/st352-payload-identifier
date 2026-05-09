@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] — 2026-05-09
 
-First production-ready release for the Fox broadcast engineering team.
+First production-ready release.
 
 ### Coverage
 
@@ -48,7 +48,7 @@ Registry — never with synthesised content.
   ANC user-data words from stream monitors (Tektronix Prism, EBU LIST,
   NMOS receivers, Imagine Selenio, Cinegy, Nevion VideoIPath, …) with
   deduplication and source-line context, auto-populating Batch decode.
-- **Quick-start examples** — one-click load of common Fox scenarios.
+- **Quick-start examples** — one-click load of common broadcast scenarios.
 
 ### Audit
 

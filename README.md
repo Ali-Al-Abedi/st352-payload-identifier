@@ -5,8 +5,8 @@ SMPTE ST 352 Video Payload Identifier (VPID) into a complete description of
 the underlying ST 2110 / SDI source, and encodes any combination of source
 characteristics back into a canonical VPID hex value.
 
-Built for the **Fox broadcast engineering team** to verify ST 2110 sources
-during commissioning, fault diagnosis, and contribution-feed analysis.
+Built for **broadcast engineering teams** to verify ST 2110 sources during
+commissioning, fault diagnosis, and contribution-feed analysis.
 
 > **No guessing.** Every bit-level decoded field cites the SMPTE standard
 > it originates from. Every byte-2/3/4 mapping is verbatim from the
@@ -190,22 +190,21 @@ The workflow only publishes `vpid.html`, the README, and a redirect
 all gitignored — see `docs/smpte/README.md` for what to download
 locally if you want the source PDFs).
 
-## Vortex integration
+## Embedding in a host app
 
-The same `vpid.html` is also wired into the parent
-[`st2110-monitoring`](https://github.com/...) Vortex frontend at
-`/tools/vpid` — engineers in the dashboard can hit the **VPID** button
-in the top bar and the calculator opens inline with a
-"back to dashboard" affordance. The standalone HTML is served from the
-React app's `public/tools/vpid.html`, so changes in this repo
-auto-propagate the next time the Vortex frontend is rebuilt and
-deployed.
+`vpid.html` is a single self-contained file (no build step, no bundler,
+no external dependencies). To embed it inside a larger React / Vue /
+plain-HTML dashboard, copy it into your app's static-assets directory
+(for example `public/tools/vpid.html` for a Create-React-App / Vite /
+Next.js project) and link to it from a top-bar button or open it in an
+`<iframe>`. The standalone build is the only build, so any update in
+this repo can be picked up by re-copying `vpid.html`.
 
 ## License
 
 The VPID Calculator source (`vpid.html` and friends in this repo) is
-provided as-is for the Fox / Vortex broadcast engineering team and the
-broader broadcast community to use freely.
+released under the [MIT License](LICENSE) for use by broadcast
+engineering teams and the broader broadcast community.
 
 The **SMPTE standards** the decoders are derived from are SMPTE
 copyrighted material and are **not** redistributed by this repository

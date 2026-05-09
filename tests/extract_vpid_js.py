@@ -319,7 +319,7 @@ def extract(src_path: str, out_path: str) -> None:
 
     // 1. Tektronix Prism / generic JSON receiver telemetry
     const teleA = JSON.stringify({
-      receiver: 'FOX-NY-MCR-RX-12',
+      receiver: 'BROADCAST-MCR-RX-12',
       anc: [
         { did: '0x41', sdid: '0x01', vpid: '0x89CA8001', label: 'PGM-1' },
         { did: '0x41', sdid: '0x01', vpid: '0x89CA8001', label: 'PGM-1-bkp' },
