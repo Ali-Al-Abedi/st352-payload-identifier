@@ -20,3 +20,11 @@ __pycache__/
 # never tracked by git. Only docs/smpte/README.md is tracked.
 docs/smpte/*
 !docs/smpte/README.md
+
+# Audit PDF-text extracts contain copyrighted SMPTE / ITU-R material;
+# they are regenerated locally from docs/smpte/*.pdf via
+# tests/extract_pdfs.sh. Audit findings (audit/findings/*.md) ARE
+# committed because they only quote the minimum verbatim text
+# necessary for the bit-level cross-check.
+audit/pdf-text/*
+!audit/pdf-text/README.md
