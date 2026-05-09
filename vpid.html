@@ -60,18 +60,17 @@
 
   main { padding: 24px 32px 80px; max-width: 1600px; margin: 0 auto; }
 
-  /* Top input row */
-  .input-row {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 16px;
-    align-items: end;
-    margin-bottom: 20px;
-  }
+  /* Top input card: unified hex display + action toolbar separated by a hairline divider.
+     Single visual unit — the hex input lives at the top with full padding, the toolbar
+     sits at the bottom on a slightly recessed background so it reads as a footer. */
   .hex-input-wrap {
     background: var(--bg-elev);
     border: 1px solid var(--border);
     border-radius: 12px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .hex-input-body {
     padding: 18px 20px;
   }
   .hex-input-label {
@@ -91,7 +90,22 @@
   }
   .hex-input::placeholder { color: var(--text-faint); font-weight: 400; }
 
-  .actions { display: flex; gap: 8px; align-items: center; }
+  .input-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 12px;
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .input-toolbar-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
   .btn {
     background: var(--bg-elev);
     border: 1px solid var(--border);
@@ -563,8 +577,8 @@
 
 <main>
 
-  <div class="input-row">
-    <div class="hex-input-wrap">
+  <div class="hex-input-wrap">
+    <div class="hex-input-body">
       <div class="hex-input-label">Enter VPID (4 bytes, hex)</div>
       <input
         id="hexInput"
@@ -576,13 +590,17 @@
         maxlength="11"
       >
     </div>
-    <div class="actions">
-      <button id="copyBtn" class="btn">Copy hex</button>
-      <button id="copyKVBtn" class="btn">Copy specs</button>
-      <button id="copyLinkBtn" class="btn" title="Copy a shareable link with this VPID encoded in the URL (e.g. ?vpid=89CA8001)">Copy link</button>
-      <button id="exportJsonBtn" class="btn" title="Download the fully-decoded VPID as a JSON file">Export JSON</button>
-      <button id="exportCsvBtn" class="btn" title="Download the per-field byte-by-byte breakdown as a CSV file">Export CSV</button>
-      <button id="clearBtn" class="btn">Clear</button>
+    <div class="input-toolbar">
+      <div class="input-toolbar-group" aria-label="Copy actions">
+        <button id="copyBtn" class="btn">Copy hex</button>
+        <button id="copyKVBtn" class="btn">Copy specs</button>
+        <button id="copyLinkBtn" class="btn" title="Copy a shareable link with this VPID encoded in the URL (e.g. ?vpid=89CA8001)">Copy link</button>
+      </div>
+      <div class="input-toolbar-group" aria-label="Export and reset actions">
+        <button id="exportJsonBtn" class="btn" title="Download the fully-decoded VPID as a JSON file">Export JSON</button>
+        <button id="exportCsvBtn" class="btn" title="Download the per-field byte-by-byte breakdown as a CSV file">Export CSV</button>
+        <button id="clearBtn" class="btn">Clear</button>
+      </div>
     </div>
   </div>
 
