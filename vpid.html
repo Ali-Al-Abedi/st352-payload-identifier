@@ -108,6 +108,37 @@
   .btn.primary { background: var(--accent); color: #001218; border-color: var(--accent); font-weight: 600; }
   .btn.primary:hover { background: #33dcff; }
 
+  /* Quick-start chip row — one-click load of common broadcast scenarios. */
+  .quick-row {
+    display: flex; align-items: center; flex-wrap: wrap;
+    gap: 8px; margin: -4px 0 18px 0;
+    padding: 12px 16px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .quick-row-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text-faint); font-weight: 600;
+    margin-right: 4px; white-space: nowrap;
+  }
+  .chip {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 6px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .chip:hover { background: var(--bg-elev-2); color: var(--accent); border-color: var(--accent); }
+  .chip .chip-hex { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; color: var(--text-faint); margin-left: 6px; }
+  .chip:hover .chip-hex { color: var(--text-dim); }
+
   /* Main grid */
   .grid {
     display: grid;
@@ -555,6 +586,20 @@
     </div>
   </div>
 
+  <div class="quick-row" id="quickRow" aria-label="Quick-start example VPIDs">
+    <span class="quick-row-label">Try one</span>
+    <button class="chip" data-vpid="89CA8001" type="button">1080p59.94 SDR<span class="chip-hex">89 CA 80 01</span></button>
+    <button class="chip" data-vpid="89DA8001" type="button">1080p59.94 HLG<span class="chip-hex">89 DA 80 01</span></button>
+    <button class="chip" data-vpid="89EAA001" type="button">1080p59.94 PQ Rec.2020<span class="chip-hex">89 EA A0 01</span></button>
+    <button class="chip" data-vpid="85062001" type="button">1080i29.97 SDR<span class="chip-hex">85 06 20 01</span></button>
+    <button class="chip" data-vpid="84CA8001" type="button">720p59.94 SDR<span class="chip-hex">84 CA 80 01</span></button>
+    <button class="chip" data-vpid="89C58001" type="button">1080p25 PAL SDR<span class="chip-hex">89 C5 80 01</span></button>
+    <button class="chip" data-vpid="A1CA0001" type="button">UHDTV1 4Kp59.94 (10G)<span class="chip-hex">A1 CA 00 01</span></button>
+    <button class="chip" data-vpid="C0CAE001" type="button">6G 4Kp59.94 Rec.2020<span class="chip-hex">C0 CA E0 01</span></button>
+    <button class="chip" data-vpid="CEDAE001" type="button">12G 4Kp59.94 HLG<span class="chip-hex">CE DA E0 01</span></button>
+    <button class="chip" data-vpid="81060001" type="button">SD 525i NTSC<span class="chip-hex">81 06 00 01</span></button>
+  </div>
+
   <div class="grid">
 
     <div class="card">
@@ -720,6 +765,10 @@ Example:
       <li><code>SMPTE Payload ID Registry</code> — <a href="https://smpte-ra.org/registers/Payload-Identifier-Registry/" target="_blank" rel="noopener">smpte-ra.org Payload Identifier Registry</a> (used for full Byte&nbsp;1 coverage; codes without a bit-level decoder show their registered standard, description, and status)</li>
     </ul>
     <p style="margin-top: 12px;">Bit-level definitions cite their originating standard on each decoded field, so any value can be traced to its source. Fields decoded from 6G-SDI VPIDs are marked with the citation <code>ST 2081-10 (Tek)</code> to distinguish them from fields confirmed against the official SMPTE PDFs. Codes signalled in the SMPTE-RA registry but without a published bit layout in this tool are flagged as "Recognised by registry — bit-level decoder not yet implemented". Round-trip integrity is verified by automated tests against known-good VPIDs.</p>
+    <p style="margin-top: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-elev);">
+      <strong>Known limitations.</strong>
+      Codes registered in the SMPTE-RA Payload Identifier Registry but <em>without</em> a published bit-level layout are surfaced through the registry-only fallback path with their full SMPTE-RA standard, description, and status — never with synthesised characteristics. <code>0xC0</code>/<code>0xC1</code> bit-level fields originate from the Tektronix "Creating 4K/UHD Content" poster (the original SMPTE ST 2081-10:2018 PDF was unavailable when those layouts were authored); each affected field is tagged <code>ST 2081-10 (Tek)</code> in the byte breakdown to make the provenance explicit. Bytes 2-4 of <code>0xD9</code>-<code>0xDE</code> (ST 2082-30 multiplex) are intentionally delegated to the underlying single-stream standard (ST 2081-10 / ST 425-1 Level A / ST 292-1) — the calculator surfaces the multiplex framing but not per-sub-stream bit decode. <strong>Glass-to-glass audit:</strong> 22 P0, 88 P1, 30 P2, 1 P3 findings — all fixed and verified (see <code>audit/SUMMARY.md</code>). <strong>Found a bug?</strong> Open an issue at <a href="https://github.com/Ali-Al-Abedi/vpid_calculator/issues" target="_blank" rel="noopener">github.com/Ali-Al-Abedi/vpid_calculator/issues</a>.
+    </p>
   </footer>
 </main>
 
@@ -8814,6 +8863,20 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#hexInput').addEventListener('input', handleHexChange);
   $('#hexInput').addEventListener('blur', handleHexChange);
   $('#clearBtn').addEventListener('click', () => { $('#hexInput').value = ''; handleHexChange(); });
+  // Quick-start chip row: one-click load of a known-good VPID into the hex input.
+  // Scrolls the hex input into view so the user sees the chip's effect immediately.
+  const quickRow = $('#quickRow');
+  if (quickRow) {
+    quickRow.addEventListener('click', (ev) => {
+      const chip = ev.target.closest('.chip[data-vpid]');
+      if (!chip) return;
+      const hex = String(chip.getAttribute('data-vpid') || '').trim();
+      if (!hex) return;
+      $('#hexInput').value = formatHexBytes(parseHex(hex) || []);
+      handleHexChange();
+      $('#hexInput').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
   $('#copyBtn').addEventListener('click', async () => {
     try { await navigator.clipboard.writeText($('#hexInput').value); flashBtn($('#copyBtn'), 'Copied!', 'Copy hex'); }
     catch(e) { /* ignored */ }
