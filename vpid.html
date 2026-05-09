@@ -3719,6 +3719,760 @@ VPID_LAYOUTS[0xDE] = makeMuxLayout({
   baseLayoutHex: 0x84, muxNomenclature: "8× HD-SDI octal-stream (ST 2082-30 Mode 3)"
 });
 
+/* ============================================================
+ * 0x83 — 525/625-line 4:2:2/4:4:4:4 video on 540 Mb/s SDI
+ * SMPTE ST 352:2013 Annex B.3 Table B.3 (byte layout)
+ * SMPTE ST 347:2001 (referenced source format mappings, Table 1)
+ *
+ *   Byte 2 b7      Reserved (0)
+ *   Byte 2 b6      Picture scan: 0 = Interlaced, 1 = Progressive
+ *   Byte 2 b5:b4   Reserved (0)
+ *   Byte 2 b3:b0   Picture rate (ST 352 Table 2)
+ *   Byte 3 b7      Aspect ratio: 0 = 4:3, 1 = 16:9 (anamorphic)
+ *   Byte 3 b6:b4   Reserved (0)
+ *   Byte 3 b3:b0   Sampling structure (ST 352 Table 3)
+ *   Byte 4 b7:b1   Reserved (0)
+ *   Byte 4 b0      Bit depth: 0 = 8-bit, 1 = 10-bit
+ *
+ * Per ST 352 §B.3 + ST 347 Table 1, only these (rate, sampling) pairs
+ * are defined: (5h=25, 6h=29.97) interlaced 4:4:4:4 Y/CbCr/A or G/B/R/A
+ * (samp 5h or 6h); (9h=50, Ah=59.94) progressive 4:2:2 (samp 0h).
+ * ============================================================ */
+VPID_LAYOUTS[0x83] = {
+  id: "ST347-540Mbps",
+  hex: 0x83,
+  family: "540 Mb/s SD-SDI",
+  label: "525/625-line on 540 Mb/s SDI (ST 347)",
+  citation: "SMPTE ST 352:2013 Annex B.3 Table B.3 / ST 347:2001 Table 1",
+  interface: "540 Mb/s SDI (SMPTE ST 344) carrying ST 347 source image format mappings",
+  allowedRates: [0x5, 0x6, 0x9, 0xA],
+  allowedSamplings: [0x0, 0x5, 0x6, 0x9, 0xA],
+  decode(b2, b3, b4) {
+    const fields = [];
+    const warnings = [];
+    const reservedB2_7  = (b2 >> 7) & 1;
+    const scanBit       = (b2 >> 6) & 1;
+    const reservedB2_54 = (b2 >> 4) & 0x3;
+    const rate          = b2 & 0xF;
+    fields.push({ byte: 2, bits: "b7",    name: "Reserved",     value: reservedB2_7  ? "1 (should be 0)" : "0",                                         source: "ST 352 §B.3 Table B.3", flag: reservedB2_7 ? "warn" : null });
+    fields.push({ byte: 2, bits: "b6",    name: "Picture scan", value: scanBit ? "Progressive" : "Interlaced",                                          source: "ST 352 §B.3 Table B.3" });
+    fields.push({ byte: 2, bits: "b5:b4", name: "Reserved",     value: reservedB2_54 ? `${reservedB2_54.toString(16).toUpperCase()}h (should be 0)` : "0h", source: "ST 352 §B.3 Table B.3", flag: reservedB2_54 ? "warn" : null });
+    fields.push({ byte: 2, bits: "b3:b0", name: "Picture rate", value: PICTURE_RATE[rate].label,                                                         source: "ST 352 Table 2" });
+    if (!this.allowedRates.includes(rate)) warnings.push(`Picture rate ${rate.toString(16)}h is not in ST 347's mandated set (5h=25, 6h=29.97, 9h=50, Ah=59.94).`);
+
+    const aspect        = (b3 >> 7) & 1;
+    const reservedB3_64 = (b3 >> 4) & 0x7;
+    const samp          = b3 & 0xF;
+    fields.push({ byte: 3, bits: "b7",    name: "Aspect ratio",       value: aspect ? "16:9" : "4:3",                                                   source: "ST 352 §B.3 Table B.3" });
+    fields.push({ byte: 3, bits: "b6:b4", name: "Reserved",           value: reservedB3_64 ? `${reservedB3_64.toString(16).toUpperCase()}h (should be 0)` : "0h", source: "ST 352 §B.3 Table B.3", flag: reservedB3_64 ? "warn" : null });
+    fields.push({ byte: 3, bits: "b3:b0", name: "Sampling structure", value: SAMPLING[samp],                                                            source: "ST 352 Table 3" });
+    if (!this.allowedSamplings.includes(samp)) warnings.push(`Sampling structure ${samp.toString(16)}h is not in ST 347's mandated set (0h=4:2:2, 5h=Y/CbCr/A, 6h=G/B/R/A, 9h=Y/CbCr/D, Ah=G/B/R/D).`);
+
+    const reservedB4_71 = (b4 >> 1) & 0x7F;
+    const depth         = b4 & 1;
+    fields.push({ byte: 4, bits: "b7:b1", name: "Reserved",  value: reservedB4_71 ? `0x${reservedB4_71.toString(16).toUpperCase()} (should be 0)` : "0x0", source: "ST 352 §B.3 Table B.3", flag: reservedB4_71 ? "warn" : null });
+    fields.push({ byte: 4, bits: "b0",    name: "Bit depth", value: BIT_DEPTH_SD_BIT[depth],                                                            source: "ST 352 §B.3 Table B.3" });
+
+    const lineSystem = ([0x6, 0xA].includes(rate)) ? "525-line (NTSC)" : ([0x5, 0x9].includes(rate)) ? "625-line (PAL)" : "525/625-line";
+    return {
+      fields, warnings,
+      characteristics: {
+        resolution:       `${lineSystem} on 540 Mb/s SDI`,
+        horizontalActive: 720,
+        frameRate:        PICTURE_RATE[rate].hz,
+        frameRateLabel:   PICTURE_RATE[rate].label,
+        scan:             scanBit ? "Progressive" : "Interlaced",
+        aspect:           aspect ? "16:9" : "4:3",
+        sampling:         SAMPLING[samp],
+        bitDepth:         BIT_DEPTH_SD_BIT[depth],
+        colorimetry:      "Rec. 601 (assumed for SD)",
+        transferChar:     "SDR",
+        interface:        this.interface,
+        channel:          null,
+        standard:         "SMPTE ST 347 — 540 Mb/s SDI Source Image Format Mapping"
+      }
+    };
+  },
+  encode(c) {
+    const scanBit = (c.scan === "Progressive") ? 1 : 0;
+    const rate    = (c.rate ?? 0x6) & 0xF;
+    const aspect  = (c.aspect === "16:9") ? 1 : 0;
+    const samp    = (c.samp ?? 0x5) & 0xF;
+    const depth   = bitDepthToBit(c.bitDepth);
+    const b2 = (scanBit << 6) | rate;
+    const b3 = (aspect << 7)  | samp;
+    const b4 = depth & 1;
+    return [b2, b3, b4];
+  }
+};
+
+/* ============================================================
+ * 0x86 — SD payload mapping into 1.5 Gb/s HD-SDI (ST 349)
+ * SMPTE ST 352:2013 Annex B.4 Tables B.4.1 + B.4.2
+ *
+ *   Byte 2 b7:b5   Reserved (0)
+ *   Byte 2 b4      Total line number: 0 = 483, 1 = 576
+ *   Byte 2 b3:b0   Picture rate (ST 352 Table 2; values per ST 349 Table 1)
+ *   Byte 3 b7:b4   Reserved (0)
+ *   Byte 3 b3:b0   Sampling structure (ST 352 Table B.4.2 — SPECIAL table
+ *                  combining sampling, scan, single/dual-channel)
+ *   Byte 4 b7      Reserved (0)
+ *   Byte 4 b6      Channel: 0 = Ch1 only, 1 = Ch1+Ch2
+ *   Byte 4 b5      Reserved (0)
+ *   Byte 4 b4      Aspect ratio: 0 = 4:3, 1 = 16:9 (anamorphic)
+ *   Byte 4 b3      Mapping mode: 0 = Normal, 1 = Whole-line
+ *   Byte 4 b2:b1   Reserved (0)
+ *   Byte 4 b0      Bit depth: 0 = 8-bit, 1 = 10-bit
+ * ============================================================ */
+const ST349_SAMPLING_B42 = {
+  // Table B.4.2: combined (sampling × scan × channel-count) field.
+  0x0: "4:2:2i Y'CbCr (No.1 or 7)",
+  0x1: "4:2:2i Y'CbCr (No.2 or 8)",
+  0x2: "4:2:0p Y'CbCr (No.6 or 12)",
+  0x3: "4:4:4:4i Y'CbCr/A (No.3 or 9)",
+  0x4: "4:4:4:4i G/B/R/A (No.3 or 9)",
+  0x5: "4:2:2p Y'CbCr (No.4 or 10)",
+  0x6: "4:2:2p Y'CbCr (No.5 or 11)",
+  0x7: "4:2:2i Y'CbCr ×2ch (No.1 or 7)",
+  0x8: "4:2:2i Y'CbCr ×2ch (No.2 or 8)",
+  0x9: "4:2:0p Y'CbCr ×2ch (No.6 or 12)",
+  0xA: "Reserved",
+  0xB: "Reserved",
+  0xC: "Reserved",
+  0xD: "Reserved",
+  0xE: "Reserved",
+  0xF: "Reserved"
+};
+// Whether the Table B.4.2 sampling code carries a progressive picture.
+const ST349_B42_IS_PROGRESSIVE = new Set([0x2, 0x5, 0x6, 0x9]);
+// Whether the code carries dual-channel (vs single-channel).
+const ST349_B42_IS_DUAL_CH = new Set([0x7, 0x8, 0x9]);
+
+VPID_LAYOUTS[0x86] = {
+  id: "ST349-HD",
+  hex: 0x86,
+  family: "ST 349 SD over 1.5 Gb/s HD-SDI",
+  label: "SD source mapped on 1.5 Gb/s HD-SDI (ST 349)",
+  citation: "SMPTE ST 352:2013 Annex B.4 Tables B.4.1/B.4.2 / ST 349:2001 Table 1",
+  interface: "1.5 Gb/s HD-SDI (ST 292-1) carrying SD (525/625-line) per ST 349",
+  allowedRates: [0x5, 0x6, 0x9, 0xA],
+  decode(b2, b3, b4) {
+    const fields = [];
+    const warnings = [];
+    const reservedB2_75 = (b2 >> 5) & 0x7;
+    const lineCount     = (b2 >> 4) & 1;
+    const rate          = b2 & 0xF;
+    fields.push({ byte: 2, bits: "b7:b5", name: "Reserved",         value: reservedB2_75 ? `${reservedB2_75.toString(16).toUpperCase()}h (should be 0)` : "0h", source: "ST 352 §B.4 Table B.4.1", flag: reservedB2_75 ? "warn" : null });
+    fields.push({ byte: 2, bits: "b4",    name: "Total line count", value: lineCount ? "576 lines (PAL)" : "483 lines (NTSC)",                                  source: "ST 352 §B.4 Table B.4.1" });
+    fields.push({ byte: 2, bits: "b3:b0", name: "Picture rate",     value: PICTURE_RATE[rate].label,                                                            source: "ST 352 Table 2 / ST 349 Table 1" });
+    if (!this.allowedRates.includes(rate)) warnings.push(`Picture rate ${rate.toString(16)}h is not in ST 349's mandated set (5h=25, 6h=29.97, 9h=50, Ah=59.94).`);
+
+    const reservedB3_74 = (b3 >> 4) & 0xF;
+    const sampB42       = b3 & 0xF;
+    fields.push({ byte: 3, bits: "b7:b4", name: "Reserved",            value: reservedB3_74 ? `${reservedB3_74.toString(16).toUpperCase()}h (should be 0)` : "0h", source: "ST 352 §B.4 Table B.4.1", flag: reservedB3_74 ? "warn" : null });
+    fields.push({ byte: 3, bits: "b3:b0", name: "Sampling (Table B.4.2)", value: ST349_SAMPLING_B42[sampB42],                                                       source: "ST 352 Table B.4.2" });
+    if (sampB42 >= 0xA) warnings.push(`Byte 3 b3:b0 = ${sampB42.toString(16).toUpperCase()}h is Reserved per ST 352 Table B.4.2.`);
+
+    const reservedB4_7  = (b4 >> 7) & 1;
+    const ch            = (b4 >> 6) & 1;
+    const reservedB4_5  = (b4 >> 5) & 1;
+    const aspect        = (b4 >> 4) & 1;
+    const mappingMode   = (b4 >> 3) & 1;
+    const reservedB4_21 = (b4 >> 1) & 0x3;
+    const depth         = b4 & 1;
+    fields.push({ byte: 4, bits: "b7",    name: "Reserved",             value: reservedB4_7 ? "1 (should be 0)" : "0",                                              source: "ST 352 §B.4 Table B.4.1", flag: reservedB4_7 ? "warn" : null });
+    fields.push({ byte: 4, bits: "b6",    name: "Channel assignment",   value: ch ? "Ch1 + Ch2 active (dual)" : "Ch1 active only (single)",                          source: "ST 352 §B.4 Table B.4.1" });
+    fields.push({ byte: 4, bits: "b5",    name: "Reserved",             value: reservedB4_5 ? "1 (should be 0)" : "0",                                              source: "ST 352 §B.4 Table B.4.1", flag: reservedB4_5 ? "warn" : null });
+    fields.push({ byte: 4, bits: "b4",    name: "Aspect ratio",         value: aspect ? "16:9" : "4:3",                                                              source: "ST 352 §B.4 Table B.4.1" });
+    fields.push({ byte: 4, bits: "b3",    name: "Mapping mode",         value: mappingMode ? "Whole-line mapping (ST 349 Annex A)" : "Normal mapping (ST 349 §6.1)", source: "ST 352 §B.4 Table B.4.1" });
+    fields.push({ byte: 4, bits: "b2:b1", name: "Reserved",             value: reservedB4_21 ? `${reservedB4_21.toString(16).toUpperCase()}h (should be 0)` : "0h",  source: "ST 352 §B.4 Table B.4.1", flag: reservedB4_21 ? "warn" : null });
+    fields.push({ byte: 4, bits: "b0",    name: "Bit depth",            value: BIT_DEPTH_SD_BIT[depth],                                                              source: "ST 352 §B.4 Table B.4.1" });
+
+    const isProg     = ST349_B42_IS_PROGRESSIVE.has(sampB42);
+    const isDualCh   = ST349_B42_IS_DUAL_CH.has(sampB42) || ch === 1;
+    const lineSystem = lineCount ? "625-line (PAL)" : "483/525-line (NTSC)";
+    return {
+      fields, warnings,
+      characteristics: {
+        resolution:       `${lineSystem} mapped onto HD-SDI`,
+        horizontalActive: aspect ? 960 : 720,
+        frameRate:        PICTURE_RATE[rate].hz,
+        frameRateLabel:   PICTURE_RATE[rate].label,
+        scan:             isProg ? "Progressive" : "Interlaced",
+        aspect:           aspect ? "16:9" : "4:3",
+        sampling:         ST349_SAMPLING_B42[sampB42],
+        bitDepth:         BIT_DEPTH_SD_BIT[depth],
+        colorimetry:      "Rec. 601 (assumed for SD)",
+        transferChar:     "SDR",
+        interface:        this.interface,
+        channel:          isDualCh ? "Ch1 + Ch2 active" : "Ch1 only",
+        mappingMode:      mappingMode ? "Whole-line" : "Normal",
+        standard:         "SMPTE ST 349 — SD Source Format Mapping into ST 292-1 HD-SDI"
+      }
+    };
+  },
+  encode(c) {
+    const lineCount = (c.lineCount === 576 || (c.frameRateLabel === "25" || c.frameRateLabel === "50")) ? 1 : 0;
+    const rate    = (c.rate ?? (lineCount ? 0x5 : 0x6)) & 0xF;
+    const samp    = (c.sampB42 ?? c.samp ?? 0x0) & 0xF;
+    const ch      = (c.channel === "Ch1 + Ch2 active" || c.dualCh === true) ? 1 : 0;
+    const aspect  = (c.aspect === "16:9") ? 1 : 0;
+    const mapMode = (c.mappingMode === "Whole-line") ? 1 : 0;
+    const depth   = bitDepthToBit(c.bitDepth);
+    const b2 = (lineCount << 4) | rate;
+    const b3 = samp & 0xF;
+    const b4 = (ch << 6) | (aspect << 4) | (mapMode << 3) | (depth & 1);
+    return [b2, b3, b4];
+  }
+};
+
+/* ============================================================
+ * 0xB3 — DCI 4K (4096×2160) on dual/triple-link 10G-SDI
+ * SMPTE ST 2048-3:2024 §7.1 Tables 2 + 3
+ *
+ *   Byte 2 b7      Transport scan: 0=Interlaced, 1=Progressive
+ *   Byte 2 b6      Picture scan (always 1 progressive per §7.1)
+ *   Byte 2 b5:b4   Reserved (0)
+ *   Byte 2 b3:b0   Picture rate (ST 352 Table 2)
+ *   Byte 3 b7      Reserved (0)
+ *   Byte 3 b6:b4   10G-SDI link number: 0h=Link1, 1h=Link2, 2h=Link3 (3-7 reserved)
+ *   Byte 3 b3:b0   Sampling structure (ST 2048-3 Table 3 — adds 7h = ST 2048-2 FS 1)
+ *   Byte 4 b7:b5   Basic-Stream channel: 0h=Ch1 … 5h=Ch6 (6,7 reserved)
+ *   Byte 4 b4:b2   Reserved (0)
+ *   Byte 4 b1:b0   Bit depth: 1h=10-bit, 2h=12-bit (0,3 reserved)
+ * ============================================================ */
+const ST2048_3_SAMPLING = Object.assign({}, SAMPLING, {
+  0x7: "ST 2048-2 FS 1 (DCI Color VANC)" // ST 2048-3 §7.1: 7h replaces ST 352's "Reserved"
+});
+
+VPID_LAYOUTS[0xB3] = {
+  id: "DCI4K-10G",
+  hex: 0xB3,
+  family: "DCI 4K over multi-link 10G-SDI",
+  label: "DCI 4K (4096×2160) on dual/triple-link 10G-SDI (ST 2048-3)",
+  citation: "SMPTE ST 2048-3:2024 §7.1 Tables 2 + 3",
+  interface: "Dual-link or triple-link 10 Gb/s SDI (SMPTE ST 2036-3 carrier) carrying 4096×2160 FS/709 per ST 2048-2",
+  allowedRates: [0x2, 0x3, 0x5, 0x6, 0x7, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF],
+  decode(b2, b3, b4) {
+    const fields = [];
+    const warnings = [];
+    const trans         = (b2 >> 7) & 1;
+    const pic           = (b2 >> 6) & 1;
+    const reservedB2_54 = (b2 >> 4) & 0x3;
+    const rate          = b2 & 0xF;
+    fields.push({ byte: 2, bits: "b7",    name: "Transport scan", value: trans ? "Progressive" : "Interlaced",                                                source: "ST 2048-3 Table 2" });
+    fields.push({ byte: 2, bits: "b6",    name: "Picture scan",   value: pic   ? "Progressive" : "Interlaced (invalid; ST 2048-3 §7.1 mandates 1)",            source: "ST 2048-3 Table 2", flag: pic ? null : "warn" });
+    fields.push({ byte: 2, bits: "b5:b4", name: "Reserved",       value: reservedB2_54 ? `${reservedB2_54.toString(16).toUpperCase()}h (should be 0)` : "0h",   source: "ST 2048-3 Table 2", flag: reservedB2_54 ? "warn" : null });
+    fields.push({ byte: 2, bits: "b3:b0", name: "Picture rate",   value: PICTURE_RATE[rate].label,                                                              source: "ST 352 Table 2" });
+    if (!pic) warnings.push("ST 2048-3 §7.1 mandates b6 = 1 (progressive picture).");
+    if (reservedB2_54) warnings.push(`Byte 2 b5:b4 = ${reservedB2_54.toString(16)}h is Reserved per ST 2048-3 Table 2.`);
+
+    const reservedB3_7 = (b3 >> 7) & 1;
+    const linkNum      = (b3 >> 4) & 0x7;
+    const samp         = b3 & 0xF;
+    fields.push({ byte: 3, bits: "b7",    name: "Reserved",          value: reservedB3_7 ? "1 (should be 0)" : "0",                                            source: "ST 2048-3 Table 2", flag: reservedB3_7 ? "warn" : null });
+    fields.push({ byte: 3, bits: "b6:b4", name: "10G-SDI link number", value: linkNum < 3 ? `Link ${linkNum + 1}` : `Reserved (${linkNum.toString(16)}h)`,        source: "ST 2048-3 §7.1" });
+    fields.push({ byte: 3, bits: "b3:b0", name: "Sampling structure", value: ST2048_3_SAMPLING[samp],                                                            source: "ST 2048-3 Table 3" });
+    if (linkNum >= 3) warnings.push(`Byte 3 b6:b4 = ${linkNum.toString(16)}h is Reserved per ST 2048-3 §7.1 (only 0h-2h are valid).`);
+
+    const ch            = (b4 >> 5) & 0x7;
+    const reservedB4_42 = (b4 >> 2) & 0x7;
+    const depth         = b4 & 0x3;
+    fields.push({ byte: 4, bits: "b7:b5", name: "Basic-Stream channel", value: ch < 6 ? `Ch${ch + 1}` : `Reserved (${ch.toString(16)}h)`,                          source: "ST 2048-3 §7.1" });
+    fields.push({ byte: 4, bits: "b4:b2", name: "Reserved",             value: reservedB4_42 ? `${reservedB4_42.toString(16).toUpperCase()}h (should be 0)` : "0h", source: "ST 2048-3 Table 2", flag: reservedB4_42 ? "warn" : null });
+    fields.push({ byte: 4, bits: "b1:b0", name: "Bit depth",            value: depth === 0x1 ? "10-bit" : depth === 0x2 ? "12-bit" : `Reserved (${depth.toString(16)}h)`, source: "ST 2048-3 §7.1" });
+    if (depth === 0x0 || depth === 0x3) warnings.push(`Byte 4 b1:b0 = ${depth.toString(16)}h is Reserved per ST 2048-3 §7.1 (only 1h=10-bit and 2h=12-bit are valid).`);
+    if (ch >= 6) warnings.push(`Byte 4 b7:b5 = ${ch.toString(16)}h is Reserved per ST 2048-3 §7.1 (only Ch1-Ch6 are defined).`);
+
+    return {
+      fields, warnings,
+      characteristics: {
+        resolution:       "4096×2160",
+        horizontalActive: 4096,
+        frameRate:        PICTURE_RATE[rate].hz,
+        frameRateLabel:   PICTURE_RATE[rate].label,
+        scan:             trans ? "Progressive" : "Interlaced",
+        aspect:           "17:9 (DCI)",
+        sampling:         ST2048_3_SAMPLING[samp],
+        bitDepth:         depth === 0x1 ? "10-bit" : depth === 0x2 ? "12-bit" : "Reserved",
+        colorimetry:      "FS/709 per ST 2048-1/2 (Digital Cinema)",
+        transferChar:     "SDR",
+        transferCharLabel: "DCI FS/709",
+        interface:        this.interface,
+        channel:          `Link ${linkNum + 1}, Ch${ch + 1}`,
+        linkAssignment:   linkNum,
+        chAssignment:     ch,
+        standard:         "SMPTE ST 2048-3 — DCI 4K Multi-link 10G-SDI"
+      }
+    };
+  },
+  encode(c) {
+    const trans   = (c.scan === "Interlaced") ? 0 : 1;
+    const pic     = 1;
+    const rate    = (c.rate ?? 0x6) & 0xF;
+    const samp    = (c.samp ?? 0x0) & 0xF;
+    const linkNum = (c.linkAssignment ?? 0) & 0x7;
+    const ch      = (c.chAssignment ?? c.channel ?? 0) & 0x7;
+    const depth   = (c.bitDepth === "12-bit" || c.bitDepth === 2) ? 0x2 : 0x1;
+    const b2 = (trans << 7) | (pic << 6) | (rate & 0xF);
+    const b3 = ((linkNum & 0x7) << 4) | (samp & 0xF);
+    const b4 = ((ch & 0x7) << 5) | (depth & 0x3);
+    return [b2, b3, b4];
+  }
+};
+
+/* ============================================================
+ * ITU-R BT.2077-2 Part 3 — 24G-SDI VPID family (Table 3-7)
+ * Common byte 2/3/4 layout shared by all 24G byte-1 codes.
+ *
+ *   Byte 2 b7      Transport scan: always 1 = Progressive (BT.2077-2 §3)
+ *   Byte 2 b6      Picture scan:   always 1 = Progressive
+ *   Byte 2 b5:b4   Transfer characteristics:
+ *                    0h = SDR-TV   1h = HLG   2h = PQ   3h = Unspecified
+ *   Byte 2 b3:b0   Picture rate (Table 3-9, identical to ST 352 Table 2)
+ *   Byte 3 b7      Aspect ratio: 1 = 16:9, 0 = Unknown
+ *   Byte 3 b6      Horizontal pixel count: 0 = 1920/3840/7680, 1 = 2048/4096/8192
+ *   Byte 3 b5:b4   Colorimetry: 0h=Rec.709, 1h=Reserved, 2h=Rec.2020, 3h=Reserved
+ *   Byte 3 b3:b0   Sampling structure (Table 3-10, equivalent to ST 352 Table 3)
+ *   Byte 4 b7:b5   6G/12G/24G link assignment: Link1 (0h) … Link8 (7h)
+ *   Byte 4 b4      Y'CbCr encoding: 0=NCL Y'CbCr, 1=CL Y'CbCr or HDR ICTCP
+ *   Byte 4 b3      Reserved (0)
+ *   Byte 4 b2      Audio copy status: 0=additional channels, 1=copied
+ *   Byte 4 b1:b0   Bit depth: 0h=10-bit FR, 1h=10-bit, 2h=12-bit, 3h=12-bit FR
+ * ============================================================ */
+function makeBT2077_24G_Layout(opts) {
+  // opts: {hex, id, family, label, vLines (2160 or 4320), links (1/2/4/8), interface}
+  return {
+    id:        opts.id,
+    hex:       opts.hex,
+    family:    opts.family,
+    label:     opts.label,
+    citation:  "ITU-R BT.2077-2 §4.10 Table 3-7 / Table 3-8",
+    interface: opts.interface,
+    vLines:    opts.vLines,
+    links:     opts.links,
+    decode(b2, b3, b4) {
+      const fields   = [];
+      const warnings = [];
+      const trans = (b2 >> 7) & 1;
+      const pic   = (b2 >> 6) & 1;
+      const tc    = (b2 >> 4) & 0x3;
+      const rate  = b2 & 0xF;
+      fields.push({ byte: 2, bits: "b7",    name: "Transport scan",            value: trans ? "Progressive" : "Interlaced (invalid for BT.2077-2)",   source: "BT.2077-2 Table 3-7", flag: trans ? null : "warn" });
+      fields.push({ byte: 2, bits: "b6",    name: "Picture scan",              value: pic   ? "Progressive" : "Interlaced (invalid for BT.2077-2)",   source: "BT.2077-2 Table 3-7", flag: pic ? null : "warn" });
+      fields.push({ byte: 2, bits: "b5:b4", name: "Transfer characteristics",  value: TRANSFER_CHAR[tc].label,                                         source: "BT.2077-2 Table 3-7" });
+      fields.push({ byte: 2, bits: "b3:b0", name: "Picture rate",              value: PICTURE_RATE[rate].label,                                        source: "BT.2077-2 Table 3-9" });
+      if (!trans) warnings.push("BT.2077-2 Part 3 only defines progressive transport (b7 must be 1).");
+      if (!pic)   warnings.push("BT.2077-2 Part 3 only defines progressive picture (b6 must be 1).");
+
+      const aspect  = (b3 >> 7) & 1;
+      const hSamp   = (b3 >> 6) & 1;
+      const colorim = (b3 >> 4) & 0x3;
+      const samp    = b3 & 0xF;
+      const dciHpix    = (this.vLines === 2160) ? 4096 : 8192;
+      const uhdHpix    = (this.vLines === 2160) ? 3840 : 7680;
+      fields.push({ byte: 3, bits: "b7",    name: "Aspect ratio",         value: aspect ? "16:9" : "Unknown",                              source: "BT.2077-2 Table 3-7" });
+      fields.push({ byte: 3, bits: "b6",    name: "Horizontal pixel count", value: hSamp ? `${dciHpix} (DCI)` : `${uhdHpix} (UHDTV)`,         source: "BT.2077-2 Table 3-7" });
+      fields.push({ byte: 3, bits: "b5:b4", name: "Colorimetry",          value: COLORIMETRY_2BIT[colorim].label,                            source: "BT.2077-2 Table 3-7" });
+      fields.push({ byte: 3, bits: "b3:b0", name: "Sampling structure",   value: SAMPLING[samp],                                              source: "BT.2077-2 Table 3-10" });
+      if (colorim === 0x1 || colorim === 0x3) warnings.push(`Byte 3 b5:b4 = ${colorim.toString(16)}h is Reserved per BT.2077-2 Table 3-7 (only 0h=Rec.709 and 2h=Rec.2020 are defined).`);
+
+      const link         = (b4 >> 5) & 0x7;
+      const ycEnc        = (b4 >> 4) & 1;
+      const reservedB4_3 = (b4 >> 3) & 1;
+      const audCopy      = (b4 >> 2) & 1;
+      const depth        = b4 & 0x3;
+      fields.push({ byte: 4, bits: "b7:b5", name: "Link assignment",   value: link < this.links ? `Link ${link + 1} of ${this.links}` : `Out-of-range Link ${link + 1} (max ${this.links})`, source: "BT.2077-2 Table 3-7", flag: link >= this.links ? "warn" : null });
+      fields.push({ byte: 4, bits: "b4",    name: "Y'CbCr encoding",   value: ycEnc ? "CL Y'CbCr or HDR ICTCP" : "NCL Y'CbCr",        source: "BT.2077-2 Table 3-7" });
+      fields.push({ byte: 4, bits: "b3",    name: "Reserved",          value: reservedB4_3 ? "1 (should be 0)" : "0",                  source: "BT.2077-2 Table 3-7", flag: reservedB4_3 ? "warn" : null });
+      fields.push({ byte: 4, bits: "b2",    name: "Audio copy status", value: audCopy ? "Copied audio" : "Additional channels",       source: "BT.2077-2 Table 3-7" });
+      fields.push({ byte: 4, bits: "b1:b0", name: "Bit depth",         value: BIT_DEPTH_2BIT_FULL[depth],                              source: "BT.2077-2 Table 3-7" });
+      if (link >= this.links) warnings.push(`Byte 4 b7:b5 = ${link.toString(16)}h: link index exceeds ${this.links}-link cap of this 24G payload.`);
+
+      const horizActive = hSamp ? dciHpix : uhdHpix;
+      return {
+        fields, warnings,
+        characteristics: {
+          resolution:       `${horizActive}×${this.vLines}`,
+          horizontalActive: horizActive,
+          frameRate:        PICTURE_RATE[rate].hz,
+          frameRateLabel:   PICTURE_RATE[rate].label,
+          scan:             "Progressive",
+          aspect:           aspect ? "16:9" : "Unknown",
+          sampling:         SAMPLING[samp],
+          bitDepth:         BIT_DEPTH_2BIT_FULL[depth],
+          colorimetry:      COLORIMETRY_2BIT[colorim].label,
+          transferChar:     TRANSFER_CHAR[tc].code,
+          transferCharLabel: TRANSFER_CHAR[tc].label,
+          interface:        this.interface,
+          channel:          `Link ${link + 1} of ${this.links}`,
+          linkAssignment:   link,
+          ycEncoding:       ycEnc ? "CL Y'CbCr / HDR ICTCP" : "NCL Y'CbCr",
+          audioCopyStatus:  audCopy ? "Copied" : "Additional",
+          standard:         opts.label
+        }
+      };
+    },
+    encode(c) {
+      const trans = 1, pic = 1; // BT.2077-2 always progressive
+      // transferChar may arrive as a numeric value (round-trip from byte 2 b5:b4)
+      // or a string code ("HLG", "PQ", "UNSPEC") from the builder UI.
+      const tc = (typeof c.transferChar === 'number')
+                  ? (c.transferChar & 0x3)
+                  : (c.transferChar === "HLG" ? 0x1 : c.transferChar === "PQ" ? 0x2 : c.transferChar === "UNSPEC" ? 0x3 : 0x0);
+      const rate = (c.rate ?? 0xA) & 0xF;
+      const aspect = (c.aspect === "16:9") ? 1 : 0;
+      const dciHpix = (this.vLines === 2160) ? 4096 : 8192;
+      const hSamp = (c.horizontalActive === dciHpix || c.hSamp === dciHpix) ? 1 : 0;
+      const colorim = (c.colorim ?? 0x0) & 0x3;
+      const samp = (c.samp ?? 0x0) & 0xF;
+      const link = (c.linkAssignment ?? 0) & 0x7;
+      const ycEnc = (c.ycEncoding === "CL Y'CbCr / HDR ICTCP" || c.ycEnc === 1) ? 1 : 0;
+      const audCopy = (c.audioCopyStatus === "Copied" || c.audCopy === 1) ? 1 : 0;
+      const depth = (c.bitDepth ?? 0x1) & 0x3;
+      const b2 = (trans << 7) | (pic << 6) | ((tc & 0x3) << 4) | (rate & 0xF);
+      const b3 = (aspect << 7) | (hSamp << 6) | ((colorim & 0x3) << 4) | (samp & 0xF);
+      const b4 = ((link & 0x7) << 5) | ((ycEnc & 1) << 4) | ((audCopy & 1) << 2) | (depth & 0x3);
+      return [b2, b3, b4];
+    }
+  };
+}
+
+VPID_LAYOUTS[0xDF] = makeBT2077_24G_Layout({
+  hex: 0xDF, id: "24G-SL-4320", family: "24G-SDI single-link 8K",
+  label: "8K (4320-line) on single-link 24G-SDI",
+  vLines: 4320, links: 1,
+  interface: "Single-link 24 Gb/s SDI (ITU-R BT.2077-2 Part 3)"
+});
+VPID_LAYOUTS[0xE0] = makeBT2077_24G_Layout({
+  hex: 0xE0, id: "24G-SL-2160", family: "24G-SDI single-link 4K",
+  label: "4K (2160-line) on single-link 24G-SDI",
+  vLines: 2160, links: 1,
+  interface: "Single-link 24 Gb/s SDI (ITU-R BT.2077-2 Part 3)"
+});
+VPID_LAYOUTS[0xE1] = makeBT2077_24G_Layout({
+  hex: 0xE1, id: "24G-DL-4320", family: "24G-SDI dual-link 8K",
+  label: "8K (4320-line) on dual-link 24G-SDI",
+  vLines: 4320, links: 2,
+  interface: "Dual-link 24 Gb/s SDI (ITU-R BT.2077-2 Part 3)"
+});
+VPID_LAYOUTS[0xE2] = makeBT2077_24G_Layout({
+  hex: 0xE2, id: "24G-DL-2160", family: "24G-SDI dual-link 4K",
+  label: "4K (2160-line) on dual-link 24G-SDI",
+  vLines: 2160, links: 2,
+  interface: "Dual-link 24 Gb/s SDI (ITU-R BT.2077-2 Part 3)"
+});
+VPID_LAYOUTS[0xE3] = makeBT2077_24G_Layout({
+  hex: 0xE3, id: "24G-QL-4320", family: "24G-SDI quad-link 8K",
+  label: "8K (4320-line) on quad-link 24G-SDI",
+  vLines: 4320, links: 4,
+  interface: "Quad-link 24 Gb/s SDI (ITU-R BT.2077-2 Part 3)"
+});
+VPID_LAYOUTS[0xF1] = makeBT2077_24G_Layout({
+  hex: 0xF1, id: "24G-OL-4320", family: "24G-SDI octa-link 8K",
+  label: "8K (4320-line) on octa-link 24G-SDI",
+  vLines: 4320, links: 8,
+  interface: "Octa-link 24 Gb/s SDI (ITU-R BT.2077-2 Part 3)"
+});
+
+/* ============================================================
+ * Annex C historical (deprecated) layouts — ST 352:2013 §C
+ * These VPIDs were defined in the 2001 trial-publication of ST 352M
+ * (SMPTE Journal, July 2001) and should NOT be used in new designs.
+ * Implemented here so that legacy capture files can still be decoded.
+ *
+ *   0x01 — ITU-R BT.601 on ST 259 SDI (§C.1, Table C.1)
+ *   0x02 — ITU-R BT.1358 on BT.1362 SDI (§C.2, Table C.2)
+ *   0x03 — ST 347 540 Mb/s (§C.3, Table C.3)
+ *   0x04 — ST 274 1125-line on ST 292-1 (§C.4, Table C.4)
+ *   0x05 — ST 296 750-line on ST 292-1 (§C.5, Table C.5)
+ *   0x06 — ST 349 SD into ST 292-1 (§C.6, Table C.6)
+ * ============================================================ */
+VPID_LAYOUTS[0x01] = {
+  id: "HIST-BT601-259",
+  hex: 0x01,
+  family: "Historical (ST 352 Annex C.1)",
+  label: "[Deprecated] ITU-R BT.601 on ST 259 SDI",
+  citation: "SMPTE ST 352:2013 Annex C.1 Table C.1 (deprecated; SMPTE Journal July 2001)",
+  interface: "270/360 Mb/s SDI (SMPTE ST 259) — historical 2001-era VPID format",
+  decode(b2, b3, b4) {
+    const fields = [];
+    const warnings = ["This is a historical (deprecated) VPID per ST 352:2013 Annex C — not for new designs."];
+    const rate = b2 & 0xF;
+    const samp = b3 & 0xF;
+    const aspect = (b3 >> 4) & 1;
+    fields.push({ byte: 2, bits: "b7:b4", name: "Reserved",         value: ((b2 >> 4) & 0xF) ? `${((b2 >> 4) & 0xF).toString(16)}h (should be 0)` : "0h", source: "ST 352 §C.1 Table C.1", flag: ((b2 >> 4) & 0xF) ? "warn" : null });
+    fields.push({ byte: 2, bits: "b3:b0", name: "Frame rate",       value: PICTURE_RATE[rate].label,                                                       source: "ST 352 Table 2" });
+    fields.push({ byte: 3, bits: "b7:b5", name: "Reserved",         value: ((b3 >> 5) & 0x7) ? `${((b3 >> 5) & 0x7).toString(16)}h (should be 0)` : "0h", source: "ST 352 §C.1 Table C.1", flag: ((b3 >> 5) & 0x7) ? "warn" : null });
+    fields.push({ byte: 3, bits: "b4",    name: "Aspect ratio",     value: aspect ? "16:9" : "4:3 (or N/A for non-720-pixel sampling)",                    source: "ST 352 §C.1" });
+    fields.push({ byte: 3, bits: "b3:b0", name: "Sampling structure", value: SAMPLING[samp],                                                                source: "ST 352 Table 3 (limited to 0h, 1h, Fh)" });
+    fields.push({ byte: 4, bits: "b7:b0", name: "Reserved",         value: b4 ? `0x${b4.toString(16).toUpperCase()} (should be 0)` : "0x0",                source: "ST 352 §C.1 Table C.1", flag: b4 ? "warn" : null });
+    return {
+      fields, warnings,
+      characteristics: {
+        resolution:       (samp === 0x0 ? "720×483/576" : samp === 0x1 ? "960×483/576" : samp === 0xF ? "4fsc composite" : "—"),
+        horizontalActive: (samp === 0x0 ? 720 : samp === 0x1 ? 960 : null),
+        frameRate:        PICTURE_RATE[rate].hz,
+        frameRateLabel:   PICTURE_RATE[rate].label,
+        scan:             "Interlaced",
+        aspect:           aspect ? "16:9" : "4:3",
+        sampling:         SAMPLING[samp],
+        bitDepth:         "10-bit (assumed)",
+        colorimetry:      "Rec. 601",
+        transferChar:     "SDR",
+        interface:        this.interface,
+        channel:          null,
+        standard:         "[Historical] ITU-R BT.601 on ST 259 — see ST 352 §C.1"
+      }
+    };
+  },
+  encode(c) {
+    const rate = (c.rate ?? 0x6) & 0xF;
+    const samp = (c.samp ?? 0x0) & 0xF;
+    const aspect = (c.aspect === "16:9") ? 1 : 0;
+    return [rate, (aspect << 4) | samp, 0];
+  }
+};
+
+VPID_LAYOUTS[0x02] = {
+  id: "HIST-BT1358-1362",
+  hex: 0x02,
+  family: "Historical (ST 352 Annex C.2)",
+  label: "[Deprecated] ITU-R BT.1358 on BT.1362 SDI",
+  citation: "SMPTE ST 352:2013 Annex C.2 Table C.2 (deprecated)",
+  interface: "270 Mb/s dual-link SDI (ITU-R BT.1362) — historical 2001-era VPID format",
+  decode(b2, b3, b4) {
+    const fields = [];
+    const warnings = ["This is a historical (deprecated) VPID per ST 352:2013 Annex C — not for new designs."];
+    const rate    = b2 & 0xF;
+    const chPair  = (b3 >> 6) & 0x3;
+    const aspect  = (b3 >> 4) & 1;
+    const samp    = b3 & 0xF;
+    fields.push({ byte: 2, bits: "b7:b4", name: "Reserved",            value: ((b2 >> 4) & 0xF) ? `${((b2 >> 4) & 0xF).toString(16)}h (should be 0)` : "0h", source: "ST 352 §C.2 Table C.2", flag: ((b2 >> 4) & 0xF) ? "warn" : null });
+    fields.push({ byte: 2, bits: "b3:b0", name: "Frame rate",          value: PICTURE_RATE[rate].label,                                                      source: "ST 352 Table 2" });
+    const chLabel = chPair === 0 ? "Single-link" : chPair === 1 ? "Dual-link Ch 1" : chPair === 2 ? "Dual-link Ch 2" : "Reserved (3h)";
+    fields.push({ byte: 3, bits: "b7:b6", name: "Channel number",      value: chLabel,                                                                       source: "ST 352 §C.2", flag: chPair === 3 ? "warn" : null });
+    fields.push({ byte: 3, bits: "b5",    name: "Reserved",            value: ((b3 >> 5) & 1) ? "1 (should be 0)" : "0",                                     source: "ST 352 §C.2 Table C.2", flag: ((b3 >> 5) & 1) ? "warn" : null });
+    fields.push({ byte: 3, bits: "b4",    name: "Aspect ratio",        value: aspect ? "16:9" : "4:3",                                                       source: "ST 352 §C.2" });
+    fields.push({ byte: 3, bits: "b3:b0", name: "Sampling structure",  value: SAMPLING[samp],                                                                source: "ST 352 Table 3 (only 3h = 4:2:0p valid here)" });
+    fields.push({ byte: 4, bits: "b7:b0", name: "Reserved",            value: b4 ? `0x${b4.toString(16).toUpperCase()} (should be 0)` : "0x0",               source: "ST 352 §C.2 Table C.2", flag: b4 ? "warn" : null });
+    if (chPair === 3) warnings.push("Byte 3 b7:b6 = 3h is Reserved per ST 352 §C.2.");
+    return {
+      fields, warnings,
+      characteristics: {
+        resolution:       "525p/625p (BT.1358)",
+        horizontalActive: 720,
+        frameRate:        PICTURE_RATE[rate].hz,
+        frameRateLabel:   PICTURE_RATE[rate].label,
+        scan:             "Progressive",
+        aspect:           aspect ? "16:9" : "4:3",
+        sampling:         SAMPLING[samp],
+        bitDepth:         "10-bit (assumed)",
+        colorimetry:      "Rec. 601",
+        transferChar:     "SDR",
+        interface:        this.interface,
+        channel:          chLabel,
+        standard:         "[Historical] ITU-R BT.1358 525p/625p on BT.1362 SDI — see ST 352 §C.2"
+      }
+    };
+  },
+  encode(c) {
+    const rate = (c.rate ?? 0xA) & 0xF;
+    const samp = (c.samp ?? 0x3) & 0xF;
+    const aspect = (c.aspect === "16:9") ? 1 : 0;
+    const chPair = (c.chPair ?? 0) & 0x3;
+    return [rate, (chPair << 6) | (aspect << 4) | samp, 0];
+  }
+};
+
+VPID_LAYOUTS[0x03] = {
+  id: "HIST-ST347",
+  hex: 0x03,
+  family: "Historical (ST 352 Annex C.3)",
+  label: "[Deprecated] ST 347 540 Mb/s SDI (legacy 2001-era encoding)",
+  citation: "SMPTE ST 352:2013 Annex C.3 Table C.3 (deprecated; use 0x83 for new designs)",
+  interface: "540 Mb/s SDI (SMPTE ST 344) — historical 2001-era VPID format",
+  decode(b2, b3, b4) {
+    const fields = [];
+    const warnings = ["This is a historical (deprecated) VPID per ST 352:2013 Annex C — use 0x83 for new designs."];
+    const rate   = b2 & 0xF;
+    const aspect = (b3 >> 4) & 1;
+    const samp   = b3 & 0xF;
+    fields.push({ byte: 2, bits: "b7:b4", name: "Reserved",            value: ((b2 >> 4) & 0xF) ? `${((b2 >> 4) & 0xF).toString(16)}h (should be 0)` : "0h", source: "ST 352 §C.3 Table C.3", flag: ((b2 >> 4) & 0xF) ? "warn" : null });
+    fields.push({ byte: 2, bits: "b3:b0", name: "Frame rate",          value: PICTURE_RATE[rate].label,                                                      source: "ST 352 Table 2" });
+    fields.push({ byte: 3, bits: "b7:b5", name: "Reserved",            value: ((b3 >> 5) & 0x7) ? `${((b3 >> 5) & 0x7).toString(16)}h (should be 0)` : "0h", source: "ST 352 §C.3 Table C.3", flag: ((b3 >> 5) & 0x7) ? "warn" : null });
+    fields.push({ byte: 3, bits: "b4",    name: "Aspect ratio",        value: aspect ? "16:9" : "4:3",                                                       source: "ST 352 §C.3" });
+    fields.push({ byte: 3, bits: "b3:b0", name: "Sampling structure",  value: SAMPLING[samp],                                                                source: "ST 352 Table 3 (4h, 6h, 7h valid here)" });
+    fields.push({ byte: 4, bits: "b7:b0", name: "Reserved",            value: b4 ? `0x${b4.toString(16).toUpperCase()} (should be 0)` : "0x0",               source: "ST 352 §C.3 Table C.3", flag: b4 ? "warn" : null });
+    return {
+      fields, warnings,
+      characteristics: {
+        resolution:       "525/625-line on 540 Mb/s SDI",
+        horizontalActive: 720,
+        frameRate:        PICTURE_RATE[rate].hz,
+        frameRateLabel:   PICTURE_RATE[rate].label,
+        scan:             [0x9, 0xA].includes(rate) ? "Progressive" : "Interlaced",
+        aspect:           aspect ? "16:9" : "4:3",
+        sampling:         SAMPLING[samp],
+        bitDepth:         "10-bit (assumed)",
+        colorimetry:      "Rec. 601",
+        transferChar:     "SDR",
+        interface:        this.interface,
+        channel:          null,
+        standard:         "[Historical] ST 347 — see ST 352 §C.3"
+      }
+    };
+  },
+  encode(c) {
+    const rate = (c.rate ?? 0x6) & 0xF;
+    const samp = (c.samp ?? 0x6) & 0xF;
+    const aspect = (c.aspect === "16:9") ? 1 : 0;
+    return [rate, (aspect << 4) | samp, 0];
+  }
+};
+
+VPID_LAYOUTS[0x04] = {
+  id: "HIST-ST274",
+  hex: 0x04,
+  family: "Historical (ST 352 Annex C.4)",
+  label: "[Deprecated] ST 274 1125-line on ST 292-1 (legacy 2001-era encoding)",
+  citation: "SMPTE ST 352:2013 Annex C.4 Table C.4 (deprecated; use 0x85 for new designs)",
+  interface: "1.5 Gb/s HD-SDI (ST 292-1) — historical 2001-era VPID format",
+  decode(b2, b3, b4) {
+    const fields = [];
+    const warnings = ["This is a historical (deprecated) VPID per ST 352:2013 Annex C — use 0x85 for new designs."];
+    const scanFmt = (b2 >> 6) & 0x3;
+    const rate    = b2 & 0xF;
+    const samp    = b3 & 0xF;
+    const scanLabels = { 0: "Interlace (4:2:2 i)", 1: "PsF (4:2:2 p, 16:9)", 2: "Reserved (2h)", 3: "Progressive (4:2:2 p, 16:9)" };
+    fields.push({ byte: 2, bits: "b7:b6", name: "Scanning format",  value: scanLabels[scanFmt],                                                                source: "ST 352 §C.4", flag: scanFmt === 2 ? "warn" : null });
+    fields.push({ byte: 2, bits: "b5:b4", name: "Reserved",         value: ((b2 >> 4) & 0x3) ? `${((b2 >> 4) & 0x3).toString(16)}h (should be 0)` : "0h",   source: "ST 352 §C.4 Table C.4", flag: ((b2 >> 4) & 0x3) ? "warn" : null });
+    fields.push({ byte: 2, bits: "b3:b0", name: "Frame rate",       value: PICTURE_RATE[rate].label,                                                          source: "ST 352 Table 2 (per ST 274)" });
+    fields.push({ byte: 3, bits: "b7:b4", name: "Reserved",         value: ((b3 >> 4) & 0xF) ? `${((b3 >> 4) & 0xF).toString(16)}h (should be 0)` : "0h",   source: "ST 352 §C.4 Table C.4", flag: ((b3 >> 4) & 0xF) ? "warn" : null });
+    fields.push({ byte: 3, bits: "b3:b0", name: "Sampling structure", value: SAMPLING[samp],                                                                  source: "ST 352 Table 3" });
+    fields.push({ byte: 4, bits: "b7:b0", name: "Reserved",         value: b4 ? `0x${b4.toString(16).toUpperCase()} (should be 0)` : "0x0",                  source: "ST 352 §C.4 Table C.4", flag: b4 ? "warn" : null });
+    if (scanFmt === 2) warnings.push("Byte 2 b7:b6 = 2h is Reserved per ST 352 §C.4 (only 0h, 1h, 3h are defined).");
+    return {
+      fields, warnings,
+      characteristics: {
+        resolution:       "1920×1080 (ST 274)",
+        horizontalActive: 1920,
+        frameRate:        PICTURE_RATE[rate].hz,
+        frameRateLabel:   PICTURE_RATE[rate].label,
+        scan:             scanFmt === 0 ? "Interlaced" : scanFmt === 1 ? "PsF" : scanFmt === 3 ? "Progressive" : "Reserved",
+        aspect:           "16:9",
+        sampling:         SAMPLING[samp],
+        bitDepth:         "10-bit (assumed)",
+        colorimetry:      "Rec. 709",
+        transferChar:     "SDR",
+        interface:        this.interface,
+        channel:          null,
+        standard:         "[Historical] ST 274 1125-line — see ST 352 §C.4"
+      }
+    };
+  },
+  encode(c) {
+    const rate = (c.rate ?? 0xA) & 0xF;
+    const samp = (c.samp ?? 0x5) & 0xF;
+    const scanFmt = (c.scan === "Interlaced") ? 0 : (c.scan === "PsF") ? 1 : 3;
+    return [(scanFmt << 6) | rate, samp, 0];
+  }
+};
+
+VPID_LAYOUTS[0x05] = {
+  id: "HIST-ST296",
+  hex: 0x05,
+  family: "Historical (ST 352 Annex C.5)",
+  label: "[Deprecated] ST 296 750-line on ST 292-1 (legacy 2001-era encoding)",
+  citation: "SMPTE ST 352:2013 Annex C.5 Table C.5 (deprecated; use 0x84 for new designs)",
+  interface: "1.5 Gb/s HD-SDI (ST 292-1) — historical 2001-era VPID format",
+  decode(b2, b3, b4) {
+    const fields = [];
+    const warnings = ["This is a historical (deprecated) VPID per ST 352:2013 Annex C — use 0x84 for new designs."];
+    const rate = b2 & 0xF;
+    const samp = b3 & 0xF;
+    fields.push({ byte: 2, bits: "b7:b4", name: "Reserved",            value: ((b2 >> 4) & 0xF) ? `${((b2 >> 4) & 0xF).toString(16)}h (should be 0)` : "0h", source: "ST 352 §C.5 Table C.5", flag: ((b2 >> 4) & 0xF) ? "warn" : null });
+    fields.push({ byte: 2, bits: "b3:b0", name: "Frame rate",          value: PICTURE_RATE[rate].label,                                                      source: "ST 352 Table 2 (per ST 296)" });
+    fields.push({ byte: 3, bits: "b7:b4", name: "Reserved",            value: ((b3 >> 4) & 0xF) ? `${((b3 >> 4) & 0xF).toString(16)}h (should be 0)` : "0h", source: "ST 352 §C.5 Table C.5", flag: ((b3 >> 4) & 0xF) ? "warn" : null });
+    fields.push({ byte: 3, bits: "b3:b0", name: "Sampling structure",  value: SAMPLING[samp],                                                                source: "ST 352 Table 3 (always 5h = 4:2:2 p, 16:9)" });
+    fields.push({ byte: 4, bits: "b7:b0", name: "Reserved",            value: b4 ? `0x${b4.toString(16).toUpperCase()} (should be 0)` : "0x0",               source: "ST 352 §C.5 Table C.5", flag: b4 ? "warn" : null });
+    return {
+      fields, warnings,
+      characteristics: {
+        resolution:       "1280×720 (ST 296)",
+        horizontalActive: 1280,
+        frameRate:        PICTURE_RATE[rate].hz,
+        frameRateLabel:   PICTURE_RATE[rate].label,
+        scan:             "Progressive",
+        aspect:           "16:9",
+        sampling:         SAMPLING[samp],
+        bitDepth:         "10-bit (assumed)",
+        colorimetry:      "Rec. 709",
+        transferChar:     "SDR",
+        interface:        this.interface,
+        channel:          null,
+        standard:         "[Historical] ST 296 750-line — see ST 352 §C.5"
+      }
+    };
+  },
+  encode(c) {
+    const rate = (c.rate ?? 0xA) & 0xF;
+    const samp = (c.samp ?? 0x5) & 0xF;
+    return [rate, samp, 0];
+  }
+};
+
+VPID_LAYOUTS[0x06] = {
+  id: "HIST-ST349",
+  hex: 0x06,
+  family: "Historical (ST 352 Annex C.6)",
+  label: "[Deprecated] ST 349 SD into ST 292-1 (legacy 2001-era encoding)",
+  citation: "SMPTE ST 352:2013 Annex C.6 Table C.6 (deprecated; use 0x86 for new designs)",
+  interface: "1.5 Gb/s HD-SDI (ST 292-1) carrying SD per ST 349 — historical 2001-era VPID format",
+  decode(b2, b3, b4) {
+    const fields = [];
+    const warnings = ["This is a historical (deprecated) VPID per ST 352:2013 Annex C — use 0x86 for new designs."];
+    const rate    = b2 & 0xF;
+    const mapMode = (b3 >> 6) & 1;
+    const aspect  = (b3 >> 4) & 1;
+    const samp    = b3 & 0xF;
+    fields.push({ byte: 2, bits: "b7:b4", name: "Reserved",         value: ((b2 >> 4) & 0xF) ? `${((b2 >> 4) & 0xF).toString(16)}h (should be 0)` : "0h", source: "ST 352 §C.6 Table C.6", flag: ((b2 >> 4) & 0xF) ? "warn" : null });
+    fields.push({ byte: 2, bits: "b3:b0", name: "Frame rate",       value: PICTURE_RATE[rate].label,                                                      source: "ST 352 Table 2 / ST 349 Table 1" });
+    fields.push({ byte: 3, bits: "b7",    name: "Reserved",         value: ((b3 >> 7) & 1) ? "1 (should be 0)" : "0",                                     source: "ST 352 §C.6 Table C.6", flag: ((b3 >> 7) & 1) ? "warn" : null });
+    fields.push({ byte: 3, bits: "b6",    name: "Mapping mode",     value: mapMode ? "Whole-line mapping (ST 349 Annex A)" : "Normal mapping (ST 349 §6.1)", source: "ST 352 §C.6" });
+    fields.push({ byte: 3, bits: "b5",    name: "Reserved",         value: ((b3 >> 5) & 1) ? "1 (should be 0)" : "0",                                     source: "ST 352 §C.6 Table C.6", flag: ((b3 >> 5) & 1) ? "warn" : null });
+    fields.push({ byte: 3, bits: "b4",    name: "Aspect ratio",     value: aspect ? "16:9" : "4:3",                                                       source: "ST 352 §C.6" });
+    fields.push({ byte: 3, bits: "b3:b0", name: "Sampling structure", value: SAMPLING[samp],                                                                source: "ST 352 Table 3 / ST 349 Table 1" });
+    fields.push({ byte: 4, bits: "b7:b0", name: "Reserved",         value: b4 ? `0x${b4.toString(16).toUpperCase()} (should be 0)` : "0x0",               source: "ST 352 §C.6 Table C.6", flag: b4 ? "warn" : null });
+    return {
+      fields, warnings,
+      characteristics: {
+        resolution:       "525/625-line mapped onto HD-SDI",
+        horizontalActive: aspect ? 960 : 720,
+        frameRate:        PICTURE_RATE[rate].hz,
+        frameRateLabel:   PICTURE_RATE[rate].label,
+        scan:             [0x9, 0xA].includes(rate) ? "Progressive" : "Interlaced",
+        aspect:           aspect ? "16:9" : "4:3",
+        sampling:         SAMPLING[samp],
+        bitDepth:         "10-bit (assumed)",
+        colorimetry:      "Rec. 601",
+        transferChar:     "SDR",
+        interface:        this.interface,
+        channel:          null,
+        mappingMode:      mapMode ? "Whole-line" : "Normal",
+        standard:         "[Historical] ST 349 SD over HD-SDI — see ST 352 §C.6"
+      }
+    };
+  },
+  encode(c) {
+    const rate = (c.rate ?? 0x6) & 0xF;
+    const samp = (c.samp ?? 0x0) & 0xF;
+    const mapMode = (c.mappingMode === "Whole-line") ? 1 : 0;
+    const aspect = (c.aspect === "16:9") ? 1 : 0;
+    return [rate, (mapMode << 6) | (aspect << 4) | samp, 0];
+  }
+};
+
 /* ---------- Convention sets ---------- */
 // Byte 1 layouts where the underlying raster is physically 16:9 (HD 1080-line and
 // UHD 2160/4320-line per ST 274 / ST 2036-1 / ST 2095). When the aspect bit is 0
@@ -3732,7 +4486,8 @@ const LAYOUTS_16x9_BY_CONVENTION = new Set([
   0xB1,                                     // ST 292-2 dual 1.5G stereo 1080-line
   0xC0, 0xC1,                               // 6G-SDI 1080/2160
   0xCE, 0xCF, 0xD0, 0xD1, 0xD2, 0xD3,       // 12G-SDI 1080/2160/4320 (single + dual + quad)
-  0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE        // ST 2082-30 muxes (sub-stream is 1080/2160)
+  0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE,       // ST 2082-30 muxes (sub-stream is 1080/2160)
+  0xDF, 0xE0, 0xE1, 0xE2, 0xE3, 0xF1        // ITU-R BT.2077-2 24G-SDI 2160/4320 (single/dual/quad/octa)
 ]);
 
 /* ---------- SMPTE Byte 1 Payload Identifier Registry ---------- */
@@ -4120,7 +4875,13 @@ function runSelfTest() {
   ];
   // Layouts where bytes 2/3/4 use non-standard field placements
   // (handled by layout-specific round-trip below, not the generic loop).
-  const NON_STANDARD_LAYOUTS = new Set([0xA1, 0xA2, 0xA5, 0xA6, 0xB0]);
+  const NON_STANDARD_LAYOUTS = new Set([
+    0xA1, 0xA2, 0xA5, 0xA6, 0xB0,
+    // New (this build):
+    0x83, 0x86, 0xB3,
+    0xDF, 0xE0, 0xE1, 0xE2, 0xE3, 0xF1,           // BT.2077-2 24G
+    0x01, 0x02, 0x03, 0x04, 0x05, 0x06            // Annex C historical
+  ]);
   for (const hex of roundTripSamples) {
     const bytes = parseHex(hex);
     const r = decodeVpidBytes(...bytes);
@@ -4187,7 +4948,39 @@ function runSelfTest() {
     { hex: "B2 0A 80 03", b1: 0xB2 },   // 1280x720p 60/1.001
     { hex: "B2 09 80 04", b1: 0xB2 },   // 1280x720p 50
     { hex: "B2 06 80 05", b1: 0xB2 },   // 1440x1080i 60/1.001
-    { hex: "B2 05 80 06", b1: 0xB2 }    // 1440x1080i 50
+    { hex: "B2 05 80 06", b1: 0xB2 },   // 1440x1080i 50
+    // 0x83: ST 347 540 Mb/s SDI (ST 352 Annex B.3)
+    { hex: "83 06 05 01", b1: 0x83 },   // 525i 4:4:4:4 Y/CB/CR/A 4:3 10-bit
+    { hex: "83 49 80 00", b1: 0x83 },   // 625p 4:2:2 16:9 8-bit
+    { hex: "83 4A 80 01", b1: 0x83 },   // 525p 4:2:2 16:9 10-bit
+    // 0x86: ST 349 SD into HD-SDI (ST 352 Annex B.4)
+    { hex: "86 06 00 01", b1: 0x86 },   // 525i 4:2:2i (Tab B.4.2 0h) NTSC 4:3 normal-map 10-bit single
+    { hex: "86 15 02 11", b1: 0x86 },   // 625i 4:2:0p (Tab B.4.2 2h) PAL 16:9 normal-map 10-bit single
+    { hex: "86 09 09 49", b1: 0x86 },   // 625p ×2ch (Tab B.4.2 9h) PAL 16:9 dual-ch whole-line 10-bit
+    // 0xB3: ST 2048-3 DCI 4K over multi-link 10G-SDI.
+    // Byte 2 b6 is fixed at 1 (progressive picture) per ST 2048-3 §7.1.
+    { hex: "B3 CA 01 21", b1: 0xB3 },   // p59.94 (trans=p) Link 1 4:4:4 R'G'B' Ch2 10-bit
+    { hex: "B3 46 02 41", b1: 0xB3 },   // p29.97 (trans=interlaced carrier, picture=p) Link 1 4:2:0 Ch3 10-bit
+    { hex: "B3 49 17 02", b1: 0xB3 },   // p50 (trans=interlaced, picture=p) Link 2 ST 2048-2 FS 1 (samp=7h) Ch1 12-bit
+    // 0xDF/E0/E1/E2/E3/F1: BT.2077-2 24G-SDI Table 3-7
+    { hex: "DF CA E0 01", b1: 0xDF },   // 8K SL 59.94 SDR Rec.2020 4:2:2 Link 1 NCL 10-bit
+    { hex: "E0 DA F1 22", b1: 0xE0 },   // 4K SL 59.94 HLG Rec.2020 4:4:4 RGB Link 1 ICTCP 12-bit
+    { hex: "E1 EA E0 21", b1: 0xE1 },   // 8K DL 59.94 PQ Rec.2020 4:2:2 Link 2 NCL 10-bit
+    { hex: "E2 CA E0 41", b1: 0xE2 },   // 4K DL 59.94 SDR Rec.2020 4:2:2 Link 2 NCL 10-bit
+    { hex: "E3 CA E0 61", b1: 0xE3 },   // 8K QL 59.94 SDR Rec.2020 4:2:2 Link 3 NCL 10-bit
+    { hex: "F1 CA E0 E1", b1: 0xF1 },   // 8K Octa 59.94 SDR Rec.2020 4:2:2 Link 7 NCL 10-bit
+    // 0x01-0x06: Annex C historical
+    { hex: "01 06 00 00", b1: 0x01 },   // 525i 4:2:2 NTSC 4:3
+    { hex: "01 06 10 00", b1: 0x01 },   // 525i 4:2:2 NTSC 16:9
+    { hex: "02 0A 53 00", b1: 0x02 },   // 525p 4:2:0 dual-link Ch 1 16:9
+    { hex: "03 06 06 00", b1: 0x03 },   // 525i 4:4:4:4 G/B/R/A 4:3
+    { hex: "03 09 04 00", b1: 0x03 },   // 625p 4:2:2 16:9 (byte 2 b7:b4 = 0 per Table C.3)
+    { hex: "04 CA 05 00", b1: 0x04 },   // 1080p 59.94 4:2:2p
+    { hex: "04 06 01 00", b1: 0x04 },   // 1080i 29.97 4:2:2i
+    { hex: "05 0A 05 00", b1: 0x05 },   // 720p 59.94
+    { hex: "05 09 05 00", b1: 0x05 },   // 720p 50
+    { hex: "06 06 00 00", b1: 0x06 },   // 525i NTSC 4:2:2 normal-map 4:3
+    { hex: "06 05 49 00", b1: 0x06 }    // 625p PAL ×2ch 16:9 whole-line
   ];
   for (const t of newLayoutTests) {
     const bytes = parseHex(t.hex);
@@ -4232,6 +5025,102 @@ function runSelfTest() {
     } else if (t.b1 === 0xB2) {
       // ST 2047-4: byte 2 = rate (b3:b0), byte 3 = 0x80 fixed, byte 4 = format ID.
       ch = { rate: bytes[1] & 0xF, formatId: bytes[3] };
+    } else if (t.b1 === 0x83) {
+      // ST 352 Annex B.3 — ST 347 540 Mb/s SDI
+      ch = {
+        rate:     bytes[1] & 0xF,
+        scan:     ((bytes[1] >> 6) & 1) ? "Progressive" : "Interlaced",
+        aspect:   ((bytes[2] >> 7) & 1) ? "16:9" : "4:3",
+        samp:     bytes[2] & 0xF,
+        bitDepth: bytes[3] & 1
+      };
+    } else if (t.b1 === 0x86) {
+      // ST 352 Annex B.4 — ST 349 SD-into-HD-SDI
+      ch = {
+        rate:        bytes[1] & 0xF,
+        lineCount:   ((bytes[1] >> 4) & 1) ? 576 : 483,
+        sampB42:     bytes[2] & 0xF,
+        samp:        bytes[2] & 0xF,
+        channel:     ((bytes[3] >> 6) & 1) ? "Ch1 + Ch2 active" : "Ch1 only",
+        dualCh:      ((bytes[3] >> 6) & 1) === 1,
+        aspect:      ((bytes[3] >> 4) & 1) ? "16:9" : "4:3",
+        mappingMode: ((bytes[3] >> 3) & 1) ? "Whole-line" : "Normal",
+        bitDepth:    bytes[3] & 1
+      };
+    } else if (t.b1 === 0xB3) {
+      // ST 2048-3 §7.1 — DCI 4K over multi-link 10G-SDI
+      ch = {
+        rate:           bytes[1] & 0xF,
+        scan:           ((bytes[1] >> 7) & 1) ? "Progressive" : "Interlaced",
+        linkAssignment: (bytes[2] >> 4) & 0x7,
+        samp:           bytes[2] & 0xF,
+        chAssignment:   (bytes[3] >> 5) & 0x7,
+        bitDepth:       (bytes[3] & 0x3) === 0x2 ? "12-bit" : "10-bit"
+      };
+    } else if ([0xDF, 0xE0, 0xE1, 0xE2, 0xE3, 0xF1].includes(t.b1)) {
+      // ITU-R BT.2077-2 24G-SDI Table 3-7
+      const dciHpix = (layout.vLines === 2160) ? 4096 : 8192;
+      const uhdHpix = (layout.vLines === 2160) ? 3840 : 7680;
+      ch = {
+        rate:            bytes[1] & 0xF,
+        transferChar:    (bytes[1] >> 4) & 0x3,
+        scan:            "Progressive",
+        aspect:          ((bytes[2] >> 7) & 1) ? "16:9" : "Unknown",
+        hSamp:           ((bytes[2] >> 6) & 1) ? dciHpix : uhdHpix,
+        horizontalActive: ((bytes[2] >> 6) & 1) ? dciHpix : uhdHpix,
+        colorim:         (bytes[2] >> 4) & 0x3,
+        samp:            bytes[2] & 0xF,
+        linkAssignment:  (bytes[3] >> 5) & 0x7,
+        ycEnc:           (bytes[3] >> 4) & 1,
+        ycEncoding:      ((bytes[3] >> 4) & 1) ? "CL Y'CbCr / HDR ICTCP" : "NCL Y'CbCr",
+        audCopy:         (bytes[3] >> 2) & 1,
+        audioCopyStatus: ((bytes[3] >> 2) & 1) ? "Copied" : "Additional",
+        bitDepth:        bytes[3] & 0x3
+      };
+    } else if (t.b1 === 0x01) {
+      // Annex C.1 — ST 259 BT.601
+      ch = {
+        rate:   bytes[1] & 0xF,
+        samp:   bytes[2] & 0xF,
+        aspect: ((bytes[2] >> 4) & 1) ? "16:9" : "4:3"
+      };
+    } else if (t.b1 === 0x02) {
+      // Annex C.2 — BT.1358 dual-link
+      ch = {
+        rate:   bytes[1] & 0xF,
+        samp:   bytes[2] & 0xF,
+        aspect: ((bytes[2] >> 4) & 1) ? "16:9" : "4:3",
+        chPair: (bytes[2] >> 6) & 0x3
+      };
+    } else if (t.b1 === 0x03) {
+      // Annex C.3 — historical ST 347 540 Mb/s
+      ch = {
+        rate:   bytes[1] & 0xF,
+        samp:   bytes[2] & 0xF,
+        aspect: ((bytes[2] >> 4) & 1) ? "16:9" : "4:3"
+      };
+    } else if (t.b1 === 0x04) {
+      // Annex C.4 — historical ST 274 1125-line
+      const scanFmt = (bytes[1] >> 6) & 0x3;
+      ch = {
+        rate: bytes[1] & 0xF,
+        samp: bytes[2] & 0xF,
+        scan: scanFmt === 0 ? "Interlaced" : scanFmt === 1 ? "PsF" : scanFmt === 3 ? "Progressive" : "Reserved"
+      };
+    } else if (t.b1 === 0x05) {
+      // Annex C.5 — historical ST 296 750-line
+      ch = {
+        rate: bytes[1] & 0xF,
+        samp: bytes[2] & 0xF
+      };
+    } else if (t.b1 === 0x06) {
+      // Annex C.6 — historical ST 349 SD-into-HD-SDI
+      ch = {
+        rate:        bytes[1] & 0xF,
+        samp:        bytes[2] & 0xF,
+        aspect:      ((bytes[2] >> 4) & 1) ? "16:9" : "4:3",
+        mappingMode: ((bytes[2] >> 6) & 1) ? "Whole-line" : "Normal"
+      };
     }
     const [b2, b3, b4] = layout.encode(ch);
     if (b2 !== bytes[1] || b3 !== bytes[2] || b4 !== bytes[3]) {
@@ -4239,14 +5128,15 @@ function runSelfTest() {
     }
   }
 
-  // Registry-only fallback test: 0x86 (ST 349) is registered but not
-  // bit-decoded in this build. Ensure the decoder routes it through the
-  // SMPTE-RA registry path. (0x90 / 0xA0 are now fully decoded by ST 435-1.)
+  // Registry-only fallback test: pick a code that is still registered but NOT
+  // bit-decoded in this build. 0x86 (ST 349) is now fully bit-decoded — pick
+  // 0xB4 (SMPTE RDD 22 film transfer) instead, which is registered but has no
+  // bit-decoder here (RDD 22 specs are not in the docs/smpte folder).
   {
-    const r = decodeVpidBytes(0x86, 0x06, 0x00, 0x01);
-    if (r.valid)            failures.push(`Registry fallback: 0x86 should not decode (no bit-decoder)`);
-    else if (!r.registered) failures.push(`Registry fallback: 0x86 should be registered (ST 349)`);
-    else if (r.registry.standard !== "SMPTE ST 349") failures.push(`Registry fallback: 0x86 wrong standard ${r.registry.standard}`);
+    const r = decodeVpidBytes(0xB4, 0x00, 0x00, 0x00);
+    if (r.valid)            failures.push(`Registry fallback: 0xB4 should not decode (no bit-decoder)`);
+    else if (!r.registered) failures.push(`Registry fallback: 0xB4 should be registered (RDD 22)`);
+    else if (r.registry.standard !== "SMPTE RDD 22") failures.push(`Registry fallback: 0xB4 wrong standard ${r.registry.standard}`);
   }
   // ST 435-1 (0x90 / 0xA0) decode + round-trip checks.
   // Per ST 435-1 Table 6 (quad-link 1080) only 50/59.94/60 progressive are valid.
@@ -5060,6 +5950,28 @@ function renderBuilder(decoded) {
     else if (newB1 === 0xDE)                        { defB2 = 0x4A; defB3 = 0x80; defB4 = 0x01; }  // ST 2082-30 Mode 3: bytes from 0x84 default (HD 720p59.94)
     else if (newB1 === 0x90)                        { defB2 = 0xCA; defB3 = 0x20; defB4 = 0x01; }  // ST 435-1 quad-link 1080p59.94 1920 16:9 4:2:2 Ch1 10-bit
     else if (newB1 === 0xA0)                        { defB2 = 0xC6; defB3 = 0x20; defB4 = 0x01; }  // ST 435-1 octa-link 2160p29.97 3840 16:9 4:2:2 Ch1 10-bit
+    // ST 347 540 Mb/s SDI defaults: 525i NTSC 4:4:4:4 Y/CB/CR/A 10-bit per ST 347 system 1.
+    else if (newB1 === 0x83)                        { defB2 = 0x06; defB3 = 0x05; defB4 = 0x01; }
+    // ST 349 SD-into-HD-SDI defaults: 525-line, 30/1.001, 4:2:2i Y'CbCr (table B.4.2 = 0h),
+    // 4:3, normal mapping, 10-bit, single channel.
+    else if (newB1 === 0x86)                        { defB2 = 0x06; defB3 = 0x00; defB4 = 0x01; }
+    // ST 2048-3 DCI 4K defaults: 4096×2160p59.94 Link1 Ch1 10-bit 4:2:2.
+    else if (newB1 === 0xB3)                        { defB2 = 0xCA; defB3 = 0x00; defB4 = 0x01; }
+    // BT.2077-2 24G-SDI defaults: progressive 59.94 SDR + 16:9 + DCI hpix + Rec.2020
+    // + 4:2:2 + Link 1 + NCL Y'CbCr + additional audio + 10-bit.
+    else if (newB1 === 0xDF)                        { defB2 = 0xCA; defB3 = 0xE0; defB4 = 0x01; }  // 4320-line single-link 24G
+    else if (newB1 === 0xE0)                        { defB2 = 0xCA; defB3 = 0xE0; defB4 = 0x01; }  // 2160-line single-link 24G
+    else if (newB1 === 0xE1)                        { defB2 = 0xCA; defB3 = 0xE0; defB4 = 0x01; }  // 4320-line dual-link 24G
+    else if (newB1 === 0xE2)                        { defB2 = 0xCA; defB3 = 0xE0; defB4 = 0x01; }  // 2160-line dual-link 24G
+    else if (newB1 === 0xE3)                        { defB2 = 0xCA; defB3 = 0xE0; defB4 = 0x01; }  // 4320-line quad-link 24G
+    else if (newB1 === 0xF1)                        { defB2 = 0xCA; defB3 = 0xE0; defB4 = 0x01; }  // 4320-line octa-link 24G
+    // Annex C historical (deprecated) defaults — minimal but valid byte values
+    else if (newB1 === 0x01)                        { defB2 = 0x06; defB3 = 0x00; defB4 = 0x00; }  // 525i 4:2:2 NTSC
+    else if (newB1 === 0x02)                        { defB2 = 0x0A; defB3 = 0x43; defB4 = 0x00; }  // 525p 4:2:0 dual-link Ch1
+    else if (newB1 === 0x03)                        { defB2 = 0x06; defB3 = 0x06; defB4 = 0x00; }  // 525i 4:4:4:4 Y/CB/CR/A
+    else if (newB1 === 0x04)                        { defB2 = 0xCA; defB3 = 0x05; defB4 = 0x00; }  // 1080p59.94 4:2:2p 16:9
+    else if (newB1 === 0x05)                        { defB2 = 0x0A; defB3 = 0x05; defB4 = 0x00; }  // 720p59.94 4:2:2p 16:9
+    else if (newB1 === 0x06)                        { defB2 = 0x06; defB3 = 0x00; defB4 = 0x00; }  // 525i 4:2:2 NTSC normal mapping
     $('#hexInput').value = formatHexBytes([newB1, defB2, defB3, defB4]);
     handleHexChange();
   });
@@ -5193,6 +6105,72 @@ function renderBuilder(decoded) {
         channel: (b4 >> 5) & 0x7,
         bitDepth: b4 & 0x3
       };
+    } else if (layout.hex === 0x83) {
+      // ST 352 Annex B.3 — ST 347 540 Mb/s SDI.
+      ch = {
+        rate:   b2 & 0xF,
+        scan:   ((b2 >> 6) & 1) ? "Progressive" : "Interlaced",
+        aspect: ((b3 >> 7) & 1) ? "16:9" : "4:3",
+        samp:   b3 & 0xF,
+        bitDepth: b4 & 1
+      };
+    } else if (layout.hex === 0x86) {
+      // ST 352 Annex B.4 — ST 349 SD-into-HD-SDI.
+      ch = {
+        rate:        b2 & 0xF,
+        lineCount:   ((b2 >> 4) & 1) ? 576 : 483,
+        sampB42:     b3 & 0xF,
+        samp:        b3 & 0xF,
+        channel:     ((b4 >> 6) & 1) ? "Ch1 + Ch2 active" : "Ch1 only",
+        dualCh:      (b4 >> 6) & 1,
+        aspect:      ((b4 >> 4) & 1) ? "16:9" : "4:3",
+        mappingMode: ((b4 >> 3) & 1) ? "Whole-line" : "Normal",
+        bitDepth:    b4 & 1
+      };
+    } else if (layout.hex === 0xB3) {
+      // ST 2048-3 §7.1 — DCI 4K over multi-link 10G-SDI.
+      ch = {
+        rate:           b2 & 0xF,
+        scan:           ((b2 >> 7) & 1) ? "Progressive" : "Interlaced",
+        linkAssignment: (b3 >> 4) & 0x7,
+        samp:           b3 & 0xF,
+        chAssignment:   (b4 >> 5) & 0x7,
+        bitDepth:       (b4 & 0x3) === 0x2 ? "12-bit" : "10-bit"
+      };
+    } else if ([0xDF, 0xE0, 0xE1, 0xE2, 0xE3, 0xF1].includes(layout.hex)) {
+      // ITU-R BT.2077-2 Part 3 24G-SDI VPIDs (Table 3-7).
+      const dciHpix = (layout.vLines === 2160) ? 4096 : 8192;
+      const uhdHpix = (layout.vLines === 2160) ? 3840 : 7680;
+      ch = {
+        rate:            b2 & 0xF,
+        transferChar:    (b2 >> 4) & 0x3,
+        scan:            "Progressive",
+        aspect:          ((b3 >> 7) & 1) ? "16:9" : "Unknown",
+        hSamp:           ((b3 >> 6) & 1) ? dciHpix : uhdHpix,
+        horizontalActive: ((b3 >> 6) & 1) ? dciHpix : uhdHpix,
+        colorim:         (b3 >> 4) & 0x3,
+        samp:            b3 & 0xF,
+        linkAssignment:  (b4 >> 5) & 0x7,
+        ycEncoding:      ((b4 >> 4) & 1) ? "CL Y'CbCr / HDR ICTCP" : "NCL Y'CbCr",
+        ycEnc:           (b4 >> 4) & 1,
+        audCopy:         (b4 >> 2) & 1,
+        audioCopyStatus: ((b4 >> 2) & 1) ? "Copied" : "Additional",
+        bitDepth:        b4 & 0x3
+      };
+    } else if ([0x01, 0x02, 0x03, 0x04, 0x05, 0x06].includes(layout.hex)) {
+      // Historical Annex C codes (deprecated). Minimal extraction; only rate +
+      // a couple of common fields are user-editable.
+      ch = {
+        rate:   b2 & 0xF,
+        samp:   b3 & 0xF,
+        aspect: ((layout.hex === 0x04 || layout.hex === 0x05) ? "16:9"
+                 : ((b3 >> 4) & 1) ? "16:9" : "4:3"),
+        scan:   (layout.hex === 0x04) ? (((b2 >> 6) & 0x3) === 3 ? "Progressive" : ((b2 >> 6) & 0x3) === 1 ? "PsF" : "Interlaced")
+                : (layout.hex === 0x05) ? "Progressive"
+                : ([0x9, 0xA].includes(b2 & 0xF)) ? "Progressive" : "Interlaced",
+        chPair:      (layout.hex === 0x02) ? ((b3 >> 6) & 0x3) : 0,
+        mappingMode: (layout.hex === 0x06) ? (((b3 >> 6) & 1) ? "Whole-line" : "Normal") : null
+      };
     } else {
       // Standard layout (ST 425-1 / ST 2082-x / 6G / 3G / HD-SDI / etc.)
       ch = {
@@ -5229,7 +6207,10 @@ function renderBuilder(decoded) {
   // Stereoscopic codes also expose scan: 0x8F (1080), 0x92 (1080), 0x93 (1080), 0x99 (1080), 0x9A (1080).
   // Scan does not vary for 0x8E/0x91 (720 — always progressive) or 0x9B (2160 — always progressive per ST 425-3 §8.2.3).
   // ST 435-1 0x90 (quad-link 1080) and 0xA0 (octa-link 2160) both signal scan via byte 2 b7/b6.
-  if ([0x82, 0x85, 0x87, 0x89, 0x8A, 0x8C, 0x8F, 0x90, 0x92, 0x93, 0x94, 0x95, 0x96, 0x98, 0x97, 0x99, 0x9A, 0xA0].includes(b1)) {
+  // 0x83 (ST 347) signals interlaced/progressive in byte 2 b6.
+  // 0xB3 (ST 2048-3) signals interlaced/progressive in byte 2 b7 (transport).
+  // BT.2077-2 24G codes are progressive-only (no scan dropdown).
+  if ([0x82, 0x83, 0x85, 0x87, 0x89, 0x8A, 0x8C, 0x8F, 0x90, 0x92, 0x93, 0x94, 0x95, 0x96, 0x98, 0x97, 0x99, 0x9A, 0xA0, 0xB3].includes(b1)) {
     const scanOptions = [
       { value: "Progressive", label: "Progressive" },
       { value: "Interlaced",  label: "Interlaced"  }
@@ -5250,7 +6231,9 @@ function renderBuilder(decoded) {
   // Reserved (no transfer-characteristic / HDR signalling) — pre-HDR spec.
   const STEREO_NO_HDR = new Set([0x8E, 0x8F, 0x91, 0x92, 0x93, 0x99, 0x9A, 0x9B]);
   const ST435_NO_HDR = new Set([0x90, 0xA0]);
-  if (b1 >= 0x85 && b1 !== 0x86 && b1 !== 0x84 && b1 !== 0x8B && b1 !== 0xB0 && b1 !== 0xB1 && b1 !== 0xB2 && !STEREO_NO_HDR.has(b1) && !ST435_NO_HDR.has(b1)) {
+  // BT.2077-2 24G codes (0xDF, 0xE0-E3, 0xF1) DO carry transfer characteristics.
+  // ST 2048-3 (0xB3) does NOT signal transfer characteristics (b5:b4 are reserved).
+  if (b1 >= 0x85 && b1 !== 0x86 && b1 !== 0x84 && b1 !== 0x8B && b1 !== 0xB0 && b1 !== 0xB1 && b1 !== 0xB2 && b1 !== 0xB3 && !STEREO_NO_HDR.has(b1) && !ST435_NO_HDR.has(b1)) {
     f.appendChild(makeSelectFor('Transfer characteristics (HDR)', Object.keys(TRANSFER_CHAR).map(k => {
       const v = parseInt(k); return { value: v, label: TRANSFER_CHAR[v].label };
     }), (b2 >> 4) & 0x3, val => update(ch => { ch.transferChar = val; })).wrap);
@@ -5263,13 +6246,13 @@ function renderBuilder(decoded) {
       { value: "16:9",    label: "16:9" },
       { value: "Unknown", label: "Unknown" }
     ], c.aspect, val => update(ch => { ch.aspect = val; })).wrap);
-  } else if ([0x81, 0x82, 0x85, 0x87, 0x89, 0x8A, 0x8C, 0x8E, 0x8F, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9A, 0x9B, 0xC0, 0xC1, 0xCE, 0xCF, 0xD0, 0xD1, 0xD2, 0xD3].includes(b1)) {
+  } else if ([0x81, 0x82, 0x83, 0x85, 0x86, 0x87, 0x89, 0x8A, 0x8C, 0x8E, 0x8F, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9A, 0x9B, 0xC0, 0xC1, 0xCE, 0xCF, 0xD0, 0xD1, 0xD2, 0xD3, 0xDF, 0xE0, 0xE1, 0xE2, 0xE3, 0xF1, 0x01, 0x02, 0x03, 0x06].includes(b1)) {
     f.appendChild(makeSelectFor('Aspect ratio', [
       { value: "16:9",    label: "16:9" },
       { value: "4:3",     label: "4:3 (SD only)" },
       { value: "Unknown", label: "Unknown" }
     ], c.aspect, val => update(ch => { ch.aspect = val; })).wrap);
-  } else if ([0xA1, 0xA2, 0xA5, 0xA6, 0xB0, 0xB2].includes(b1)) {
+  } else if ([0xA1, 0xA2, 0xA5, 0xA6, 0xB0, 0xB2, 0xB3, 0x04, 0x05].includes(b1)) {
     // ST 2036-3 / ST 2036-4 / ST 2047-2 / ST 2047-4: aspect is fixed at 16:9 (no signalling).
     const info = document.createElement('p');
     info.className = 'form-hint';
@@ -5285,15 +6268,17 @@ function renderBuilder(decoded) {
       { value: 1920, label: "1920 (SMPTE 274)" },
       { value: 2048, label: "2048 (SMPTE 2048-2)" }
     ], c.horizontalActive, val => update(ch => { ch.hSamp = val; })).wrap);
-  } else if ([0x96, 0x97, 0x98, 0x9B, 0xA0, 0xC0, 0xCE, 0xD1, 0xD3].includes(b1)) {
+  } else if ([0x96, 0x97, 0x98, 0x9B, 0xA0, 0xC0, 0xCE, 0xD1, 0xD3, 0xE0, 0xE2].includes(b1)) {
     // 0xD1 / 0xD3: 2160-line over dual/quad-link 12G-SDI extended chroma/depth/HFR.
     // Byte 3 b6 maps to 1920 sub-image (3840 picture) vs 2048 sub-image (4096 picture)
     // per ST 2082-11 §5.8.3 / ST 2082-12 §5.9.3.
+    // 0xE0 / 0xE2: 2160-line on single/dual-link 24G-SDI per BT.2077-2 Table 3-7.
     f.appendChild(makeSelectFor('Horizontal pixels', [
       { value: 3840, label: "3840 (UHDTV1)" },
       { value: 4096, label: "4096 (DCI-4K)" }
     ], c.horizontalActive, val => update(ch => { ch.hSamp = val; })).wrap);
-  } else if ([0xD0, 0xD2].includes(b1)) {
+  } else if ([0xD0, 0xD2, 0xDF, 0xE1, 0xE3, 0xF1].includes(b1)) {
+    // 0xDF/0xE1/0xE3/0xF1: 4320-line on single/dual/quad/octa-link 24G-SDI per BT.2077-2.
     f.appendChild(makeSelectFor('Horizontal pixels', [
       { value: 7680, label: "7680 (UHDTV2)" },
       { value: 8192, label: "8192 (8K DCI)" }
@@ -5315,7 +6300,7 @@ function renderBuilder(decoded) {
   // Stereoscopic Level A (modern 2-bit colorim, like 0x88/0x89/0x94): 0x91, 0x92, 0x99
   // Stereoscopic Level B-DL/DS (split colorim, like 0x87/0x95): 0x93, 0x9A, 0x9B
   // Stereoscopic ST 292-2 (single-link 3G, ST 425-2 — 0x8E, 0x8F): no colorim signalled
-  if ([0x89, 0x88, 0x8B, 0x91, 0x92, 0x94, 0x97, 0x99, 0xC0, 0xC1, 0xCE, 0xCF, 0xD0, 0xD1, 0xD2, 0xD3].includes(b1)) {
+  if ([0x89, 0x88, 0x8B, 0x91, 0x92, 0x94, 0x97, 0x99, 0xC0, 0xC1, 0xCE, 0xCF, 0xD0, 0xD1, 0xD2, 0xD3, 0xDF, 0xE0, 0xE1, 0xE2, 0xE3, 0xF1].includes(b1)) {
     f.appendChild(makeSelectFor('Colorimetry', Object.keys(COLORIMETRY_2BIT).map(k => {
       const v = parseInt(k); return { value: v, label: COLORIMETRY_2BIT[v].label };
     }), (b3 >> 4) & 0x3, val => update(ch => { ch.colorim = val; })).wrap);
@@ -5364,8 +6349,12 @@ function renderBuilder(decoded) {
 
   // Bit depth
   let depthTable;
-  if ([0x81, 0x82, 0x8D].includes(b1)) {
+  if ([0x81, 0x82, 0x83, 0x86, 0x8D].includes(b1)) {
+    // ST 352 §B (1-bit depth): 0=8-bit, 1=10-bit
     depthTable = { 0: "8-bit", 1: "10-bit" };
+  } else if ([0x01, 0x02, 0x03, 0x04, 0x05, 0x06].includes(b1)) {
+    // Annex C historical (depth not signalled — byte 4 reserved). Use 1-bit table.
+    depthTable = { 0: "8-bit (default)", 1: "10-bit" };
   } else if ([0x84, 0x88, 0x8B].includes(b1)) {
     depthTable = { 0: "8-bit", 1: "10-bit" };
   } else if ([0x85, 0x87, 0x8A, 0x8C, 0x95, 0x96, 0x98].includes(b1)) {
@@ -5376,12 +6365,17 @@ function renderBuilder(decoded) {
     depthTable = BIT_DEPTH_ST2036_4;
   } else if ([0x90, 0xA0].includes(b1)) {
     depthTable = BIT_DEPTH_ST435;
+  } else if (b1 === 0xB3) {
+    // ST 2048-3 §7.1: only 10-bit (1h) and 12-bit (2h) defined; 0h/3h reserved.
+    depthTable = { 1: "10-bit", 2: "12-bit" };
   } else {
     depthTable = BIT_DEPTH_2BIT_FULL;
   }
   // Hide bit depth dropdown for 0xB0 / 0xB2 (always 10-bit VC-2; byte 4 of 0xB2 is the format ID, not depth).
   if (b1 !== 0xB0 && b1 !== 0xB2) {
-    f.appendChild(makeSelectFor('Bit depth', Object.keys(depthTable).map(k => ({ value: parseInt(k), label: depthTable[parseInt(k)] })), b4 & (Object.keys(depthTable).length > 2 ? 0x3 : 1), val => update(ch => { ch.bitDepth = val; })).wrap);
+    const isOneBit = ([0x81, 0x82, 0x83, 0x86, 0x8D, 0x84, 0x88, 0x8B, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06].includes(b1));
+    const cur = isOneBit ? (b4 & 1) : (b4 & 0x3);
+    f.appendChild(makeSelectFor('Bit depth', Object.keys(depthTable).map(k => ({ value: parseInt(k), label: depthTable[parseInt(k)] })), cur, val => update(ch => { ch.bitDepth = val; })).wrap);
   }
 
   // Link / channel
@@ -5412,6 +6406,64 @@ function renderBuilder(decoded) {
     // 0xD2 (4320-line quad) and 0xD3 (2160-line quad) both use byte 4 b7:b5 = 0h..3h
     // for Link 1..4 per ST 2082-12 §4.6.4 / §5.9.4.
     f.appendChild(makeSelectFor('Link', [0,1,2,3].map(i => ({ value: i, label: `12G Link ${i+1}` })), (b4 >> 5) & 0x7, val => update(ch => { ch.linkAssignment = val; })).wrap);
+  } else if ([0xDF, 0xE0, 0xE1, 0xE2, 0xE3, 0xF1].includes(b1)) {
+    // ITU-R BT.2077-2 24G-SDI: byte 4 b7:b5 = 3-bit link assignment per Table 3-7.
+    // Link cap depends on byte 1 (single/dual/quad/octa). Out-of-range values
+    // are encoded but flagged with a warning by the decoder.
+    const linkCap = (b1 === 0xDF || b1 === 0xE0) ? 1
+                  : (b1 === 0xE1 || b1 === 0xE2) ? 2
+                  : (b1 === 0xE3) ? 4
+                  : 8;
+    const linkOpts = [];
+    for (let i = 0; i < linkCap; i++) linkOpts.push({ value: i, label: `24G Link ${i + 1}` });
+    f.appendChild(makeSelectFor('Link', linkOpts, (b4 >> 5) & 0x7, val => update(ch => { ch.linkAssignment = val; })).wrap);
+    f.appendChild(makeSelectFor('Y\u2032CbCr encoding', [
+      { value: 0, label: "NCL Y'CbCr (Rec.709 / BT.2100 NCL)" },
+      { value: 1, label: "CL Y'CbCr or HDR ICTCP (BT.2100)" }
+    ], (b4 >> 4) & 1, val => update(ch => { ch.ycEnc = val; ch.ycEncoding = val ? "CL Y'CbCr / HDR ICTCP" : "NCL Y'CbCr"; })).wrap);
+    f.appendChild(makeSelectFor('Audio copy status', [
+      { value: 0, label: "Additional channels (no copy)" },
+      { value: 1, label: "Copied audio (replicates earlier link)" }
+    ], (b4 >> 2) & 1, val => update(ch => { ch.audCopy = val; ch.audioCopyStatus = val ? "Copied" : "Additional"; })).wrap);
+  } else if (b1 === 0xB3) {
+    // ST 2048-3 §7.1: byte 3 b6:b4 = 3-bit 10G link number (0=Link1..2=Link3); b3:b0 = sampling.
+    // byte 4 b7:b5 = Basic-Stream channel number (Ch1..Ch6).
+    f.appendChild(makeSelectFor('10G-SDI link number', [
+      { value: 0, label: "Link 1" },
+      { value: 1, label: "Link 2" },
+      { value: 2, label: "Link 3 (triple-link mode only)" }
+    ], (b3 >> 4) & 0x7, val => update(ch => { ch.linkAssignment = val; })).wrap);
+    f.appendChild(makeSelectFor('Basic-Stream channel', [0,1,2,3,4,5].map(i => ({ value: i, label: `Ch${i + 1}` })), (b4 >> 5) & 0x7, val => update(ch => { ch.chAssignment = val; })).wrap);
+  } else if (b1 === 0x86) {
+    // ST 349 SD-into-HD-SDI: byte 4 b6 = channel pair, byte 4 b3 = mapping mode.
+    f.appendChild(makeSelectFor('Channel assignment', [
+      { value: "Ch1 only",            label: "Ch1 active only (single-channel)" },
+      { value: "Ch1 + Ch2 active",    label: "Ch1 + Ch2 active (dual-channel)"  }
+    ], ((b4 >> 6) & 1) ? "Ch1 + Ch2 active" : "Ch1 only", val => update(ch => {
+      ch.channel = val;
+      ch.dualCh  = (val === "Ch1 + Ch2 active");
+    })).wrap);
+    f.appendChild(makeSelectFor('Mapping mode', [
+      { value: "Normal",     label: "Normal mapping (ST 349 §6.1)" },
+      { value: "Whole-line", label: "Whole-line mapping (ST 349 Annex A)" }
+    ], ((b4 >> 3) & 1) ? "Whole-line" : "Normal", val => update(ch => { ch.mappingMode = val; })).wrap);
+    f.appendChild(makeSelectFor('Total line count', [
+      { value: 483, label: "483/525-line (NTSC)" },
+      { value: 576, label: "576/625-line (PAL)"  }
+    ], ((b2 >> 4) & 1) ? 576 : 483, val => update(ch => { ch.lineCount = val; })).wrap);
+  } else if (b1 === 0x06) {
+    // Annex C historical ST 349 mapping
+    f.appendChild(makeSelectFor('Mapping mode', [
+      { value: "Normal",     label: "Normal mapping (ST 349 §6.1)" },
+      { value: "Whole-line", label: "Whole-line mapping (ST 349 Annex A)" }
+    ], ((b3 >> 6) & 1) ? "Whole-line" : "Normal", val => update(ch => { ch.mappingMode = val; })).wrap);
+  } else if (b1 === 0x02) {
+    // Annex C historical BT.1358 dual-link channel selector
+    f.appendChild(makeSelectFor('Channel number', [
+      { value: 0, label: "0h — Single-link" },
+      { value: 1, label: "1h — Dual-link Ch 1" },
+      { value: 2, label: "2h — Dual-link Ch 2" }
+    ], (b3 >> 6) & 0x3, val => update(ch => { ch.chPair = val; })).wrap);
   } else if (b1 === 0xA1) {
     // ST 2036-3: byte 3 b4 = 1-bit link (Single/first vs Link 2 of dual)
     f.appendChild(makeSelectFor('10G link', [

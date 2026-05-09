@@ -50,9 +50,12 @@ step, no bundler, no `node_modules`.
 
 | Byte 1 | Standard | Coverage |
 |--------|----------|----------|
+| **`0x01-0x06`** | **ST 352:2013 Annex C (deprecated)** | **Historical 2001-era VPIDs**: BT.601 / BT.1358 / ST 347 / ST 274 / ST 296 / ST 349. Each emits a deprecation warning and points to the modern `0x8x` replacement. |
 | `0x81 / 0x82` | ST 259 / ST 294 | SD-SDI 525i/625i / 525p/625p |
+| **`0x83`** | **ST 347 / ST 352:2013 Annex B.3** | **525/625-line on 540 Mb/s SDI** (interlaced 4:4:4:4 Y′CbCr/A or G′B′R′/A; progressive 4:2:2; 8/10-bit; 4:3 / 16:9 anamorphic) |
 | `0x84` | ST 292-1 | HD-SDI 720-line |
 | `0x85` | ST 292-1 / BT 1120 | HD-SDI 1080-line (split colorimetry) |
+| **`0x86`** | **ST 349 / ST 352:2013 Annex B.4** | **SD source mapped on 1.5 Gb/s HD-SDI** — Table B.4.2 combined sampling + scan + single/dual-channel field, plus mapping-mode bit (normal vs whole-line) and 483/576-line selector |
 | `0x87` | ST 372 / BT 1120 | Dual-link 1.5G HD 1080-line |
 | `0x88` | ST 425-1 | 3G-SDI Level A 720-line |
 | `0x89` | ST 425-1 | 3G-SDI Level A 1080-line |
@@ -70,6 +73,7 @@ step, no bundler, no `node_modules`.
 | **`0xB0`** | **ST 2047-2** | **VC-2 mezzanine compressed 1080p over 1.5G HD-SDI** |
 | **`0xB1`** | **ST 292-2** | **Stereoscopic 720/1080-line on dual 1.5G HD-SDI** (shares ST 425-2's bytes 2-4 layout) |
 | **`0xB2`** | **ST 2047-4 / RP 2047-3** | **VC-2 Level 65 compressed HD on 270 Mb/s SD-SDI** (1080i / 720p / 1440x1080i format-ID byte 4) |
+| **`0xB3`** | **ST 2048-3:2024 §7.1** | **DCI 4K (4096×2160) on dual/triple-link 10G-SDI** (FS/709 per ST 2048-1/2; Link 1-3 + Ch1-Ch6; 10/12-bit; sampling adds 7h = ST 2048-2 FS 1) |
 | `0xC0 / 0xC1` | ST 2081-10 (Tek) | 6G-SDI 4K / 1080p HFR |
 | `0xCE / 0xCF` | ST 2082-10 | 12G-SDI 4K / 1080p HFR |
 | `0xD0` | ST 2082-11 §4.7 | Dual-link 12G-SDI 4320-line (8K) |
@@ -79,6 +83,12 @@ step, no bundler, no `node_modules`.
 | **`0xD9 / 0xDA`** | **ST 2082-30 Mode 1** | **2× 6G-SDI muxed on 12G-SDI** (delegates bytes 2-4 to ST 2081-10) |
 | **`0xDB / 0xDC`** | **ST 2082-30 Mode 2** | **4× 3G-SDI muxed on 12G-SDI** (delegates bytes 2-4 to ST 425-1 Level A) |
 | **`0xDD / 0xDE`** | **ST 2082-30 Mode 3** | **8× HD-SDI muxed on 12G-SDI** (delegates bytes 2-4 to ST 292-1) |
+| **`0xDF`** | **ITU-R BT.2077-2 §4.10 Table 3-7 / 3-8** | **8K (4320-line) on single-link 24G-SDI** — full Table 3-7 byte 2/3/4 layout (transfer characteristics, aspect, hpix, colorimetry, sampling, link, Y′CbCr encoding, audio copy status, bit depth) |
+| **`0xE0`** | **ITU-R BT.2077-2 Table 3-7 / 3-8** | **4K (2160-line) on single-link 24G-SDI** |
+| **`0xE1`** | **ITU-R BT.2077-2 Table 3-7 / 3-8** | **8K on dual-link 24G-SDI** |
+| **`0xE2`** | **ITU-R BT.2077-2 Table 3-7 / 3-8** | **4K on dual-link 24G-SDI** |
+| **`0xE3`** | **ITU-R BT.2077-2 Table 3-7 / 3-8** | **8K on quad-link 24G-SDI** |
+| **`0xF1`** | **ITU-R BT.2077-2 Table 3-7 / 3-8** | **8K on octa-link 24G-SDI** |
 
 ### Registry-only fallback
 
@@ -91,22 +101,23 @@ mirror.
 **Codes that remain registry-only** because their byte-2-4 layout
 isn't (or can't be) bit-decoded in this build:
 
-* `0x01-0x06` — deprecated SD/HD legacy codes (superseded by their
-  `0x8x` modern equivalents). Most have no published byte-2-4 layout.
-* `0x83` (ST 347 — 540 Mb/s SDI), `0x86` (ST 349 — SD over 1.5G HD-SDI):
-  niche, source PDF not yet referenced in `docs/smpte/`.
-* `0xB3` (ST 2048-3 — DCI 4K / 4096×2160 over 10G), `0xB4 / 0xB5`
-  (RDD 22 — Film Transfer 2048×1556): no PDFs available yet.
+* `0xB4 / 0xB5` (RDD 22 — Film Transfer 2048×1556 on 1.5G / 3G):
+  SMPTE RDD 22 PDF not yet referenced in `docs/smpte/`.
 * `0xC2-0xC5`, `0xCB-0xCD` (ST 2081-11 / -12 / -30 — 6G-SDI multiplexes
   and dual/quad-link variants): no PDFs available yet.
+* `0xE4-0xF0`, `0xF2-0xF9` (ITU-R BT.2077-3 Part 4 — 26.73 Gb/s and
+  106.92 Gb/s class interfaces, plus a few unassigned ranges): all
+  Provisionally Assigned in the SMPTE-RA registry; BT.2077-3 hasn't
+  been published yet (BT.2077-2 covers Parts 1–3 only).
 * `0xF3` (ST 2081-11 Mode 2): no PDF available yet.
-* `0xDF-0xF9` — 24G-SDI codes per ITU-R BT.2077-2/-3 Parts 3/4, all
-  Provisionally Assigned. These are ITU-R recommendations rather than
-  SMPTE standards, so they're not in `docs/smpte/`; obtaining ITU-R
-  BT.2077 would unlock them.
 
 Drop the corresponding PDF into `docs/smpte/` (locally only — see that
 folder's README) and these can be wired up.
+
+> The deprecated **Annex C historical codes** (`0x01-0x06`) are now
+> bit-decoded with explicit deprecation warnings per ST 352:2013 §C —
+> the active **`0x8x` codes** (`0x81`-`0x86`) decode the modern
+> equivalents per ST 352 Annex B.
 
 [smpte-ra]: https://smpte-ra.org/registers/Payload-Identifier-Registry/
 
