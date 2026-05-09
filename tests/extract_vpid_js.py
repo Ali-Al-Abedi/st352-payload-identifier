@@ -132,7 +132,25 @@ def extract(src_path: str, out_path: str) -> None:
     ['04 CA 05 00', '[Deprecated] ST 352 Annex C.4 ST 274 1080 progressive 4:2:2p'],
     ['05 0A 05 00', '[Deprecated] ST 352 Annex C.5 ST 296 720p 50'],
     ['06 06 00 00', '[Deprecated] ST 352 Annex C.6 ST 349 SD into HD 525i'],
-    ['B4 00 00 00', 'ST RDD 22 (registry-only fallback for 0xB4 — proves fallback still works)']
+    ['B4 C3 42 01', 'RDD 22 Film 2K dual-link 1.5G — 24p 4:2:2 YCbCr Ch1'],
+    ['B4 C5 42 41', 'RDD 22 Film 2K dual-link 1.5G — 25p 4:2:2 YCbCr Ch2'],
+    ['B5 C2 47 01', 'RDD 22 Film 2K 3G — 23.976p 4:4:4 Rfs/Gfs/Bfs FS-Gamut Ch1'],
+    ['C0 CA E0 01', 'ST 2081-10 Mode 1 — 4K p59.94 SDR Rec.2020 4:2:2 single-link'],
+    ['C1 CA 80 01', 'ST 2081-10 Mode 2/3 — 1080p59.94 SDR Rec.709 4:2:2 single-link'],
+    ['C2 CA E0 21', 'ST 2081-11 Mode 1 — 4K dual-link 6G p59.94 Link 2 4:2:2'],
+    ['C2 EA E0 23', 'ST 2081-11 Mode 1 — 4K dual-link 6G p59.94 PQ Link 2 12-bit FR'],
+    ['C4 CA E0 41', 'ST 2081-12 Mode 1 — 8K quad-link 6G p59.94 Link 3 4:2:2'],
+    ['C5 CA E0 21', 'ST 2081-12 Mode 2 — 4K quad-link 6G p59.94 4:2:2 Link 2'],
+    ['C5 CA E2 22', 'ST 2081-12 Mode 2 — 4K quad-link 6G p59.94 4:4:4 RGB Link 2 12-bit'],
+    ['F3 CD E0 21', 'ST 2081-11 Mode 2 — 1080-line HFR 100Hz dual-link 6G Link 2'],
+    ['C3 CA 80 01', 'ST 2081-30 §4 — 2× 3G-A 1080p59.94 SDR Rec.709 muxed on 6G'],
+    ['CB CA 80 01', 'ST 2081-30 §4 — 2× 3G-A 720p59.94 SDR Rec.709 muxed on 6G'],
+    ['CC 06 20 01', 'ST 2081-30 §5 — 4× HD-SDI 1080i29.97 muxed on 6G'],
+    ['CD 0A 00 01', 'ST 2081-30 §5 — 4× HD-SDI 720p59.94 muxed on 6G'],
+    ['F4 CA 20 0B', 'BT.2077-3 Octa-link 1.5G class — 4K p59.94 SDR Rec.709 Ch1 12-bit FR'],
+    ['F5 CA 20 09', 'BT.2077-3 16-link 1.5G on 26.73G — 8K p59.94 SDR FP=7680x4320 narrow 10-bit'],
+    ['F7 CA 20 09', 'BT.2077-3 32-link 1.5G on dual 26.73G — Link 1, 8K, FP=7680x4320 narrow 10-bit'],
+    ['F9 CA 20 09', 'BT.2077-3 Quad-link 1.5G class — Ch1 4K narrow 10-bit']
   ];
   console.log('\n--- Smoke decode samples ---');
   for (const [hex, label] of cases) {
@@ -157,20 +175,27 @@ def extract(src_path: str, out_path: str) -> None:
 
   // ---- Batch decoder smoke test ----
   // Verifies: line splitting, comment stripping, blank-line skipping,
-  // valid + registry + invalid all coexist in one batch.
+  // valid + registry + invalid all coexist in one batch. As of this build
+  // every code in the SMPTE Byte 1 registry is fully bit-decoded, so the
+  // "registry-only" branch is exercised via an UNREGISTERED byte 1 (0x10),
+  // which falls through to the unknown-code path.
   if (typeof batchDecodeAll === 'function') {
     const batchInput = [
       '89 CA 80 01    # 1080p59.94 SDR Rec.709',
       '85 06 20 01    # 1080i29.97',
       '',
       '# This is a comment-only line',
-      'A1 CA 00 01',
-      'B0 0B 80 01',
-      '90 CA 20 01',
-      'A0 C7 20 E1',
+      'A1 CA 00 01    # ST 2036-3 UHDTV1 4K p59.94',
+      'B0 0B 80 01    # ST 2047-2 VC-2 1080p60',
+      '90 CA 20 01    # ST 435-1 quad-link 1080p59.94',
+      'A0 C7 20 E1    # ST 435-1 octa-link 2160p30',
       '86 06 00 01    # ST 349 SD into HD-SDI (now bit-decoded)',
-      'B4 00 00 00    # ST RDD 22 (still registry-only)',
-      'FF FF FF FF    # invalid'
+      'B4 C3 42 01    # ST RDD 22 Film 2K dual-link 1.5G (now bit-decoded)',
+      'C2 CA E0 21    # ST 2081-11 dual-link 6G 4K p59.94 Link 2 (now bit-decoded)',
+      'C5 CA E2 22    # ST 2081-12 quad-link 6G 4K Mode 2 12-bit (now bit-decoded)',
+      'F4 CA 20 0B    # BT.2077-3 octa-link 1.5G (now bit-decoded)',
+      'FF FF FF FF    # invalid (not registered)',
+      'FE 00 00 00    # invalid (not registered)'
     ].join('\n');
     const results = batchDecodeAll(batchInput);
     const valid    = results.filter(r => r.decoded && r.decoded.valid).length;
@@ -178,19 +203,19 @@ def extract(src_path: str, out_path: str) -> None:
     const invalid  = results.filter(r => !r.bytes || (r.decoded && !r.decoded.valid && !r.decoded.registered)).length;
     console.log(`\n--- Batch decode smoke test ---`);
     console.log(`  total=${results.length}, valid=${valid}, registry=${registry}, invalid=${invalid}`);
-    if (results.length !== 9) { console.error('FAIL: expected 9 entries (after stripping blanks/comments), got ' + results.length); process.exit(2); }
-    if (valid    !== 7) { console.error('FAIL: expected 7 valid entries (3G-A, HD, A1, B0, ST435 quad, ST435 octa, ST 349), got ' + valid); process.exit(2); }
-    if (registry !== 1) { console.error('FAIL: expected 1 registry-only entry (B4 RDD22), got ' + registry); process.exit(2); }
-    if (invalid  !== 1) { console.error('FAIL: expected 1 invalid entry, got ' + invalid); process.exit(2); }
+    if (results.length !== 13) { console.error('FAIL: expected 13 entries (after stripping blanks/comments), got ' + results.length); process.exit(2); }
+    if (valid    !== 11) { console.error('FAIL: expected 11 valid entries, got ' + valid); process.exit(2); }
+    if (registry !== 0) { console.error('FAIL: expected 0 registry-only entries (everything is bit-decoded now), got ' + registry); process.exit(2); }
+    if (invalid  !== 2) { console.error('FAIL: expected 2 invalid (unregistered) entries, got ' + invalid); process.exit(2); }
     console.log('  OK');
 
     // CSV / JSON export shape
     const csv = batchExportRows(results, 'csv');
     if (!csv.startsWith('VPID,Friendly,')) { console.error('FAIL: batch CSV header mismatch'); process.exit(2); }
     const lines = csv.trim().split(/\n/);
-    if (lines.length !== 10) { console.error('FAIL: expected 10 CSV rows (1 header + 9 data), got ' + lines.length); process.exit(2); }
+    if (lines.length !== 14) { console.error('FAIL: expected 14 CSV rows (1 header + 13 data), got ' + lines.length); process.exit(2); }
     const json = JSON.parse(batchExportRows(results, 'json'));
-    if (!Array.isArray(json) || json.length !== 9) { console.error('FAIL: batch JSON should be 9-element array'); process.exit(2); }
+    if (!Array.isArray(json) || json.length !== 13) { console.error('FAIL: batch JSON should be 13-element array'); process.exit(2); }
     console.log(`  CSV/JSON export shape OK (${lines.length} CSV rows, ${json.length} JSON entries)`);
   } else {
     console.error('FAIL: batchDecodeAll is not exported to global scope');

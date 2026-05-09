@@ -74,7 +74,13 @@ step, no bundler, no `node_modules`.
 | **`0xB1`** | **ST 292-2** | **Stereoscopic 720/1080-line on dual 1.5G HD-SDI** (shares ST 425-2's bytes 2-4 layout) |
 | **`0xB2`** | **ST 2047-4 / RP 2047-3** | **VC-2 Level 65 compressed HD on 270 Mb/s SD-SDI** (1080i / 720p / 1440x1080i format-ID byte 4) |
 | **`0xB3`** | **ST 2048-3:2024 §7.1** | **DCI 4K (4096×2160) on dual/triple-link 10G-SDI** (FS/709 per ST 2048-1/2; Link 1-3 + Ch1-Ch6; 10/12-bit; sampling adds 7h = ST 2048-2 FS 1) |
-| `0xC0 / 0xC1` | ST 2081-10 (Tek) | 6G-SDI 4K / 1080p HFR |
+| **`0xB4 / 0xB5`** | **SMPTE RDD 22:2012** | **Film transfer 2048×1556 (DCI 2K) on dual-link 1.5G or single-link 3G SDI** — PsF carriage (b7=0/b6=1), rate Tables 25/26 (23.98 / 24 / 25), Y′CbCr 4:2:2 / R′G′B′ 4:4:4 / Rfs/Gfs/Bfs FS-Gamut, Ch1/Ch2 (b4 b6), 10-bit (b1:b0=1) |
+| **`0xC0 / 0xC1`** | **ST 2081-10:2018 §4 / §5 / §6** | **6G-SDI single-link 4K (Mode 1) / 1080-line / HFR (Mode 2/3)** — full Table 3/7/15 byte 2/3/4 layout (transfer characteristics, aspect, hpix DCI/UHDTV, colorimetry, sampling Table 3, single-link, Y′CbCr/HDR ICTCP, audio copy status, 10-bit) |
+| **`0xC2`** | **ST 2081-11:2019 §4 (Mode 1)** | **6G-SDI dual-link 4K** — link assignment Link 1/2, all transfer characteristics, 10/12-bit (incl. Full Range) |
+| **`0xC3`** | **ST 2081-30:2017 §4** | **2× 3G-A 1080-line muxed on 6G** (delegates byte 2-4 to ST 425-1 Level A) |
+| **`0xC4 / 0xC5`** | **ST 2081-12:2019 §4 / §5 / §6** | **6G-SDI quad-link 8K (Mode 1) / 4K (Mode 2/3)** — link 1-4, all colorimetries / samplings / transfer characteristics, 10/12-bit (Mode 2/3) |
+| **`0xCB`** | **ST 2081-30:2017 §4** | **2× 3G-A 720-line muxed on 6G** (delegates byte 2-4 to ST 425-1 Level A) |
+| **`0xCC / 0xCD`** | **ST 2081-30:2017 §5** | **4× HD-SDI 1080 / 720-line muxed on 6G** (delegates byte 2-4 to ST 292-1) |
 | `0xCE / 0xCF` | ST 2082-10 | 12G-SDI 4K / 1080p HFR |
 | `0xD0` | ST 2082-11 §4.7 | Dual-link 12G-SDI 4320-line (8K) |
 | **`0xD1`** | **ST 2082-11 §5.8 / §6.9** | **Dual-link 12G-SDI 2160-line (4K extended)** — Mode 2 (4:4:4(:4) 10/12-bit) and Mode 3 (4:2:2/4:2:0 10-bit HFR). Mode is implied by sampling + bit-depth combination; reserved-bit warnings per §5.8.4 / §6.9.4 fire on out-of-spec values. |
@@ -89,6 +95,12 @@ step, no bundler, no `node_modules`.
 | **`0xE2`** | **ITU-R BT.2077-2 Table 3-7 / 3-8** | **4K on dual-link 24G-SDI** |
 | **`0xE3`** | **ITU-R BT.2077-2 Table 3-7 / 3-8** | **8K on quad-link 24G-SDI** |
 | **`0xF1`** | **ITU-R BT.2077-2 Table 3-7 / 3-8** | **8K on octa-link 24G-SDI** |
+| **`0xF3`** | **ST 2081-11:2019 §5 (Mode 2)** | **6G-SDI dual-link 1080-line HFR** — link 1/2, all colorimetries / samplings / transfer characteristics, 10/12-bit (incl. Full Range) |
+| **`0xF4 / 0xF9`** | **ITU-R BT.2077-3 §2.4 / §2.3 (Tables 4-19 / 4-2)** | **Octa-link / quad-link 1.5G basic-stream class** — Ch1-Ch8 (octa) or Ch1-Ch4 (quad), Y′CbCr / ICTCP, full 3840×2160 sub-image, 10-bit / 10-bit FR / 12-bit / 12-bit FR |
+| **`0xF5`** | **ITU-R BT.2077-3 §2.5 Table 4-20** | **16-link 1.5G basic-stream class on Single-Link 26.73G** — full pixel array 3840×2160 or 7680×4320 selectable, Y′CbCr/ICTCP, all bit depths |
+| **`0xF6`** | **ITU-R BT.2077-3 §2.7 Table 4-22** | **64-link 1.5G basic-stream class on Single-Link 106.92G** — 7680×4320 only, Y′CbCr/ICTCP, all bit depths |
+| **`0xF7`** | **ITU-R BT.2077-3 §2.6 Table 4-21** | **32-link 1.5G basic-stream class on Dual-Link 26.73G** — 26.73G Link 1/2 selector, full pixel array selectable, Y′CbCr/ICTCP, all bit depths |
+| **`0xF8`** | **ITU-R BT.2077-3 §2.8 Table 4-23** | **128-link 1.5G basic-stream class on Dual-Link 106.92G** — 106.92G Link 1/2 selector, 7680×4320 only, Y′CbCr/ICTCP, all bit depths |
 
 ### Registry-only fallback
 
@@ -98,23 +110,13 @@ displayed with its registered `standard`, `description`, and `status` —
 deprecated or in-force — by routing through the embedded registry
 mirror.
 
-**Codes that remain registry-only** because their byte-2-4 layout
-isn't (or can't be) bit-decoded in this build:
+As of this build **every code currently registered in the SMPTE-RA
+Payload Identifier Registry has a bit-level decoder** in `vpid.html`.
+The registry-only path is exercised by truly *unregistered* Byte 1
+values (e.g. `0x10`, `0xFE`, `0xFF`) which fall through to the
+"unknown code" branch with a helpful error.
 
-* `0xB4 / 0xB5` (RDD 22 — Film Transfer 2048×1556 on 1.5G / 3G):
-  SMPTE RDD 22 PDF not yet referenced in `docs/smpte/`.
-* `0xC2-0xC5`, `0xCB-0xCD` (ST 2081-11 / -12 / -30 — 6G-SDI multiplexes
-  and dual/quad-link variants): no PDFs available yet.
-* `0xE4-0xF0`, `0xF2-0xF9` (ITU-R BT.2077-3 Part 4 — 26.73 Gb/s and
-  106.92 Gb/s class interfaces, plus a few unassigned ranges): all
-  Provisionally Assigned in the SMPTE-RA registry; BT.2077-3 hasn't
-  been published yet (BT.2077-2 covers Parts 1–3 only).
-* `0xF3` (ST 2081-11 Mode 2): no PDF available yet.
-
-Drop the corresponding PDF into `docs/smpte/` (locally only — see that
-folder's README) and these can be wired up.
-
-> The deprecated **Annex C historical codes** (`0x01-0x06`) are now
+> The deprecated **Annex C historical codes** (`0x01-0x06`) are
 > bit-decoded with explicit deprecation warnings per ST 352:2013 §C —
 > the active **`0x8x` codes** (`0x81`-`0x86`) decode the modern
 > equivalents per ST 352 Annex B.

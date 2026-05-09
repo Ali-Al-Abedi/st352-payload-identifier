@@ -51,16 +51,21 @@ need to verify a particular code's behaviour.
 | `st2036-4-2019.pdf` | ST 2036-4 | `0xA5 / 0xA6` UHDTV1/2 multi-link 10G 12-bit |
 | `st2048-1-2024.pdf`, `st2048-2-2024.pdf` | ST 2048-1 / -2 | DCI 4K (4096×2160) FS/709 image format & color VANC base |
 | `st2048-3-2024.pdf` | ST 2048-3 | `0xB3` DCI 4K (4096×2160) on dual/triple-link 10G-SDI |
+| `st2081-10-2018.pdf` | ST 2081-10 | `0xC0 / 0xC1` 6G-SDI single-link 4K (Mode 1) and 1080-line / HFR (Mode 2/3); §4.3 Table 3 / §5.3 Table 7 / §6.8 Table 15 |
+| `st2081-11-2019.pdf` | ST 2081-11 | `0xC2` Dual-link 6G-SDI 4K (Mode 1) §4.3 Table 3; `0xF3` Dual-link 6G-SDI 1080-line HFR (Mode 2) §5.8 Table 16 |
+| `st2081-12-2019.pdf` | ST 2081-12 | `0xC4` Quad-link 6G-SDI 8K (Mode 1) §4.7 Table 3; `0xC5` Quad-link 6G-SDI 4K (Mode 2 / Mode 3) §5.8 Table 9 / §6.9 Table 16 |
+| `st2081-30-2017.pdf` | ST 2081-30 | `0xC3 / 0xCB` 2× 3G-SDI Level A muxed on 6G §4 Tables 1/2; `0xCC / 0xCD` 4× HD-SDI muxed on 6G §5 Tables 2/3 |
 | `st2082-10-2018.pdf` | ST 2082-10 | `0xCE / 0xCF` 12G-SDI 4K / 1080p HFR |
 | `st2082-11-2019.pdf` | ST 2082-11 | `0xD0` Dual-link 12G-SDI 4320-line (8K) §4.7; `0xD1` Dual-link 12G-SDI 2160-line (4K extended) Mode 2/3 §5.8 / §6.9 |
 | `st2082-12-2019.pdf` | ST 2082-12 | `0xD2` Quad-link 12G-SDI 4320-line (8K) §4.6; `0xD3` Quad-link 12G-SDI 2160-line (4K extended) Mode 2 §5.9 |
 | `st2082-30-2017.pdf` | ST 2082-30 | `0xD9 - 0xDE` Mode 1/2/3 muxes on 12G-SDI |
 
-### 24G-SDI (ITU-R recommendations)
+### 24G-SDI / 26.73G / 106.92G (ITU-R recommendations)
 
 | File | Recommendation | Decoder it unlocks |
 |------|----------------|-------------------|
 | `R-REC-BT.2077-2-201706-S!!PDF-E.pdf` | ITU-R BT.2077-2 Part 3 | `0xDF / 0xE0 / 0xE1 / 0xE2 / 0xE3 / 0xF1` — single/dual/quad/octa-link 24G-SDI for 2160-line and 4320-line image formats; full Table 3-7 byte 2/3/4 layout (transfer characteristics, aspect, hpix, colorimetry, sampling, link, Y′CbCr encoding, audio copy, bit depth) and Table 3-8 byte-1 hex assignments. |
+| `R-REC-BT.2077-3-202106-I!!PDF-E.pdf` | ITU-R BT.2077-3 Part 4 | `0xF4 / 0xF9` octa-link / quad-link 1.5G basic-stream class (Tables 4-19 / 4-2); `0xF5` 16-link 1.5G on Single-Link 26.73G (Table 4-20); `0xF6` 64-link 1.5G on Single-Link 106.92G (Table 4-22); `0xF7` 32-link 1.5G on Dual-Link 26.73G (Table 4-21); `0xF8` 128-link 1.5G on Dual-Link 106.92G (Table 4-23). |
 
 ### VC-2 mezzanine compression
 
@@ -78,6 +83,12 @@ need to verify a particular code's behaviour.
 | `st2110-21-2022.pdf` | ST 2110-21 | Traffic shaping / timing — referenced by some SDP fields |
 | `rp2110-23-2019.pdf`, `rp2110-24-2023.pdf` | RP 2110-23 / -24 | Single-source IP / SMPTE 2022-7 dual-stream RP |
 
+### Film / digital cinema mappings
+
+| File | Standard | Decoder it unlocks |
+|------|----------|-------------------|
+| `rdd22-2012.pdf` | SMPTE RDD 22 | `0xB4 / 0xB5` Film transfer 2048×1556 image container (DCI 2K) on dual-link 1.5G or single-link 3G SDI — Tables 25/26 byte 2/3/4 layout (PsF carriage, frame rate, sampling structure, Y′CbCr 4:2:2 / R′G′B′ / Rfs/Gfs/Bfs FS-Gamut, Ch1/Ch2, 10-bit). |
+
 ### Historical / deprecated codes (informative only)
 
 | File | Standard | Decoder it unlocks |
@@ -88,8 +99,8 @@ need to verify a particular code's behaviour.
 
 | File | Source | Why we need it |
 |------|--------|---------------|
-| `Creating-4K-UHD-Content-Poster_11W-60274-2-2.pdf` | Tektronix (publicly available) | Used as a non-normative cross-check for 6G-SDI / ST 2081-10 byte assignments; the official ST 2081-10 PDF was not available at decoder-implementation time. |
-| `liaison-2019-10-25-itu-t-sg-16-avtcore-ls-on-the-second-edition-of-series-h-supplement-19-usage-of-video-signal-type-code-points-to-arib-et-al-attachment-1.pdf` | ITU-T SG 16 liaison | Cross-reference for video signal type code-points (transfer characteristics, colorimetry) used inside the BT.2077-2 24G-SDI byte 2/3 fields. |
+| `Creating-4K-UHD-Content-Poster_11W-60274-2-2.pdf` | Tektronix (publicly available) | Originally used as a non-normative cross-check for 6G-SDI / ST 2081-10 byte assignments before the authoritative SMPTE PDF was added. The current `0xC0 / 0xC1` decoder is now derived from `st2081-10-2018.pdf`. |
+| `liaison-2019-10-25-itu-t-sg-16-avtcore-ls-on-the-second-edition-of-series-h-supplement-19-usage-of-video-signal-type-code-points-to-arib-et-al-attachment-1.pdf` | ITU-T SG 16 liaison | Cross-reference for video signal type code-points (transfer characteristics, colorimetry) used inside the BT.2077-2 / BT.2077-3 byte 2/3 fields. |
 
 ## What the decoders do without these PDFs
 
