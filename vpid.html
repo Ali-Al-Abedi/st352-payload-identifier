@@ -646,6 +646,84 @@
   }
   .app-tabs a:hover { color: var(--accent); }
   .app-tabs a.on { color: #001018; background: var(--accent); }
+
+  /* ---- SDP generator (inlined for GitHub Pages; scoped to #tool-sdp) ---- */
+#tool-sdp .tabs { display: flex; gap: 6px; margin-bottom: 18px; border-bottom: 1px solid var(--border); }
+#tool-sdp .tabs button {
+    background: none; border: none; border-bottom: 2px solid transparent;
+    color: var(--text-dim); padding: 10px 16px; cursor: pointer; font-size: 13px;
+    font-weight: 600; letter-spacing: 0.04em; font-family: inherit;
+  }
+#tool-sdp .tabs button.on { color: var(--accent); border-bottom-color: var(--accent); }
+
+#tool-sdp .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+  @media (max-width: 1024px) { .layout { grid-template-columns: 1fr; } }
+
+#tool-sdp .card {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 20px; margin-bottom: 16px;
+  }
+#tool-sdp .card h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--text-faint); font-weight: 700; margin-bottom: 14px;
+  }
+
+#tool-sdp .field { margin-bottom: 12px; }
+#tool-sdp .field label {
+    display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-faint); font-weight: 600; margin-bottom: 5px;
+  }
+#tool-sdp input, #tool-sdp select, #tool-sdp textarea {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); padding: 8px 10px; font-size: 13px; outline: none;
+  }
+#tool-sdp input:focus, #tool-sdp select:focus, #tool-sdp textarea:focus { border-color: var(--accent-dim); }
+#tool-sdp textarea { min-height: 140px; resize: vertical; }
+
+#tool-sdp .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+#tool-sdp .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+#tool-sdp .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+#tool-sdp .seg button {
+    background: var(--bg); border: none; color: var(--text-dim); padding: 7px 14px;
+    cursor: pointer; font-size: 12px; font-weight: 600; font-family: inherit;
+  }
+#tool-sdp .seg button.on { background: var(--accent-dim); color: #001018; }
+
+#tool-sdp .toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+#tool-sdp .toggle input { width: auto; }
+
+#tool-sdp .btn {
+    background: var(--accent-dim); border: 1px solid var(--accent-dim); color: #001018;
+    border-radius: 6px; padding: 9px 16px; cursor: pointer; font-size: 12px;
+    font-weight: 700; letter-spacing: 0.04em; font-family: inherit;
+  }
+#tool-sdp .btn.ghost { background: none; color: var(--text-dim); border-color: var(--border); }
+#tool-sdp .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+#tool-sdp .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+
+#tool-sdp pre.preview {
+    background: #060a11; border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; font-size: 12.5px; line-height: 1.55; color: var(--text);
+    white-space: pre; overflow-x: auto; min-height: 320px;
+  }
+#tool-sdp .errors { list-style: none; margin-top: 10px; }
+#tool-sdp .errors li { color: var(--err); font-size: 12px; padding: 2px 0; }
+#tool-sdp .status-ok { color: var(--ok); font-size: 12px; font-weight: 600; }
+
+#tool-sdp table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
+#tool-sdp th, #tool-sdp td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+#tool-sdp th { color: var(--text-faint); text-transform: uppercase; font-size: 10px; letter-spacing: 0.08em; }
+#tool-sdp .badge-ok { color: var(--ok); font-weight: 700; }
+#tool-sdp .badge-err { color: var(--err); font-weight: 700; }
+#tool-sdp .hint { color: var(--text-faint); font-size: 11px; margin-top: 4px; }
+#tool-sdp .hidden { display: none !important; }
+  #tool-sdp { display: none; }
+  body.show-sdp #tool-vpid { display: none; }
+  body.show-sdp #tool-sdp { display: block; }
+  body.show-sdp header .title .subtitle-vpid { display: none; }
+  body.show-sdp header .title .subtitle-sdp { display: inline; }
+  header .title .subtitle-sdp { display: none; }
 </style>
 </head>
 <body>
@@ -653,11 +731,11 @@
 <header>
   <div class="title">
     <h1>VPID <span class="accent">Calculator</span></h1>
-    <span class="subtitle">SMPTE ST 352 Payload Identifier Decoder &amp; Encoder</span>
+    <span class="subtitle subtitle-vpid">SMPTE ST 352 Payload Identifier Decoder &amp; Encoder</span><span class="subtitle subtitle-sdp">Magnum-import ST 2110-20 / -30 / -40 SDP files</span>
   </div>
   <nav class="app-tabs" aria-label="Tools">
-    <a class="on" href="vpid.html" aria-current="page">VPID</a>
-    <a href="sdp.html">SDP</a>
+    <a class="on" href="#vpid" data-tool="vpid" aria-current="page">VPID</a>
+    <a href="#sdp" data-tool="sdp">SDP</a>
   </nav>
   <div class="meta">
     <a href="#references">References</a>
@@ -667,6 +745,8 @@
 </header>
 
 <main>
+
+<div id="tool-vpid">
 
   <div class="hex-input-wrap">
     <div class="hex-input-body">
@@ -880,6 +960,277 @@ Example:
       Codes registered in the SMPTE-RA Payload Identifier Registry but <em>without</em> a published bit-level layout are surfaced through the registry-only fallback path with their full SMPTE-RA standard, description, and status — never with synthesised characteristics. <code>0xC0</code>/<code>0xC1</code> bit-level fields originate from the Tektronix "Creating 4K/UHD Content" poster (the original SMPTE ST 2081-10:2018 PDF was unavailable when those layouts were authored); each affected field is tagged <code>ST 2081-10 (Tek)</code> in the byte breakdown to make the provenance explicit. Bytes 2-4 of <code>0xD9</code>-<code>0xDE</code> (ST 2082-30 multiplex) are intentionally delegated to the underlying single-stream standard (ST 2081-10 / ST 425-1 Level A / ST 292-1) — the calculator surfaces the multiplex framing but not per-sub-stream bit decode. <strong>Glass-to-glass audit:</strong> 22 P0, 88 P1, 30 P2, 1 P3 findings — all fixed and verified (see <code>audit/SUMMARY.md</code>). <strong>Found a bug?</strong> Open an issue at <a href="https://github.com/Ali-Al-Abedi/vpid_calculator/issues" target="_blank" rel="noopener">github.com/Ali-Al-Abedi/vpid_calculator/issues</a>.
     </p>
   </footer>
+
+</div><!-- /tool-vpid -->
+
+<div id="tool-sdp">
+
+  <div class="tabs">
+    <button id="tab-single-btn" class="on" data-tab="single">Single</button>
+    <button id="tab-bulk-btn" data-tab="bulk">Bulk (CSV)</button>
+  </div>
+
+  <!-- ================= SINGLE ================= -->
+  <section id="tab-single">
+    <div class="layout">
+      <div>
+        <div class="card">
+          <h2>Essence</h2>
+          <div class="field">
+            <label>Media type</label>
+            <div class="seg" id="typeSeg">
+              <button data-type="video" class="on">Video (2110-20)</button>
+              <button data-type="audio">Audio (2110-30)</button>
+              <button data-type="anc">ANC (2110-40)</button>
+            </div>
+          </div>
+          <div class="field">
+            <label class="toggle"><input type="checkbox" id="redundant" checked> ST 2022-7 redundant (dual leg)</label>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Session</h2>
+          <div class="field"><label>Session name (s=)</label><input id="sessionName"></div>
+          <div class="row">
+            <div class="field"><label>Origin user (o=)</label><input id="originUser"></div>
+            <div class="field"><label>Origin IP</label><input id="originIp"></div>
+          </div>
+          <div class="row">
+            <div class="field"><label>Session id</label><input id="sessId"></div>
+            <div class="field"><label>Session version</label><input id="sessVer"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Transport &amp; clock</h2>
+          <div class="row-3">
+            <div class="field"><label>Payload type</label><input id="payloadType" type="number" min="96" max="127"></div>
+            <div class="field"><label>Port</label><input id="port" type="number" min="1" max="65535"></div>
+            <div class="field"><label>c= suffix</label><input id="ttlLayers"></div>
+          </div>
+          <div class="row">
+            <div class="field"><label>PTP GMID</label><input id="gmid"></div>
+            <div class="field"><label>PTP domain</label><input id="ptpDomain" type="number" min="0" max="127"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Legs</h2>
+          <div class="row">
+            <div class="field"><label>Group label A / mid</label><input id="groupA"></div>
+            <div class="field"><label>Group label B / mid</label><input id="groupB"></div>
+          </div>
+          <div class="row">
+            <div class="field"><label>Primary multicast</label><input id="mcastA"></div>
+            <div class="field"><label>Primary source IP</label><input id="sourceA"></div>
+          </div>
+          <div class="row" id="legB">
+            <div class="field"><label>Secondary multicast</label><input id="mcastB"></div>
+            <div class="field"><label>Secondary source IP</label><input id="sourceB"></div>
+          </div>
+        </div>
+
+        <!-- Video params -->
+        <div class="card typeblock" data-for="video">
+          <h2>Video (ST 2110-20)</h2>
+          <div class="field">
+            <label>Resolution preset</label>
+            <select id="videoPreset">
+              <option value="1080p5994">1080p59.94</option>
+              <option value="720p5994">720p59.94</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div class="row-3">
+            <div class="field"><label>Width</label><input id="videoWidth" type="number"></div>
+            <div class="field"><label>Height</label><input id="videoHeight" type="number"></div>
+            <div class="field"><label>exactframerate</label><input id="videoRate"></div>
+          </div>
+          <div class="row-3">
+            <div class="field"><label>Sampling</label><input id="videoSampling"></div>
+            <div class="field"><label>Depth</label><input id="videoDepth" type="number"></div>
+            <div class="field"><label>TCS</label><input id="videoTcs"></div>
+          </div>
+          <div class="row-3">
+            <div class="field"><label>Colorimetry</label><input id="videoColorimetry"></div>
+            <div class="field"><label>PM</label><input id="videoPm"></div>
+            <div class="field"><label>TP</label><input id="videoTp"></div>
+          </div>
+          <div class="field"><label>SSN</label><input id="videoSsn"></div>
+        </div>
+
+        <!-- Audio params -->
+        <div class="card typeblock hidden" data-for="audio">
+          <h2>Audio (ST 2110-30)</h2>
+          <div class="row-3">
+            <div class="field"><label>Encoding</label>
+              <select id="audioEncoding"><option>L24</option><option>L16</option></select>
+            </div>
+            <div class="field"><label>Sample rate</label><input id="audioRate" type="number"></div>
+            <div class="field"><label>Channels</label><input id="audioChannels" type="number" min="1" max="64"></div>
+          </div>
+          <div class="row">
+            <div class="field"><label>Channel order</label><input id="audioChannelOrder"></div>
+            <div class="field"><label>ptime (ms)</label><input id="audioPtime"></div>
+          </div>
+        </div>
+
+        <!-- ANC params -->
+        <div class="card typeblock hidden" data-for="anc">
+          <h2>ANC (ST 2110-40)</h2>
+          <div class="field"><label>VPID_Code (optional)</label><input id="ancVpid" type="number"></div>
+          <div class="field">
+            <label>DID_SDID pairs (optional)</label>
+            <input id="ancDidSdid" placeholder="0x61/0x02|0x41/0x05">
+            <div class="hint">Pipe-separated DID/SDID pairs, 0x-prefixed. Provide VPID_Code and/or at least one pair.</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h2>Preview</h2>
+          <div id="status"></div>
+          <ul class="errors" id="errors"></ul>
+          <pre class="preview" id="preview"></pre>
+          <div class="btn-row">
+            <button class="btn" id="copyBtn">Copy</button>
+            <button class="btn ghost" id="downloadBtn">Download .sdp</button>
+            <span class="hint" id="fnameHint"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= BULK ================= -->
+  <section id="tab-bulk" class="hidden">
+    <div class="card">
+      <h2>Bulk generate from CSV</h2>
+      <div class="btn-row">
+        <button class="btn ghost" id="tmplBtn">Download CSV template</button>
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label>Paste CSV or upload a file</label>
+        <textarea id="csvText" placeholder="Native template (type,session_name,...) OR a device encap export (Device,Media Port,Stream Type,Destination IP,...)"></textarea>
+        <div class="hint">Two formats are auto-detected: (1) the native template — one row = one essence; (2) a device encap stream-table export — Video/Audio/ANC rows are mapped to ST 2110-20/-30/-40, compressed/SDI-encap rows are skipped, and ENET-1/ENET-2 legs are paired into ST 2022-7.</div>
+      </div>
+
+      <details class="card" style="margin:0 0 12px" open>
+        <summary style="cursor:pointer;color:var(--text-dim);font-size:12px;font-weight:600">Export parameters (applied to every generated file)</summary>
+        <div style="margin-top:12px">
+          <div class="hint" style="margin-bottom:10px">These fields write into the SDP text of every exported file. Multicast addresses still come from the CSV; blank optional fields keep auto/CSV values. Filenames are <code>{primary_multicast}_{port}.txt</code>.</div>
+
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);font-weight:700;margin:4px 0 6px">o= origin</div>
+          <div class="row">
+            <div class="field"><label>Origin user</label><input id="impOriginUser" value="Evertz"></div>
+            <div class="field"><label>Origin IP</label><input id="impOriginIp" value="10.198.24.151"></div>
+          </div>
+          <div class="row">
+            <div class="field"><label>Session id (blank = auto)</label><input id="impSessId" placeholder="auto"></div>
+            <div class="field"><label>Session version (blank = auto)</label><input id="impSessVer" placeholder="auto"></div>
+          </div>
+
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);font-weight:700;margin:10px 0 6px">s= session name &amp; a=group:DUP</div>
+          <div class="field">
+            <label>Session name (s=)</label>
+            <input id="impSessionName" placeholder="blank = Media Port / CSV session_name; tokens: {device} {mediaPort} {type} {index}">
+          </div>
+          <div class="row">
+            <div class="field"><label>DUP label A</label><input id="impGroupA" placeholder="1P"></div>
+            <div class="field"><label>DUP label B</label><input id="impGroupB" placeholder="1S"></div>
+          </div>
+
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);font-weight:700;margin:10px 0 6px">Transport</div>
+          <div class="row-3">
+            <div class="field"><label>Force port (blank = CSV)</label><input id="impPort" placeholder="1234"></div>
+            <div class="field"><label>c= suffix</label><input id="impTtlLayers" value="64/1"></div>
+            <div class="field"><label class="toggle" style="margin-top:24px"><input type="checkbox" id="impPairLegs" checked> Pair ENET legs (ST 2022-7)</label></div>
+          </div>
+          <div class="row-3">
+            <div class="field"><label>PT video</label><input id="impPtVideo" type="number" value="96" min="96" max="127"></div>
+            <div class="field"><label>PT audio</label><input id="impPtAudio" type="number" value="97" min="96" max="127"></div>
+            <div class="field"><label>PT ANC</label><input id="impPtAnc" type="number" value="100" min="96" max="127"></div>
+          </div>
+
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);font-weight:700;margin:10px 0 6px">a=ts-refclk (PTP)</div>
+          <div class="row">
+            <div class="field"><label>GMID</label><input id="impGmid" value="00-02-C5-FF-FE-2E-43-75"></div>
+            <div class="field"><label>Domain</label><input id="impPtpDomain" type="number" value="100"></div>
+          </div>
+
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);font-weight:700;margin:10px 0 6px">a=source-filter</div>
+          <div class="row">
+            <div class="field"><label>Source IP — primary (global)</label><input id="impSrcPrimary" placeholder="e.g. 10.198.32.165"></div>
+            <div class="field"><label>Source IP — secondary (global)</label><input id="impSrcSecondary" placeholder="e.g. 10.198.64.165"></div>
+          </div>
+          <div class="field">
+            <label>Per-device source map (CSV, optional — overrides the globals)</label>
+            <textarea id="impSrcMap" style="min-height:80px" placeholder="key,source_primary,source_secondary&#10;BE-106_IPG,10.198.32.165,10.198.64.165"></textarea>
+            <div class="btn-row"><input type="file" id="impSrcMapFile" accept=".csv,text/csv" style="width:auto"></div>
+            <div class="hint">Keyed by Device. Map wins over global; blank = omit source-filter (ASM).</div>
+          </div>
+
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);font-weight:700;margin:10px 0 6px">a=fmtp video (ST 2110-20)</div>
+          <div class="row-3">
+            <div class="field"><label>Preset</label>
+              <select id="impVideoPreset"><option value="1080p5994">1080p59.94</option><option value="720p5994">720p59.94</option><option value="custom">Custom</option></select>
+            </div>
+            <div class="field"><label>Dialect</label>
+              <select id="impVideoDialect"><option value="evertz">Evertz (BPM/TPN order)</option><option value="magnum">Magnum-authored</option></select>
+            </div>
+            <div class="field"><label>Sampling</label><input id="impVideoSampling" value="YCbCr-4:2:2"></div>
+          </div>
+          <div class="row-3">
+            <div class="field"><label>Width</label><input id="impVideoWidth" type="number" value="1920"></div>
+            <div class="field"><label>Height</label><input id="impVideoHeight" type="number" value="1080"></div>
+            <div class="field"><label>exactframerate</label><input id="impVideoRate" value="60000/1001"></div>
+          </div>
+          <div class="row-3">
+            <div class="field"><label>Depth</label><input id="impVideoDepth" type="number" value="10"></div>
+            <div class="field"><label>TCS</label><input id="impVideoTcs" value="SDR"></div>
+            <div class="field"><label>Colorimetry</label><input id="impVideoColorimetry" value="BT709"></div>
+          </div>
+          <div class="row-3">
+            <div class="field"><label>PM</label>
+              <select id="impVideoPm"><option value="2110BPM">2110BPM</option><option value="2110GPM">2110GPM</option></select>
+            </div>
+            <div class="field"><label>TP</label>
+              <select id="impVideoTp"><option value="2110TPN">2110TPN</option><option value="2110TPW">2110TPW</option></select>
+            </div>
+            <div class="field"><label>SSN</label><input id="impVideoSsn" value="ST2110-20:2017"></div>
+          </div>
+
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);font-weight:700;margin:10px 0 6px">a=fmtp / rtpmap audio (ST 2110-30)</div>
+          <div class="row-3">
+            <div class="field"><label>Encoding</label>
+              <select id="impAudioEncoding"><option>L24</option><option>L16</option></select>
+            </div>
+            <div class="field"><label>Sample rate</label><input id="impAudioRate" type="number" value="48000"></div>
+            <div class="field"><label>Channels</label><input id="impAudioChannels" type="number" value="4" min="1" max="64"></div>
+          </div>
+          <div class="row">
+            <div class="field"><label>Channel order</label><input id="impAudioChannelOrder" value="SMPTE2110.(SGRP)"></div>
+            <div class="field"><label>ptime</label><input id="impAudioPtime" value="0.125"></div>
+          </div>
+
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);font-weight:700;margin:10px 0 6px">a=fmtp ANC (ST 2110-40)</div>
+          <div class="field"><label>VPID_Code</label><input id="impAncVpid" type="number" value="137"></div>
+        </div>
+      </details>
+
+      <div class="btn-row">
+        <input type="file" id="csvFile" accept=".csv,text/csv" style="width:auto">
+        <button class="btn" id="parseBtn">Validate rows</button>
+        <button class="btn" id="zipBtn" disabled>Download ZIP (valid rows)</button>
+      </div>
+      <div id="csvSummary" class="hint" style="margin-top:10px"></div>
+      <div id="csvResults"></div>
+    </div>
+  </section>
+
+</div><!-- /tool-sdp -->
 </main>
 
 <script>
@@ -9313,5 +9664,1314 @@ document.addEventListener('DOMContentLoaded', () => {
 window.VPID = { decodeVpidBytes, VPID_LAYOUTS, parseHex, formatHexBytes, COMMON_PRESETS, runSelfTest, buildFriendlyLabel };
 </script>
 
+
+<script>
+(function () {
+  function showTool(tool) {
+    var sdp = tool === 'sdp';
+    document.body.classList.toggle('show-sdp', sdp);
+    document.querySelectorAll('.app-tabs a[data-tool]').forEach(function (a) {
+      var on = a.getAttribute('data-tool') === tool;
+      a.classList.toggle('on', on);
+      if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    document.title = sdp
+      ? 'ST 2110 SDP Generator — VPID Calculator'
+      : 'VPID Calculator — SMPTE ST 352 Decoder & Encoder';
+  }
+  function fromHash() {
+    var h = (location.hash || '#vpid').replace(/^#/, '').toLowerCase();
+    showTool(h === 'sdp' ? 'sdp' : 'vpid');
+  }
+  document.querySelectorAll('.app-tabs a[data-tool]').forEach(function (a) {
+    a.addEventListener('click', function () { showTool(a.getAttribute('data-tool')); });
+  });
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+})();
+</script>
+<script type="module">
+/*
+ * VORTEX ST 2110 SDP generator — pure logic module (no DOM).
+ *
+ * Reproduces the exact line ordering of real Magnum-imported / Evertz-authored
+ * SDP files (see fixtures in test_sdp.mjs). Dialects differ by author:
+ *   - video dialect=magnum: rtpmap, source-filter, fmtp, ts-refclk, mediaclk
+ *                           (PM=2110GPM, TP=2110TPW, DUP main/backup)
+ *   - video dialect=evertz: ts-refclk, rtpmap, source-filter, fmtp, mediaclk
+ *                           (PM=2110BPM, TP=2110TPN, DUP 1P/1S) — used by encap import
+ *   - audio / anc (Evertz): ts-refclk, rtpmap, source-filter, fmtp, …, mediaclk
+ *
+ * A redundant (ST 2022-7) SDP carries BOTH legs in one file joined by
+ * a=group:DUP; single-path emits one media section with no group / no mid.
+ *
+ * Imported by the browser tool (sdp.html) as an ES module and by the Node
+ * test runner. Keep this file DOM-free and dependency-free.
+ */
+
+// RFC 4566 mandates CRLF between lines.
+const EOL = '\r\n';
+
+// ---------------------------------------------------------------------------
+// Presets
+// ---------------------------------------------------------------------------
+
+// ST 2110-20 video resolution presets. Everything else (sampling/depth/etc.)
+// is shared 10-bit 4:2:2 SDR BT.709 as per the supplied upstream source.
+const VIDEO_PRESETS = {
+  '1080p5994': { width: 1920, height: 1080, exactframerate: '60000/1001' },
+  '720p5994': { width: 1280, height: 720, exactframerate: '60000/1001' },
+};
+
+const VIDEO_DEFAULTS = {
+  dialect: 'magnum', // 'magnum' | 'evertz' — controls fmtp order + attribute order
+  sampling: 'YCbCr-4:2:2',
+  width: 1920,
+  height: 1080,
+  depth: 10,
+  exactframerate: '60000/1001',
+  tcs: 'SDR',
+  colorimetry: 'BT709',
+  pm: '2110GPM',
+  ssn: 'ST2110-20:2017',
+  tp: '2110TPW',
+};
+
+// Evertz 670ipg / Magnum-imported video defaults (device encap path).
+const VIDEO_EVERTZ_DEFAULTS = {
+  dialect: 'evertz',
+  pm: '2110BPM',
+  tp: '2110TPN',
+};
+
+const AUDIO_DEFAULTS = {
+  encoding: 'L24',
+  rate: 48000,
+  channels: 4,
+  channelOrder: 'SMPTE2110.(SGRP)',
+  ptime: '0.125',
+};
+
+const ANC_DEFAULTS = {
+  vpidCode: 137,
+  didSdids: [],
+};
+
+// Payload types / labels that match the supplied samples.
+const TYPE_DEFAULTS = {
+  video: { payloadType: 96, groupLabels: ['main', 'backup'] },
+  audio: { payloadType: 97, groupLabels: ['1P', '1S'] },
+  anc: { payloadType: 100, groupLabels: ['1P', '1S'] },
+};
+
+// ---------------------------------------------------------------------------
+// Validation helpers
+// ---------------------------------------------------------------------------
+
+function isIPv4(s) {
+  if (typeof s !== 'string') return false;
+  const m = s.trim().match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (!m) return false;
+  return m.slice(1).every((o) => {
+    const n = Number(o);
+    return n >= 0 && n <= 255 && String(n) === String(Number(o));
+  });
+}
+
+function isMulticastV4(s) {
+  if (!isIPv4(s)) return false;
+  const first = Number(s.trim().split('.')[0]);
+  return first >= 224 && first <= 239;
+}
+
+// PTP grandmaster clock identity: 8 hex octets separated by '-'.
+function isGmid(s) {
+  return typeof s === 'string' && /^([0-9A-Fa-f]{2}-){7}[0-9A-Fa-f]{2}$/.test(s.trim());
+}
+
+function isPort(n) {
+  return Number.isInteger(n) && n >= 1 && n <= 65535;
+}
+
+// A leg has a usable SSM source only when it is a real unicast address.
+// Device exports commonly carry a blank or 0.0.0.0 source (ASM), in which
+// case the a=source-filter line is omitted entirely.
+function hasSource(leg) {
+  const s = (leg && leg.source !== undefined && leg.source !== null) ? String(leg.source).trim() : '';
+  return s !== '' && s !== '0.0.0.0';
+}
+
+function isDynamicPt(n) {
+  return Number.isInteger(n) && n >= 96 && n <= 127;
+}
+
+// ---------------------------------------------------------------------------
+// Spec normalisation
+// ---------------------------------------------------------------------------
+
+/**
+ * Fill a partial spec with type-appropriate defaults so callers (manual form
+ * and CSV rows) only need to supply the fields that actually vary.
+ */
+function normalizeSpec(input) {
+  const spec = { ...input };
+  spec.type = String(spec.type || '').toLowerCase();
+  const td = TYPE_DEFAULTS[spec.type];
+
+  spec.redundant = spec.redundant === undefined ? true : !!spec.redundant;
+  spec.origin = { user: 'MAGNUM', sessId: '0', sessVer: '0', ip: '', ...(spec.origin || {}) };
+  spec.sessionName = spec.sessionName === undefined ? '' : String(spec.sessionName);
+  spec.ttlLayers = spec.ttlLayers || '64/1';
+  spec.gmid = spec.gmid || '00-00-00-00-00-00-00-00';
+  spec.ptpDomain = spec.ptpDomain === undefined || spec.ptpDomain === '' ? 0 : Number(spec.ptpDomain);
+
+  if (td) {
+    spec.payloadType = spec.payloadType === undefined || spec.payloadType === ''
+      ? td.payloadType : Number(spec.payloadType);
+    spec.groupLabels = spec.groupLabels && spec.groupLabels.length === 2
+      ? spec.groupLabels : td.groupLabels.slice();
+  }
+  spec.port = spec.port === undefined || spec.port === '' ? 1234 : Number(spec.port);
+
+  // Legs: [{ mcast, source }]. Second leg only used when redundant.
+  spec.legs = (spec.legs || []).map((l) => ({ mcast: (l.mcast || '').trim(), source: (l.source || '').trim() }));
+
+  if (spec.type === 'video') {
+    spec.video = { ...VIDEO_DEFAULTS, ...(spec.video || {}) };
+  } else if (spec.type === 'audio') {
+    spec.audio = { ...AUDIO_DEFAULTS, ...(spec.audio || {}) };
+  } else if (spec.type === 'anc') {
+    spec.anc = { ...ANC_DEFAULTS, ...(spec.anc || {}) };
+  }
+  return spec;
+}
+
+function validateSpec(rawSpec) {
+  const spec = normalizeSpec(rawSpec);
+  const errors = [];
+
+  if (!TYPE_DEFAULTS[spec.type]) errors.push(`unknown media type "${spec.type}" (expected video|audio|anc)`);
+  if (!spec.sessionName) errors.push('session name (s=) is required');
+  if (!isIPv4(spec.origin.ip)) errors.push(`origin IP "${spec.origin.ip}" is not a valid IPv4 address`);
+  if (spec.origin.sessId === '' || spec.origin.sessId === undefined) errors.push('origin session id is required');
+  if (spec.origin.sessVer === '' || spec.origin.sessVer === undefined) errors.push('origin session version is required');
+  if (!isPort(spec.port)) errors.push(`port "${spec.port}" out of range (1-65535)`);
+  if (!isDynamicPt(spec.payloadType)) errors.push(`payload type "${spec.payloadType}" out of dynamic range (96-127)`);
+  if (!isGmid(spec.gmid)) errors.push(`PTP GMID "${spec.gmid}" must be 8 hex octets separated by '-'`);
+  if (!(Number.isInteger(spec.ptpDomain) && spec.ptpDomain >= 0 && spec.ptpDomain <= 127)) {
+    errors.push(`PTP domain "${spec.ptpDomain}" out of range (0-127)`);
+  }
+
+  const legCount = spec.redundant ? 2 : 1;
+  if (spec.legs.length < legCount) {
+    errors.push(`${legCount} leg(s) required but ${spec.legs.length} provided`);
+  }
+  spec.legs.slice(0, legCount).forEach((leg, i) => {
+    const tag = spec.redundant ? (i === 0 ? 'primary' : 'secondary') : 'single';
+    if (!isMulticastV4(leg.mcast)) errors.push(`${tag} leg multicast "${leg.mcast}" is not a valid multicast IPv4 (224-239)`);
+    // Source is optional (ASM); only validate it when a real source is given.
+    if (hasSource(leg) && !isIPv4(leg.source)) errors.push(`${tag} leg source "${leg.source}" is not a valid IPv4 address`);
+  });
+
+  if (spec.type === 'video') {
+    const v = spec.video;
+    if (!(Number(v.width) > 0)) errors.push('video width must be a positive integer');
+    if (!(Number(v.height) > 0)) errors.push('video height must be a positive integer');
+    if (![8, 10, 12, 16].includes(Number(v.depth))) errors.push(`video depth "${v.depth}" must be one of 8, 10, 12, 16`);
+    if (!/^\d+(\/\d+)?$/.test(String(v.exactframerate))) errors.push(`video exactframerate "${v.exactframerate}" must be an integer or M/N ratio`);
+  } else if (spec.type === 'audio') {
+    const a = spec.audio;
+    if (!/^L(16|24)$/.test(String(a.encoding))) errors.push(`audio encoding "${a.encoding}" must be L16 or L24`);
+    if (!(Number(a.rate) > 0)) errors.push('audio sample rate must be a positive integer');
+    if (!(Number.isInteger(Number(a.channels)) && Number(a.channels) >= 1 && Number(a.channels) <= 64)) {
+      errors.push(`audio channel count "${a.channels}" out of range (1-64)`);
+    }
+    if (!/^\d+(\.\d+)?$/.test(String(a.ptime))) errors.push(`audio ptime "${a.ptime}" must be numeric (ms)`);
+  } else if (spec.type === 'anc') {
+    const n = spec.anc;
+    const hasVpid = n.vpidCode !== '' && n.vpidCode !== undefined && n.vpidCode !== null;
+    const hasDid = Array.isArray(n.didSdids) && n.didSdids.length > 0;
+    if (!hasVpid && !hasDid) errors.push('ANC requires a VPID_Code and/or at least one DID_SDID');
+    if (hasVpid && !Number.isInteger(Number(n.vpidCode))) errors.push(`ANC VPID_Code "${n.vpidCode}" must be an integer`);
+    if (hasDid) {
+      n.didSdids.forEach((d) => {
+        if (!/^0x[0-9A-Fa-f]{1,2}$/.test(String(d.did)) || !/^0x[0-9A-Fa-f]{1,2}$/.test(String(d.sdid))) {
+          errors.push(`ANC DID_SDID {${d.did},${d.sdid}} must be 0x-prefixed hex bytes`);
+        }
+      });
+    }
+  }
+
+  return { ok: errors.length === 0, errors, spec };
+}
+
+// ---------------------------------------------------------------------------
+// SDP builders
+// ---------------------------------------------------------------------------
+
+function sessionHeader(spec) {
+  const lines = [
+    'v=0',
+    `o=${spec.origin.user} ${spec.origin.sessId} ${spec.origin.sessVer} IN IP4 ${spec.origin.ip}`,
+    `s=${spec.sessionName}`,
+    't=0 0',
+  ];
+  if (spec.redundant) lines.push(`a=group:DUP ${spec.groupLabels[0]} ${spec.groupLabels[1]}`);
+  return lines;
+}
+
+function tsRefclk(spec) {
+  return `a=ts-refclk:ptp=IEEE1588-2008:${spec.gmid}:${spec.ptpDomain}`;
+}
+
+function sourceFilter(leg) {
+  return `a=source-filter: incl IN IP4 ${leg.mcast} ${leg.source}`;
+}
+
+function videoFmtp(pt, v) {
+  // Magnum-authored vs Evertz-authored fmtp parameter orders differ; both keep
+  // a trailing ';' after the last parameter.
+  const parts = v.dialect === 'evertz'
+    ? [
+      `sampling=${v.sampling}`,
+      `depth=${v.depth}`,
+      `width=${v.width}`,
+      `height=${v.height}`,
+      `exactframerate=${v.exactframerate}`,
+      `colorimetry=${v.colorimetry}`,
+      `PM=${v.pm}`,
+      `SSN=${v.ssn}`,
+      `TP=${v.tp}`,
+      `TCS=${v.tcs}`,
+    ]
+    : [
+      `sampling=${v.sampling}`,
+      `width=${v.width}`,
+      `height=${v.height}`,
+      `depth=${v.depth}`,
+      `exactframerate=${v.exactframerate}`,
+      `TCS=${v.tcs}`,
+      `colorimetry=${v.colorimetry}`,
+      `PM=${v.pm}`,
+      `SSN=${v.ssn}`,
+      `TP=${v.tp}`,
+    ];
+  return `a=fmtp:${pt} ${parts.join('; ')};`;
+}
+
+function ancFmtp(pt, n) {
+  const parts = [];
+  const hasVpid = n.vpidCode !== '' && n.vpidCode !== undefined && n.vpidCode !== null;
+  if (Array.isArray(n.didSdids)) n.didSdids.forEach((d) => parts.push(`DID_SDID={${d.did},${d.sdid}}`));
+  if (hasVpid) parts.push(`VPID_Code=${n.vpidCode}`);
+  return `a=fmtp:${pt} ${parts.join('; ')}`;
+}
+
+function videoLeg(spec, leg, midLabel) {
+  const pt = spec.payloadType;
+  const lines = [
+    `m=video ${spec.port} RTP/AVP ${pt}`,
+    `c=IN IP4 ${leg.mcast}/${spec.ttlLayers}`,
+  ];
+  if (spec.video.dialect === 'evertz') {
+    // Evertz/Magnum-imported: ts-refclk before rtpmap (same family as audio/anc).
+    lines.push(tsRefclk(spec), `a=rtpmap:${pt} raw/90000`);
+    if (hasSource(leg)) lines.push(sourceFilter(leg));
+    lines.push(videoFmtp(pt, spec.video), 'a=mediaclk:direct=0');
+  } else {
+    // Magnum-authored: rtpmap → source-filter → fmtp → ts-refclk.
+    lines.push(`a=rtpmap:${pt} raw/90000`);
+    if (hasSource(leg)) lines.push(sourceFilter(leg));
+    lines.push(videoFmtp(pt, spec.video), tsRefclk(spec), 'a=mediaclk:direct=0');
+  }
+  if (spec.redundant) lines.push(`a=mid:${midLabel}`);
+  return lines;
+}
+
+function audioLeg(spec, leg, midLabel) {
+  const pt = spec.payloadType;
+  const a = spec.audio;
+  const lines = [
+    `m=audio ${spec.port} RTP/AVP ${pt}`,
+    `c=IN IP4 ${leg.mcast}/${spec.ttlLayers}`,
+    tsRefclk(spec),
+    `a=rtpmap:${pt} ${a.encoding}/${a.rate}/${a.channels}`,
+  ];
+  if (hasSource(leg)) lines.push(sourceFilter(leg));
+  lines.push(`a=fmtp:${pt} channel-order=${a.channelOrder}`, `a=ptime:${a.ptime}`, 'a=mediaclk:direct=0');
+  if (spec.redundant) lines.push(`a=mid:${midLabel}`);
+  return lines;
+}
+
+function ancLeg(spec, leg, midLabel) {
+  const pt = spec.payloadType;
+  // ST 2110-40 ANC is carried on an m=video line per RFC 8331.
+  const lines = [
+    `m=video ${spec.port} RTP/AVP ${pt}`,
+    `c=IN IP4 ${leg.mcast}/${spec.ttlLayers}`,
+    tsRefclk(spec),
+    `a=rtpmap:${pt} smpte291/90000`,
+  ];
+  if (hasSource(leg)) lines.push(sourceFilter(leg));
+  lines.push(ancFmtp(pt, spec.anc), 'a=mediaclk:direct=0');
+  if (spec.redundant) lines.push(`a=mid:${midLabel}`);
+  return lines;
+}
+
+const LEG_BUILDERS = { video: videoLeg, audio: audioLeg, anc: ancLeg };
+
+/** Build the SDP as an array of lines (line-ending agnostic; used by tests). */
+function buildSdpLines(rawSpec) {
+  const spec = normalizeSpec(rawSpec);
+  const buildLeg = LEG_BUILDERS[spec.type];
+  if (!buildLeg) throw new Error(`cannot build SDP for unknown type "${spec.type}"`);
+
+  const lines = sessionHeader(spec);
+  const legCount = spec.redundant ? 2 : 1;
+  for (let i = 0; i < legCount; i++) {
+    lines.push(...buildLeg(spec, spec.legs[i], spec.groupLabels[i]));
+  }
+  return lines;
+}
+
+/** Build the SDP text (CRLF, trailing CRLF as is conventional for .sdp). */
+function buildSdp(rawSpec) {
+  return buildSdpLines(rawSpec).join(EOL) + EOL;
+}
+
+/** Derive a safe .sdp filename from the spec (Single-form download). */
+function sdpFilename(rawSpec) {
+  const spec = normalizeSpec(rawSpec);
+  const base = (spec.sessionName || spec.type || 'stream')
+    .trim()
+    .replace(/\s+/g, '_')
+    .replace(/[^A-Za-z0-9._-]/g, '');
+  const safe = base || 'stream';
+  return `${safe}_${spec.type}.sdp`;
+}
+
+/**
+ * Bulk export filename: primary multicast + destination port, e.g. 238.0.246.2_1234.txt
+ */
+function exportFilename(rawSpec) {
+  const spec = normalizeSpec(rawSpec);
+  const mcast = (spec.legs[0] && spec.legs[0].mcast) ? String(spec.legs[0].mcast).trim() : '0.0.0.0';
+  const port = spec.port || 1234;
+  const safeMcast = mcast.replace(/[^0-9.]/g, '') || '0.0.0.0';
+  return `${safeMcast}_${port}.txt`;
+}
+
+/**
+ * Apply Bulk-page overrides onto a already-built spec. Blank / unset options leave
+ * the existing value alone so CSV/encap-derived transport fields stay intact.
+ */
+function applyBulkOverrides(rawSpec, options = {}) {
+  const o = options || {};
+  const spec = normalizeSpec(rawSpec);
+
+  if (o.originUser) spec.origin.user = o.originUser;
+  if (o.originIp) spec.origin.ip = o.originIp;
+  if (o.sessId !== undefined && o.sessId !== '') spec.origin.sessId = String(o.sessId);
+  if (o.sessVer !== undefined && o.sessVer !== '') spec.origin.sessVer = String(o.sessVer);
+  if (o.sessionNameTemplate) {
+    spec.sessionName = String(o.sessionNameTemplate)
+      .replace(/\{type\}/g, spec.type)
+      .replace(/\{device\}/g, '')
+      .replace(/\{mediaPort\}/g, spec.sessionName)
+      .replace(/\{index\}/g, '');
+  } else if (o.sessionName) {
+    spec.sessionName = o.sessionName;
+  }
+  if (o.groupLabelA && o.groupLabelB) spec.groupLabels = [o.groupLabelA, o.groupLabelB];
+  if (o.gmid) spec.gmid = o.gmid;
+  if (o.ptpDomain !== undefined && o.ptpDomain !== '') spec.ptpDomain = Number(o.ptpDomain);
+  if (o.ttlLayers) spec.ttlLayers = o.ttlLayers;
+  if (o.port !== undefined && o.port !== '') spec.port = Number(o.port);
+
+  if (o.sourcePrimary || o.sourceSecondary) {
+    if (spec.legs[0]) spec.legs[0] = { ...spec.legs[0], source: o.sourcePrimary || spec.legs[0].source };
+    if (spec.legs[1] && o.sourceSecondary) {
+      spec.legs[1] = { ...spec.legs[1], source: o.sourceSecondary };
+    }
+  }
+
+  if (spec.type === 'video') {
+    if (o.payloadTypeVideo !== undefined && o.payloadTypeVideo !== '') spec.payloadType = Number(o.payloadTypeVideo);
+    const pr = o.videoPreset ? (VIDEO_PRESETS[o.videoPreset] || {}) : {};
+    spec.video = {
+      ...spec.video,
+      ...(pr.width ? { width: pr.width, height: pr.height, exactframerate: pr.exactframerate } : {}),
+      ...(o.videoSampling ? { sampling: o.videoSampling } : {}),
+      ...(o.videoWidth ? { width: Number(o.videoWidth) } : {}),
+      ...(o.videoHeight ? { height: Number(o.videoHeight) } : {}),
+      ...(o.videoDepth ? { depth: Number(o.videoDepth) } : {}),
+      ...(o.videoExactframerate ? { exactframerate: o.videoExactframerate } : {}),
+      ...(o.videoTcs ? { tcs: o.videoTcs } : {}),
+      ...(o.videoColorimetry ? { colorimetry: o.videoColorimetry } : {}),
+      ...(o.videoPm ? { pm: o.videoPm } : {}),
+      ...(o.videoSsn ? { ssn: o.videoSsn } : {}),
+      ...(o.videoTp ? { tp: o.videoTp } : {}),
+      ...(o.videoDialect ? { dialect: o.videoDialect } : {}),
+    };
+  } else if (spec.type === 'audio') {
+    if (o.payloadTypeAudio !== undefined && o.payloadTypeAudio !== '') spec.payloadType = Number(o.payloadTypeAudio);
+    spec.audio = {
+      ...spec.audio,
+      ...(o.audioEncoding ? { encoding: o.audioEncoding } : {}),
+      ...(o.audioRate ? { rate: Number(o.audioRate) } : {}),
+      ...(o.audioChannels ? { channels: Number(o.audioChannels) } : {}),
+      ...(o.audioChannelOrder ? { channelOrder: o.audioChannelOrder } : {}),
+      ...(o.audioPtime ? { ptime: o.audioPtime } : {}),
+    };
+  } else if (spec.type === 'anc') {
+    if (o.payloadTypeAnc !== undefined && o.payloadTypeAnc !== '') spec.payloadType = Number(o.payloadTypeAnc);
+    spec.anc = {
+      ...spec.anc,
+      ...(o.ancVpidCode !== undefined && o.ancVpidCode !== '' ? { vpidCode: Number(o.ancVpidCode) } : {}),
+    };
+  }
+  return spec;
+}
+
+// ---------------------------------------------------------------------------
+// CSV (bulk) support
+// ---------------------------------------------------------------------------
+
+const CSV_COLUMNS = [
+  'type', 'session_name', 'origin_user', 'origin_ip', 'session_id', 'session_version',
+  'payload_type', 'port', 'ttl_layers', 'gmid', 'ptp_domain', 'redundant',
+  'group_a', 'group_b', 'mcast_a', 'source_a', 'mcast_b', 'source_b',
+  'video_preset', 'video_sampling', 'video_width', 'video_height', 'video_depth',
+  'video_exactframerate', 'video_tcs', 'video_colorimetry', 'video_pm', 'video_ssn', 'video_tp',
+  'audio_encoding', 'audio_rate', 'audio_channels', 'audio_channel_order', 'audio_ptime',
+  'anc_vpid_code', 'anc_did_sdid',
+];
+
+function csvEscape(v) {
+  const s = v === undefined || v === null ? '' : String(v);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+// Build one CSV line from a column-keyed object, guaranteeing alignment with
+// CSV_COLUMNS regardless of how many fields are populated.
+function csvRow(rec) {
+  return CSV_COLUMNS.map((c) => csvEscape(rec[c])).join(',');
+}
+
+function csvTemplate() {
+  const header = CSV_COLUMNS.join(',');
+  const rows = [
+    // A redundant video row using the 1080p59.94 preset.
+    {
+      type: 'video', session_name: 'DC-0501_ORT-T_0501A sdp', origin_user: 'MAGNUM',
+      origin_ip: '10.198.5.101', session_id: '1604610747', session_version: '1604610747',
+      payload_type: 96, port: 1234, ttl_layers: '64/1', gmid: '00-00-00-00-00-00-00-00',
+      ptp_domain: 0, redundant: 'yes', group_a: 'main', group_b: 'backup',
+      mcast_a: '238.0.203.15', source_a: '10.198.34.87',
+      mcast_b: '238.0.203.55', source_b: '10.198.66.87', video_preset: '1080p5994',
+    },
+    // A redundant audio row.
+    {
+      type: 'audio', session_name: '670ipg', origin_user: 'Evertz', origin_ip: '10.198.24.151',
+      session_id: '0102', session_version: '23', payload_type: 97, port: 1234, ttl_layers: '64/1',
+      gmid: '00-02-C5-FF-FE-2E-43-75', ptp_domain: 100, redundant: 'yes', group_a: '1P', group_b: '1S',
+      mcast_a: '238.0.139.122', source_a: '10.198.32.165',
+      mcast_b: '238.0.139.116', source_b: '10.198.64.165',
+      audio_encoding: 'L24', audio_rate: 48000, audio_channels: 4,
+      audio_channel_order: 'SMPTE2110.(SGRP)', audio_ptime: '0.125',
+    },
+    // A redundant ANC row.
+    {
+      type: 'anc', session_name: '670ipg', origin_user: 'Evertz', origin_ip: '10.198.24.151',
+      session_id: '0106', session_version: '23', payload_type: 100, port: 1234, ttl_layers: '64/1',
+      gmid: '00-02-C5-FF-FE-2E-43-75', ptp_domain: 100, redundant: 'yes', group_a: '1P', group_b: '1S',
+      mcast_a: '238.0.139.118', source_a: '10.198.32.165',
+      mcast_b: '238.0.139.112', source_b: '10.198.64.165', anc_vpid_code: 137,
+    },
+  ];
+  return [header, ...rows.map(csvRow)].join('\n') + '\n';
+}
+
+/** Minimal RFC-4180-ish CSV parser (handles quoted fields with commas/quotes). */
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let inQuotes = false;
+  const s = String(text).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (s[i + 1] === '"') { field += '"'; i++; } else { inQuotes = false; }
+      } else { field += c; }
+    } else if (c === '"') {
+      inQuotes = true;
+    } else if (c === ',') {
+      row.push(field); field = '';
+    } else if (c === '\n') {
+      row.push(field); rows.push(row); row = []; field = '';
+    } else {
+      field += c;
+    }
+  }
+  // Flush trailing field/row if the file has no final newline.
+  if (field !== '' || row.length > 0) { row.push(field); rows.push(row); }
+  return rows.filter((r) => !(r.length === 1 && r[0].trim() === ''));
+}
+
+function parseBool(v) {
+  const s = String(v).trim().toLowerCase();
+  if (s === '') return true; // default to redundant
+  return ['1', 'yes', 'true', 'y', 'dup', 'redundant'].includes(s);
+}
+
+/** Convert one parsed CSV record (object keyed by CSV_COLUMNS) into a spec. */
+function rowToSpec(rec) {
+  const type = String(rec.type || '').trim().toLowerCase();
+  const redundant = parseBool(rec.redundant);
+
+  const legs = [{ mcast: rec.mcast_a, source: rec.source_a }];
+  if (redundant) legs.push({ mcast: rec.mcast_b, source: rec.source_b });
+
+  const groupLabels = (rec.group_a || rec.group_b)
+    ? [rec.group_a || '', rec.group_b || '']
+    : undefined;
+
+  const spec = {
+    type,
+    redundant,
+    sessionName: rec.session_name,
+    origin: {
+      user: rec.origin_user || 'MAGNUM',
+      sessId: rec.session_id,
+      sessVer: rec.session_version,
+      ip: rec.origin_ip,
+    },
+    payloadType: rec.payload_type,
+    port: rec.port,
+    ttlLayers: rec.ttl_layers || '64/1',
+    gmid: rec.gmid,
+    ptpDomain: rec.ptp_domain,
+    groupLabels,
+    legs,
+  };
+
+  if (type === 'video') {
+    const preset = VIDEO_PRESETS[String(rec.video_preset || '').trim()] || {};
+    spec.video = {
+      sampling: rec.video_sampling || VIDEO_DEFAULTS.sampling,
+      width: rec.video_width || preset.width || VIDEO_DEFAULTS.width,
+      height: rec.video_height || preset.height || VIDEO_DEFAULTS.height,
+      depth: rec.video_depth || VIDEO_DEFAULTS.depth,
+      exactframerate: rec.video_exactframerate || preset.exactframerate || VIDEO_DEFAULTS.exactframerate,
+      tcs: rec.video_tcs || VIDEO_DEFAULTS.tcs,
+      colorimetry: rec.video_colorimetry || VIDEO_DEFAULTS.colorimetry,
+      pm: rec.video_pm || VIDEO_DEFAULTS.pm,
+      ssn: rec.video_ssn || VIDEO_DEFAULTS.ssn,
+      tp: rec.video_tp || VIDEO_DEFAULTS.tp,
+    };
+  } else if (type === 'audio') {
+    spec.audio = {
+      encoding: rec.audio_encoding || AUDIO_DEFAULTS.encoding,
+      rate: rec.audio_rate || AUDIO_DEFAULTS.rate,
+      channels: rec.audio_channels || AUDIO_DEFAULTS.channels,
+      channelOrder: rec.audio_channel_order || AUDIO_DEFAULTS.channelOrder,
+      ptime: rec.audio_ptime || AUDIO_DEFAULTS.ptime,
+    };
+  } else if (type === 'anc') {
+    const didSdids = [];
+    // anc_did_sdid packs one or more pairs as "0x61/0x02|0x41/0x05".
+    String(rec.anc_did_sdid || '').split('|').map((p) => p.trim()).filter(Boolean).forEach((pair) => {
+      const [did, sdid] = pair.split('/').map((x) => x.trim());
+      if (did && sdid) didSdids.push({ did, sdid });
+    });
+    spec.anc = {
+      vpidCode: String(rec.anc_vpid_code || '').trim(),
+      didSdids,
+    };
+  }
+  return spec;
+}
+
+/** Parse a full CSV document into { specs, errors } keyed by row number. */
+function csvToSpecs(text) {
+  const rows = parseCsv(text);
+  if (rows.length === 0) return { header: [], records: [] };
+  const header = rows[0].map((h) => h.trim());
+  const records = rows.slice(1).map((cols, idx) => {
+    const rec = {};
+    header.forEach((h, i) => { rec[h] = cols[i] !== undefined ? cols[i] : ''; });
+    return { line: idx + 2, rec, spec: rowToSpec(rec) };
+  });
+  return { header, records };
+}
+
+// ---------------------------------------------------------------------------
+// Device encap stream-table import (Evertz-style export)
+// ---------------------------------------------------------------------------
+//
+// Maps a device's flow table:
+//   Device, Media Port, Ethernet, Stream Type, Stream Index,
+//   Destination IP, Destination Port, Source IP, Bitrate (Mbps), Backup
+// into ST 2110 SDP specs. Only the uncompressed essence stream types map:
+//   Video -> 2110-20, Audio -> 2110-30 (one per Stream Index), ANC -> 2110-40.
+// Everything else (Full / Full (J2K|H.264|MPEG-2|JPEG-XS), blank) is skipped
+// and reported. Primary/secondary legs are paired by
+// (Device, Media Port, Stream Type, Stream Index) using the Backup flag.
+
+const ENCAP_TYPE_MAP = { video: 'video', audio: 'audio', anc: 'anc' };
+
+const ENCAP_IMPORT_DEFAULTS = {
+  originUser: 'Evertz',
+  originIp: '10.198.24.151',
+  sessId: '',                 // '' => auto-incrementing per file (unique)
+  sessVer: '',                // '' => same as sessId
+  sessionNameTemplate: '',    // '' => Media Port (audio appends -A{index}); tokens: {device} {mediaPort} {type} {index}
+  groupLabelA: '',            // '' => per-type default (video main/backup, audio+anc 1P/1S)
+  groupLabelB: '',
+  gmid: '00-02-C5-FF-FE-2E-43-75',
+  ptpDomain: 100,
+  sourcePrimary: '',          // '' => omit a=source-filter (ASM). The export lacks a
+  sourceSecondary: '',        //       per-flow source, so these apply to ALL rows.
+  sourceMap: null,            // optional { [device]: { primary, secondary } }; wins over the globals.
+  videoPreset: '1080p5994',
+  videoPm: '2110BPM',
+  videoTp: '2110TPN',
+  videoSampling: 'YCbCr-4:2:2',
+  videoDepth: 10,
+  videoTcs: 'SDR',
+  videoColorimetry: 'BT709',
+  videoSsn: 'ST2110-20:2017',
+  videoDialect: 'evertz',
+  // Encap video uses Evertz DUP labels unless the user overrides both.
+  videoGroupLabels: ['1P', '1S'],
+  payloadTypeVideo: 96,
+  payloadTypeAudio: 97,
+  payloadTypeAnc: 100,
+  ttlLayers: '64/1',
+  port: '', // blank = keep Destination Port from CSV
+  audioEncoding: 'L24',
+  audioRate: 48000,
+  audioChannels: 4,
+  audioChannelOrder: 'SMPTE2110.(SGRP)',
+  audioPtime: '0.125',
+  ancVpidCode: 137,
+  pairLegs: true,
+};
+
+function renderNameTemplate(tpl, ctx) {
+  return String(tpl).replace(/\{(device|mediaPort|type|index)\}/g, (_, k) => (ctx[k] === undefined ? '' : ctx[k]));
+}
+
+/**
+ * Parse a device -> source-IP mapping CSV used to fill a=source-filter per flow
+ * (the encap export has no per-flow source). Expected columns (case-insensitive):
+ *   key|device, source_primary, source_secondary
+ * Returns { [device]: { primary, secondary } }.
+ */
+function parseSourceMap(text) {
+  const map = {};
+  const rows = parseCsv(text);
+  if (rows.length === 0) return map;
+  const header = rows[0].map((h) => String(h).trim().toLowerCase());
+  const ki = header.indexOf('key') !== -1 ? header.indexOf('key') : header.indexOf('device');
+  const pi = header.indexOf('source_primary');
+  const si = header.indexOf('source_secondary');
+  if (ki === -1 || pi === -1) return map;
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    const key = String(r[ki] === undefined ? '' : r[ki]).trim();
+    if (!key) continue;
+    map[key] = {
+      primary: String(r[pi] === undefined ? '' : r[pi]).trim(),
+      secondary: si === -1 ? '' : String(r[si] === undefined ? '' : r[si]).trim(),
+    };
+  }
+  return map;
+}
+
+function isEncapHeader(header) {
+  const h = (header || []).map((x) => String(x).trim().toLowerCase());
+  return h.includes('device') && h.includes('media port') && h.includes('stream type') &&
+         h.includes('destination ip') && h.includes('backup');
+}
+
+/**
+ * Convert a device encap CSV into { specs, skipped, mapped }.
+ *  - specs:   array of SDP specs ready for validateSpec/buildSdp
+ *  - skipped: { <reason>: count } for rows not turned into 2110 SDPs
+ *  - mapped:  number of specs produced
+ */
+function encapToSpecs(text, options = {}) {
+  const o = { ...ENCAP_IMPORT_DEFAULTS, ...options };
+  const rows = parseCsv(text);
+  if (rows.length === 0) return { specs: [], skipped: {}, mapped: 0 };
+
+  const header = rows[0].map((x) => String(x).trim());
+  const idx = {};
+  header.forEach((h, i) => { idx[h.toLowerCase()] = i; });
+  const col = (r, name) => { const i = idx[name]; return i === undefined ? '' : String(r[i] === undefined ? '' : r[i]).trim(); };
+
+  const skipped = {};
+  const bump = (reason) => { skipped[reason] = (skipped[reason] || 0) + 1; };
+
+  // Group legs by essence identity, preserving first-seen order.
+  const groups = new Map();
+  for (let li = 1; li < rows.length; li++) {
+    const r = rows[li];
+    const stype = col(r, 'stream type');
+    const mapped = ENCAP_TYPE_MAP[stype.toLowerCase()];
+    if (!mapped) { bump(stype || '(blank)'); continue; }
+    const mcast = col(r, 'destination ip');
+    if (!isMulticastV4(mcast)) { bump('invalid/blank destination ip'); continue; }
+
+    const device = col(r, 'device');
+    const mport = col(r, 'media port');
+    const sidx = col(r, 'stream index');
+    const port = Number(col(r, 'destination port')) || 1234;
+    const source = col(r, 'source ip');
+    const isBackup = /^true$/i.test(col(r, 'backup'));
+
+    const key = [device, mport, mapped, sidx].join('|');
+    let g = groups.get(key);
+    if (!g) { g = { type: mapped, device, mport, sidx, port, primary: null, secondary: null }; groups.set(key, g); }
+    const leg = { mcast, source };
+    if (isBackup) g.secondary = leg; else g.primary = leg;
+  }
+
+  let counter = 1;
+  const specs = [];
+  for (const g of groups.values()) {
+    const primary = g.primary || g.secondary; // fall back if only a backup leg exists
+    const redundant = !!(o.pairLegs && g.primary && g.secondary);
+    // Source-filter precedence: per-device map > global override > (blank) export source.
+    const dm = (o.sourceMap && o.sourceMap[g.device]) || null;
+    const primSrc = (dm && dm.primary) || o.sourcePrimary || primary.source;
+    const secSrc = (dm && dm.secondary) || o.sourceSecondary || (g.secondary && g.secondary.source) || '';
+    const legs = [{ mcast: primary.mcast, source: primSrc }];
+    if (redundant) legs.push({ mcast: g.secondary.mcast, source: secSrc });
+
+    const seq = String(counter++);
+    const sess = o.sessId !== '' && o.sessId !== undefined ? String(o.sessId) : seq;
+    const sessV = o.sessVer !== '' && o.sessVer !== undefined ? String(o.sessVer) : sess;
+    const sessionName = o.sessionNameTemplate
+      ? renderNameTemplate(o.sessionNameTemplate, { device: g.device, mediaPort: g.mport, type: g.type, index: g.sidx })
+      : (g.type === 'audio' && g.sidx ? `${g.mport}-A${g.sidx}` : g.mport);
+    const spec = {
+      type: g.type,
+      redundant,
+      sessionName,
+      origin: { user: o.originUser, ip: o.originIp, sessId: sess, sessVer: sessV },
+      port: g.port,
+      gmid: o.gmid,
+      ptpDomain: o.ptpDomain,
+      legs,
+    };
+    if (o.groupLabelA && o.groupLabelB) {
+      spec.groupLabels = [o.groupLabelA, o.groupLabelB];
+    } else if (g.type === 'video' && o.videoGroupLabels) {
+      spec.groupLabels = o.videoGroupLabels.slice();
+    }
+    if (g.type === 'video') {
+      const pr = VIDEO_PRESETS[o.videoPreset] || {};
+      spec.payloadType = o.payloadTypeVideo !== undefined && o.payloadTypeVideo !== ''
+        ? Number(o.payloadTypeVideo) : TYPE_DEFAULTS.video.payloadType;
+      if (o.ttlLayers) spec.ttlLayers = o.ttlLayers;
+      if (o.port !== undefined && o.port !== '') spec.port = Number(o.port);
+      spec.video = {
+        ...VIDEO_DEFAULTS,
+        ...VIDEO_EVERTZ_DEFAULTS,
+        dialect: o.videoDialect || VIDEO_EVERTZ_DEFAULTS.dialect,
+        width: pr.width || VIDEO_DEFAULTS.width,
+        height: pr.height || VIDEO_DEFAULTS.height,
+        exactframerate: pr.exactframerate || VIDEO_DEFAULTS.exactframerate,
+        sampling: o.videoSampling || VIDEO_DEFAULTS.sampling,
+        depth: o.videoDepth !== undefined && o.videoDepth !== '' ? Number(o.videoDepth) : VIDEO_DEFAULTS.depth,
+        tcs: o.videoTcs || VIDEO_DEFAULTS.tcs,
+        colorimetry: o.videoColorimetry || VIDEO_DEFAULTS.colorimetry,
+        pm: o.videoPm || VIDEO_EVERTZ_DEFAULTS.pm,
+        ssn: o.videoSsn || VIDEO_DEFAULTS.ssn,
+        tp: o.videoTp || VIDEO_EVERTZ_DEFAULTS.tp,
+      };
+    } else if (g.type === 'audio') {
+      spec.payloadType = o.payloadTypeAudio !== undefined && o.payloadTypeAudio !== ''
+        ? Number(o.payloadTypeAudio) : TYPE_DEFAULTS.audio.payloadType;
+      if (o.ttlLayers) spec.ttlLayers = o.ttlLayers;
+      if (o.port !== undefined && o.port !== '') spec.port = Number(o.port);
+      spec.audio = {
+        encoding: o.audioEncoding, rate: o.audioRate, channels: o.audioChannels,
+        channelOrder: o.audioChannelOrder, ptime: o.audioPtime,
+      };
+    } else if (g.type === 'anc') {
+      spec.payloadType = o.payloadTypeAnc !== undefined && o.payloadTypeAnc !== ''
+        ? Number(o.payloadTypeAnc) : TYPE_DEFAULTS.anc.payloadType;
+      if (o.ttlLayers) spec.ttlLayers = o.ttlLayers;
+      if (o.port !== undefined && o.port !== '') spec.port = Number(o.port);
+      spec.anc = { vpidCode: o.ancVpidCode, didSdids: [] };
+    }
+    specs.push(spec);
+  }
+  return { specs, skipped, mapped: specs.length };
+}
+
+// ---------------------------------------------------------------------------
+// Minimal ZIP writer (STORE / no compression, no dependencies)
+// ---------------------------------------------------------------------------
+
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+
+function crc32(bytes) {
+  let c = 0xffffffff;
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+function u8(strOrBytes) {
+  return typeof strOrBytes === 'string' ? new TextEncoder().encode(strOrBytes) : strOrBytes;
+}
+
+/**
+ * Build a ZIP archive (stored, no compression) from
+ * [{ name, data }] where data is a string or Uint8Array.
+ * Returns a Uint8Array. Sufficient for a handful of small text .sdp files.
+ */
+function makeZip(files) {
+  const enc = new TextEncoder();
+  const chunks = [];
+  const central = [];
+  let offset = 0;
+
+  const push = (arr) => { chunks.push(arr); offset += arr.length; };
+  const writeU16 = (view, o, v) => view.setUint16(o, v, true);
+  const writeU32 = (view, o, v) => view.setUint32(o, v >>> 0, true);
+
+  for (const f of files) {
+    const nameBytes = enc.encode(f.name);
+    const dataBytes = u8(f.data);
+    const crc = crc32(dataBytes);
+    const localOffset = offset;
+
+    const lh = new Uint8Array(30 + nameBytes.length);
+    const lv = new DataView(lh.buffer);
+    writeU32(lv, 0, 0x04034b50); // local file header signature
+    writeU16(lv, 4, 20);         // version needed
+    writeU16(lv, 6, 0);          // flags
+    writeU16(lv, 8, 0);          // method: store
+    writeU16(lv, 10, 0);         // mod time
+    writeU16(lv, 12, 0);         // mod date
+    writeU32(lv, 14, crc);
+    writeU32(lv, 18, dataBytes.length); // compressed size
+    writeU32(lv, 22, dataBytes.length); // uncompressed size
+    writeU16(lv, 26, nameBytes.length);
+    writeU16(lv, 28, 0);         // extra length
+    lh.set(nameBytes, 30);
+    push(lh);
+    push(dataBytes);
+
+    const ch = new Uint8Array(46 + nameBytes.length);
+    const cv = new DataView(ch.buffer);
+    writeU32(cv, 0, 0x02014b50); // central dir header signature
+    writeU16(cv, 4, 20);         // version made by
+    writeU16(cv, 6, 20);         // version needed
+    writeU16(cv, 8, 0);          // flags
+    writeU16(cv, 10, 0);         // method
+    writeU16(cv, 12, 0);         // mod time
+    writeU16(cv, 14, 0);         // mod date
+    writeU32(cv, 16, crc);
+    writeU32(cv, 20, dataBytes.length);
+    writeU32(cv, 24, dataBytes.length);
+    writeU16(cv, 28, nameBytes.length);
+    writeU16(cv, 30, 0);         // extra length
+    writeU16(cv, 32, 0);         // comment length
+    writeU16(cv, 34, 0);         // disk number
+    writeU16(cv, 36, 0);         // internal attrs
+    writeU32(cv, 38, 0);         // external attrs
+    writeU32(cv, 42, localOffset);
+    ch.set(nameBytes, 46);
+    central.push(ch);
+  }
+
+  const centralStart = offset;
+  central.forEach(push);
+  const centralSize = offset - centralStart;
+
+  const eocd = new Uint8Array(22);
+  const ev = new DataView(eocd.buffer);
+  writeU32(ev, 0, 0x06054b50); // EOCD signature
+  writeU16(ev, 4, 0);          // disk number
+  writeU16(ev, 6, 0);          // central dir disk
+  writeU16(ev, 8, files.length);
+  writeU16(ev, 10, files.length);
+  writeU32(ev, 12, centralSize);
+  writeU32(ev, 16, centralStart);
+  writeU16(ev, 20, 0);         // comment length
+  push(eocd);
+
+  const out = new Uint8Array(offset);
+  let p = 0;
+  for (const c of chunks) { out.set(c, p); p += c.length; }
+  return out;
+}
+
+
+const $ = (id) => document.getElementById(id);
+
+// Per-type seed values reproduce the supplied known-good samples so the tool
+// opens on a valid, recognisable SDP for each essence.
+const SEED = {
+  video: {
+    sessionName: 'DC-0501_ORT-T_0501A sdp', originUser: 'MAGNUM', originIp: '10.198.5.101',
+    sessId: '1604610747', sessVer: '1604610747', payloadType: 96, port: 1234, ttlLayers: '64/1',
+    gmid: '00-00-00-00-00-00-00-00', ptpDomain: 0, groupA: 'main', groupB: 'backup',
+    mcastA: '238.0.203.15', sourceA: '10.198.34.87', mcastB: '238.0.203.55', sourceB: '10.198.66.87',
+  },
+  audio: {
+    sessionName: '670ipg', originUser: 'Evertz', originIp: '10.198.24.151',
+    sessId: '0102', sessVer: '23', payloadType: 97, port: 1234, ttlLayers: '64/1',
+    gmid: '00-02-C5-FF-FE-2E-43-75', ptpDomain: 100, groupA: '1P', groupB: '1S',
+    mcastA: '238.0.139.122', sourceA: '10.198.32.165', mcastB: '238.0.139.116', sourceB: '10.198.64.165',
+  },
+  anc: {
+    sessionName: '670ipg', originUser: 'Evertz', originIp: '10.198.24.151',
+    sessId: '0106', sessVer: '23', payloadType: 100, port: 1234, ttlLayers: '64/1',
+    gmid: '00-02-C5-FF-FE-2E-43-75', ptpDomain: 100, groupA: '1P', groupB: '1S',
+    mcastA: '238.0.139.118', sourceA: '10.198.32.165', mcastB: '238.0.139.112', sourceB: '10.198.64.165',
+  },
+};
+
+let currentType = 'video';
+
+function applyPreset(name) {
+  const p = VIDEO_PRESETS[name];
+  if (!p) return;
+  $('videoWidth').value = p.width;
+  $('videoHeight').value = p.height;
+  $('videoRate').value = p.exactframerate;
+}
+
+function seedType(type) {
+  currentType = type;
+  const s = SEED[type];
+  for (const [k, v] of Object.entries(s)) if ($(k)) $(k).value = v;
+
+  document.querySelectorAll('#typeSeg button').forEach((b) =>
+    b.classList.toggle('on', b.dataset.type === type));
+  document.querySelectorAll('.typeblock').forEach((el) =>
+    el.classList.toggle('hidden', el.dataset.for !== type));
+
+  if (type === 'video') {
+    $('videoSampling').value = 'YCbCr-4:2:2';
+    $('videoDepth').value = 10;
+    $('videoTcs').value = 'SDR';
+    $('videoColorimetry').value = 'BT709';
+    $('videoPm').value = '2110GPM';
+    $('videoTp').value = '2110TPW';
+    $('videoSsn').value = 'ST2110-20:2017';
+    $('videoPreset').value = '1080p5994';
+    applyPreset('1080p5994');
+  } else if (type === 'audio') {
+    $('audioEncoding').value = 'L24';
+    $('audioRate').value = 48000;
+    $('audioChannels').value = 4;
+    $('audioChannelOrder').value = 'SMPTE2110.(SGRP)';
+    $('audioPtime').value = '0.125';
+  } else if (type === 'anc') {
+    $('ancVpid').value = 137;
+    $('ancDidSdid').value = '';
+  }
+  render();
+}
+
+function readSpec() {
+  const redundant = $('redundant').checked;
+  const legs = [{ mcast: $('mcastA').value, source: $('sourceA').value }];
+  if (redundant) legs.push({ mcast: $('mcastB').value, source: $('sourceB').value });
+
+  const spec = {
+    type: currentType,
+    redundant,
+    sessionName: $('sessionName').value,
+    origin: {
+      user: $('originUser').value, ip: $('originIp').value,
+      sessId: $('sessId').value, sessVer: $('sessVer').value,
+    },
+    payloadType: Number($('payloadType').value),
+    port: Number($('port').value),
+    ttlLayers: $('ttlLayers').value,
+    gmid: $('gmid').value,
+    ptpDomain: Number($('ptpDomain').value),
+    groupLabels: [$('groupA').value, $('groupB').value],
+    legs,
+  };
+
+  if (currentType === 'video') {
+    spec.video = {
+      sampling: $('videoSampling').value, width: Number($('videoWidth').value),
+      height: Number($('videoHeight').value), depth: Number($('videoDepth').value),
+      exactframerate: $('videoRate').value, tcs: $('videoTcs').value,
+      colorimetry: $('videoColorimetry').value, pm: $('videoPm').value,
+      ssn: $('videoSsn').value, tp: $('videoTp').value,
+    };
+  } else if (currentType === 'audio') {
+    spec.audio = {
+      encoding: $('audioEncoding').value, rate: Number($('audioRate').value),
+      channels: Number($('audioChannels').value), channelOrder: $('audioChannelOrder').value,
+      ptime: $('audioPtime').value,
+    };
+  } else if (currentType === 'anc') {
+    const didSdids = String($('ancDidSdid').value).split('|').map((p) => p.trim()).filter(Boolean)
+      .map((pair) => { const [did, sdid] = pair.split('/').map((x) => x.trim()); return { did, sdid }; })
+      .filter((d) => d.did && d.sdid);
+    const vpid = $('ancVpid').value;
+    spec.anc = { vpidCode: vpid === '' ? '' : Number(vpid), didSdids };
+  }
+  return spec;
+}
+
+let lastSpec = null;
+
+function render() {
+  const spec = readSpec();
+  lastSpec = spec;
+  $('legB').classList.toggle('hidden', !spec.redundant);
+  const { ok, errors } = validateSpec(spec);
+  const errEl = $('errors');
+  errEl.innerHTML = '';
+  if (ok) {
+    $('status').innerHTML = '<span class="status-ok">Valid — ready to import</span>';
+    $('preview').textContent = buildSdp(spec).replace(/\r\n/g, '\n');
+    $('fnameHint').textContent = sdpFilename(spec);
+  } else {
+    $('status').innerHTML = '';
+    errors.forEach((e) => { const li = document.createElement('li'); li.textContent = e; errEl.appendChild(li); });
+    $('preview').textContent = '';
+    $('fnameHint').textContent = '';
+  }
+  $('copyBtn').disabled = !ok;
+  $('downloadBtn').disabled = !ok;
+}
+
+function download(name, mime, contents) {
+  const blob = contents instanceof Uint8Array ? new Blob([contents], { type: mime })
+                                              : new Blob([contents], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+// --- wiring: single ---
+document.querySelectorAll('#typeSeg button').forEach((b) =>
+  b.addEventListener('click', () => seedType(b.dataset.type)));
+$('redundant').addEventListener('change', render);
+$('videoPreset').addEventListener('change', (e) => {
+  if (e.target.value !== 'custom') applyPreset(e.target.value);
+  render();
+});
+document.querySelectorAll('#tool-sdp input, #tool-sdp select, #tool-sdp textarea').forEach((el) => {
+  if (el.closest('#tab-bulk')) return;
+  el.addEventListener('input', render);
+});
+$('copyBtn').addEventListener('click', async () => {
+  if (!lastSpec) return;
+  await navigator.clipboard.writeText(buildSdp(lastSpec));
+  $('copyBtn').textContent = 'Copied';
+  setTimeout(() => { $('copyBtn').textContent = 'Copy'; }, 1200);
+});
+$('downloadBtn').addEventListener('click', () => {
+  if (!lastSpec) return;
+  download(sdpFilename(lastSpec), 'application/sdp', buildSdp(lastSpec));
+});
+
+// --- wiring: tabs ---
+document.querySelectorAll('#tool-sdp .tabs button').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('#tool-sdp .tabs button').forEach((x) => x.classList.toggle('on', x === b));
+  $('tab-single').classList.toggle('hidden', b.dataset.tab !== 'single');
+  $('tab-bulk').classList.toggle('hidden', b.dataset.tab !== 'bulk');
+}));
+
+// --- wiring: bulk ---
+let validBulk = [];
+
+function uniqueName(name, used) {
+  if (!used.has(name)) { used.add(name); return name; }
+  const dot = name.lastIndexOf('.');
+  const stem = dot === -1 ? name : name.slice(0, dot);
+  const ext = dot === -1 ? '' : name.slice(dot);
+  let i = 2;
+  while (used.has(`${stem}_${i}${ext}`)) i++;
+  const out = `${stem}_${i}${ext}`;
+  used.add(out);
+  return out;
+}
+
+const esc = (s) => String(s).replace(/</g, '&lt;');
+
+function readImportOptions() {
+  const preset = $('impVideoPreset').value;
+  const pr = VIDEO_PRESETS[preset] || {};
+  return {
+    originUser: $('impOriginUser').value.trim(),
+    originIp: $('impOriginIp').value.trim(),
+    sessId: $('impSessId').value.trim(),
+    sessVer: $('impSessVer').value.trim(),
+    sessionNameTemplate: $('impSessionName').value.trim(),
+    groupLabelA: $('impGroupA').value.trim(),
+    groupLabelB: $('impGroupB').value.trim(),
+    gmid: $('impGmid').value.trim(),
+    ptpDomain: Number($('impPtpDomain').value),
+    sourcePrimary: $('impSrcPrimary').value.trim(),
+    sourceSecondary: $('impSrcSecondary').value.trim(),
+    sourceMap: $('impSrcMap').value.trim() ? parseSourceMap($('impSrcMap').value) : null,
+    port: $('impPort').value.trim(),
+    ttlLayers: $('impTtlLayers').value.trim(),
+    payloadTypeVideo: Number($('impPtVideo').value),
+    payloadTypeAudio: Number($('impPtAudio').value),
+    payloadTypeAnc: Number($('impPtAnc').value),
+    videoPreset: preset === 'custom' ? '' : preset,
+    videoDialect: $('impVideoDialect').value,
+    videoSampling: $('impVideoSampling').value.trim(),
+    videoWidth: $('impVideoWidth').value.trim() || pr.width,
+    videoHeight: $('impVideoHeight').value.trim() || pr.height,
+    videoExactframerate: $('impVideoRate').value.trim() || pr.exactframerate,
+    videoDepth: $('impVideoDepth').value.trim(),
+    videoTcs: $('impVideoTcs').value.trim(),
+    videoColorimetry: $('impVideoColorimetry').value.trim(),
+    videoPm: $('impVideoPm').value,
+    videoTp: $('impVideoTp').value,
+    videoSsn: $('impVideoSsn').value.trim(),
+    audioEncoding: $('impAudioEncoding').value,
+    audioRate: Number($('impAudioRate').value),
+    audioChannels: Number($('impAudioChannels').value),
+    audioChannelOrder: $('impAudioChannelOrder').value.trim(),
+    audioPtime: $('impAudioPtime').value.trim(),
+    ancVpidCode: Number($('impAncVpid').value),
+    pairLegs: $('impPairLegs').checked,
+  };
+}
+
+// Turn a flat list of specs into downloadable files + a summarised report,
+// capping the rendered error list so very large imports stay responsive.
+function packageSpecs(specs, results, skipped) {
+  const used = new Set();
+  const byType = { video: 0, audio: 0, anc: 0 };
+  const errorSamples = [];
+  let invalid = 0;
+  const opts = readImportOptions();
+
+  specs.forEach((raw, i) => {
+    const spec = applyBulkOverrides(raw, opts);
+    const { ok, errors } = validateSpec(spec);
+    if (ok) {
+      const name = uniqueName(exportFilename(spec), used);
+      validBulk.push({ name, data: buildSdp(spec) });
+      if (byType[spec.type] !== undefined) byType[spec.type]++;
+    } else {
+      invalid++;
+      if (errorSamples.length < 200) errorSamples.push({ i: i + 1, type: spec.type, err: errors.join('; ') });
+    }
+  });
+
+  let html = '<table><thead><tr><th>Essence</th><th>Files</th></tr></thead><tbody>' +
+    `<tr><td>Video (2110-20)</td><td>${byType.video}</td></tr>` +
+    `<tr><td>Audio (2110-30)</td><td>${byType.audio}</td></tr>` +
+    `<tr><td>ANC (2110-40)</td><td>${byType.anc}</td></tr>` +
+    '</tbody></table>';
+
+  if (skipped && Object.keys(skipped).length) {
+    const rows = Object.entries(skipped).sort((a, b) => b[1] - a[1])
+      .map(([k, v]) => `<tr><td>${esc(k)}</td><td>${v}</td></tr>`).join('');
+    html += '<h2 style="margin-top:16px">Skipped (not ST 2110-20/-30/-40)</h2>' +
+      `<table><thead><tr><th>Stream type / reason</th><th>Rows</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+  if (errorSamples.length) {
+    const rows = errorSamples.map((e) => `<tr><td>${e.i}</td><td class="badge-err">${esc(e.type)}</td><td>${esc(e.err)}</td></tr>`).join('');
+    html += `<h2 style="margin-top:16px">Invalid specs (${invalid}${invalid > errorSamples.length ? `, showing first ${errorSamples.length}` : ''})</h2>` +
+      `<table><thead><tr><th>#</th><th>Type</th><th>Errors</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+  // Show a couple of example filenames so the naming scheme is obvious.
+  if (validBulk.length) {
+    const examples = validBulk.slice(0, 3).map((f) => esc(f.name)).join(', ');
+    html += `<div class="hint" style="margin-top:10px">Example filenames: ${examples}${validBulk.length > 3 ? ', …' : ''}</div>`;
+  }
+  results.innerHTML = html;
+  $('zipBtn').disabled = validBulk.length === 0;
+  return { valid: validBulk.length, invalid };
+}
+
+function runBulk() {
+  const text = $('csvText').value;
+  const results = $('csvResults');
+  results.innerHTML = '';
+  validBulk = [];
+  if (!text.trim()) { $('csvSummary').textContent = 'Paste or upload CSV first.'; $('zipBtn').disabled = true; return; }
+
+  let rows;
+  try { rows = parseCsv(text); } catch (err) { $('csvSummary').textContent = 'CSV parse error: ' + err.message; return; }
+  if (rows.length === 0) { $('csvSummary').textContent = 'No rows found.'; return; }
+
+  const header = rows[0].map((h) => String(h).trim());
+
+  // --- device encap export ---
+  if (isEncapHeader(header)) {
+    let out;
+    try { out = encapToSpecs(text, readImportOptions()); }
+    catch (err) { $('csvSummary').textContent = 'Encap import error: ' + err.message; return; }
+    const { valid } = packageSpecs(out.specs, results, out.skipped);
+    const skippedTotal = Object.values(out.skipped).reduce((a, b) => a + b, 0);
+    $('csvSummary').textContent =
+      `Device encap export detected. Mapped ${out.mapped} ST 2110 essence(s) → ${valid} file(s); ${skippedTotal} non-2110 row(s) skipped.`;
+    return;
+  }
+
+  // --- native template ---
+  let parsed;
+  try { parsed = csvToSpecs(text); } catch (err) { $('csvSummary').textContent = 'CSV parse error: ' + err.message; return; }
+  const specs = parsed.records.map((r) => r.spec);
+  const { valid, invalid } = packageSpecs(specs, results, null);
+  $('csvSummary').textContent = `Native template detected. ${valid}/${parsed.records.length} rows valid — ${valid} file(s) will be packaged${invalid ? `, ${invalid} invalid` : ''}.`;
+}
+
+$('tmplBtn').addEventListener('click', () => download('st2110_sdp_template.csv', 'text/csv', csvTemplate()));
+$('parseBtn').addEventListener('click', runBulk);
+$('csvFile').addEventListener('change', (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => { $('csvText').value = reader.result; runBulk(); };
+  reader.readAsText(f);
+});
+$('impSrcMapFile').addEventListener('change', (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => { $('impSrcMap').value = reader.result; };
+  reader.readAsText(f);
+});
+$('impVideoPreset').addEventListener('change', () => {
+  const p = VIDEO_PRESETS[$('impVideoPreset').value];
+  if (!p) return;
+  $('impVideoWidth').value = p.width;
+  $('impVideoHeight').value = p.height;
+  $('impVideoRate').value = p.exactframerate;
+});
+$('zipBtn').addEventListener('click', () => {
+  if (validBulk.length === 0) return;
+  download('st2110_sdp_bundle.zip', 'application/zip', makeZip(validBulk));
+});
+
+// init
+seedType('video');
+
+</script>
 </body>
 </html>

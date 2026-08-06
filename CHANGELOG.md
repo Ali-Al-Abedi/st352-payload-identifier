@@ -8,12 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **ST 2110 SDP Generator tab (2026-08-06).** Site-level **VPID | SDP** switcher in
-  the header of `vpid.html` and new `sdp.html` (plus `sdp.js`). Same GitHub Pages
-  site (`/vpid_calculator/`), Magnum-import SDP generation for ST 2110-20/-30/-40,
-  single-path or ST 2022-7, Single + Bulk (CSV / device encap export), export
-  parameter overrides, and `{multicast}_{port}.txt` ZIP naming. Fixture tests:
-  `node --test tests/test_sdp.mjs` (22/22).
+- **ST 2110 SDP Generator tab (2026-08-06).** Header **VPID | SDP** switcher on
+  `vpid.html` (`#vpid` / `#sdp`). The SDP tool is **inlined into `vpid.html`** so
+  GitHub Pages (which only stages that file) serves it without a workflow change.
+  Standalone `sdp.html` + `sdp.js` remain for local use. Magnum-import generation
+  for ST 2110-20/-30/-40, single-path or ST 2022-7, Single + Bulk (CSV / device
+  encap export), export-parameter overrides, `{multicast}_{port}.txt` ZIP naming.
+  Fixture tests: `node --test tests/test_sdp.mjs` (22/22).
 
 ## [1.0.0] — 2026-05-09
 

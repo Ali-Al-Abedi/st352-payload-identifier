@@ -28,11 +28,12 @@ The tools are static HTML + vanilla JavaScript (no build step):
 git clone https://github.com/Ali-Al-Abedi/vpid_calculator.git
 cd vpid_calculator
 python3 -m http.server 8765
-open http://localhost:8765/vpid.html   # VPID Calculator
-open http://localhost:8765/sdp.html    # ST 2110 SDP Generator
+open http://localhost:8765/vpid.html        # VPID Calculator
+open http://localhost:8765/vpid.html#sdp    # ST 2110 SDP Generator (same page)
+# optional standalone: sdp.html
 ```
 
-Or just open `vpid.html` / `sdp.html` directly in any modern browser — there is no build
+Or just open `vpid.html` directly in any modern browser — there is no build
 step, no bundler, no `node_modules`. Use the **VPID | SDP** tabs in the header to switch.
 
 ### Power features
