@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **SDP UHD presets (2026-08-06).** `2160p59.94 SDR` (`A1 CA 00 01`) and `2160p59.94 HLG Rec.2020` (`CE DA A0 01`).
+
 - **SDP preset: 1080p59.94 HLG Rec.2020 (2026-08-06).** VPID `89 DA A0 01` — TCS=HLG, BT2020.
 
 - **Bulk: removed Download CSV template (2026-08-06).** Encap export / paste only.

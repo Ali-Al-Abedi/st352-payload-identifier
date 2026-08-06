@@ -68,6 +68,32 @@ export const VIDEO_PRESETS = {
     colorimetry: 'BT709',
     ssn: 'ST2110-20:2017',
   },
+  '2160p5994': {
+    label: '2160p59.94 SDR',
+    vpid: 'A1CA0001',
+    vpidSpaced: 'A1 CA 00 01',
+    width: 3840,
+    height: 2160,
+    exactframerate: '60000/1001',
+    sampling: 'YCbCr-4:2:2',
+    depth: 10,
+    tcs: 'SDR',
+    colorimetry: 'BT709',
+    ssn: 'ST2110-20:2017',
+  },
+  '2160p5994hlg': {
+    label: '2160p59.94 HLG Rec.2020',
+    vpid: 'CEDAA001',
+    vpidSpaced: 'CE DA A0 01',
+    width: 3840,
+    height: 2160,
+    exactframerate: '60000/1001',
+    sampling: 'YCbCr-4:2:2',
+    depth: 10,
+    tcs: 'HLG',
+    colorimetry: 'BT2020',
+    ssn: 'ST2110-20:2017',
+  },
 };
 
 /** Apply a named VIDEO_PRESETS entry onto a video field bag (does not clear unknown keys). */
