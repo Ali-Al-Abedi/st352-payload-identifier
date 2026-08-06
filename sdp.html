@@ -15,8 +15,8 @@
     --text: #e6edf6;
     --text-dim: #94a3b8;
     --text-faint: #64748b;
-    --accent: #00d4ff;
-    --accent-dim: #0891b2;
+    --accent: #39ff14;
+    --accent-dim: #0f9d3a;
     --ok: #22c55e;
     --warn: #f59e0b;
     --err: #ef4444;
@@ -25,52 +25,125 @@
   html, body { width: 100%; min-height: 100vh; }
   body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background: var(--bg); color: var(--text);
+    background:
+      radial-gradient(1200px 600px at 12% -10%, rgba(57, 255, 20, 0.42), transparent 55%),
+      radial-gradient(900px 500px at 88% 0%, rgba(125, 255, 90, 0.08), transparent 50%),
+      radial-gradient(800px 400px at 50% 100%, rgba(15, 157, 58, 0.06), transparent 45%),
+      var(--bg);
+    background-attachment: fixed;
+    color: var(--text);
     font-size: 14px; line-height: 1.5; overflow-x: hidden;
   }
+  body::before {
+    content: "";
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+      linear-gradient(rgba(36, 48, 66, 0.35) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(36, 48, 66, 0.35) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 20%, transparent 75%);
+    opacity: 0.35;
+  }
+  header, main { position: relative; z-index: 1; }
   code, .mono, pre, input, select, textarea { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; }
 
   header {
-    padding: 22px 32px; border-bottom: 1px solid var(--border);
-    background: linear-gradient(180deg, #0d1320 0%, var(--bg) 100%);
+    padding: 26px 32px 22px; border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(13, 19, 32, 0.95) 0%, rgba(11, 15, 23, 0.88) 100%);
+    backdrop-filter: blur(10px);
     display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
   }
-  header .title { display: flex; align-items: baseline; gap: 12px; }
-  header h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
-  header h1 .accent { color: var(--accent); }
-  header .subtitle { color: var(--text-dim); font-size: 13px; }
+  header .title { display: flex; flex-direction: column; gap: 4px; }
+  header h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
+  header h1 .accent { color: var(--accent); text-shadow: 0 0 24px rgba(57, 255, 20, 0.6); }
+  header .subtitle { color: var(--text-dim); font-size: 13px; max-width: 56ch; }
   header .meta { font-size: 12px; color: var(--text-faint); display: flex; gap: 16px; }
   header .meta a { color: var(--text-dim); text-decoration: none; }
   header .meta a:hover { color: var(--accent); }
 
   .app-tabs {
-    display: inline-flex; gap: 4px; padding: 4px;
-    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    display: inline-flex; gap: 4px; padding: 5px;
+    background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border); border-radius: 999px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
   }
   .app-tabs a {
-    color: var(--text-dim); text-decoration: none; font-size: 12px; font-weight: 700;
-    letter-spacing: 0.06em; text-transform: uppercase; padding: 7px 14px;
-    border-radius: 6px; transition: color 0.15s, background 0.15s;
+    color: var(--text-dim); text-decoration: none; font-size: 12px; font-weight: 800;
+    letter-spacing: 0.08em; text-transform: uppercase; padding: 8px 18px;
+    border-radius: 999px; transition: color 0.18s, background 0.18s, box-shadow 0.18s;
   }
   .app-tabs a:hover { color: var(--accent); }
-  .app-tabs a.on { color: #001018; background: var(--accent); }
-
-  main { padding: 20px 28px 80px; max-width: 1500px; margin: 0 auto; }
-
-  .tabs { display: flex; gap: 6px; margin-bottom: 18px; border-bottom: 1px solid var(--border); }
-  .tabs button {
-    background: none; border: none; border-bottom: 2px solid transparent;
-    color: var(--text-dim); padding: 10px 16px; cursor: pointer; font-size: 13px;
-    font-weight: 600; letter-spacing: 0.04em; font-family: inherit;
+  .app-tabs a.on {
+    color: #04150c; background: linear-gradient(180deg, #7dff5a, var(--accent));
+    box-shadow: 0 0 22px rgba(57, 255, 20, 0.6);
   }
-  .tabs button.on { color: var(--accent); border-bottom-color: var(--accent); }
 
-  .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+  main { padding: 24px 32px 80px; max-width: 1500px; margin: 0 auto; }
+
+  .tool-hero {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+    flex-wrap: wrap; margin: 0 0 18px; padding: 18px 20px; border-radius: 14px;
+    border: 1px solid rgba(57, 255, 20, 0.42);
+    background:
+      linear-gradient(135deg, rgba(57, 255, 20, 0.22) 0%, rgba(15, 157, 58, 0.05) 45%, transparent 70%),
+      var(--bg-elev);
+    box-shadow: 0 10px 36px rgba(0, 0, 0, 0.28);
+  }
+  .tool-hero h2 { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .tool-hero p { color: var(--text-dim); font-size: 13px; max-width: 62ch; }
+  .tool-hero .pill {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #04150c; background: var(--accent); padding: 6px 10px; border-radius: 999px;
+    white-space: nowrap; box-shadow: 0 0 18px rgba(57, 255, 20, 0.6);
+    animation: pill-glow 2.8s ease-in-out infinite;
+  }
+  @keyframes pill-glow {
+    0%, 100% { box-shadow: 0 0 16px rgba(57, 255, 20, 0.55), 0 0 40px rgba(57, 255, 20, 0.2); }
+    50% { box-shadow: 0 0 28px rgba(57, 255, 20, 0.9), 0 0 56px rgba(57, 255, 20, 0.35); }
+  }
+    50% { box-shadow: 0 0 26px rgba(57, 255, 20, 0.75); }
+  }
+
+  .faq {
+    margin-top: 0; margin-bottom: 16px; border: 1px solid var(--border);
+    border-radius: 12px; background: rgba(0,0,0,0.2); padding: 4px 14px;
+  }
+  .faq summary {
+    cursor: pointer; color: var(--text-dim); font-size: 12px; font-weight: 700;
+    padding: 10px 0; list-style: none;
+  }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq[open] summary { color: var(--accent); }
+  .faq dl { padding-bottom: 12px; }
+  .faq dt { color: var(--text); font-weight: 700; font-size: 12px; margin-top: 10px; }
+  .faq dd { color: var(--text-dim); font-size: 12px; margin: 3px 0 0; }
+
+  .tabs {
+    display: inline-flex; gap: 4px; margin-bottom: 18px; padding: 5px;
+    background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 999px;
+  }
+  .tabs button {
+    background: none; border: none; color: var(--text-dim); padding: 8px 16px;
+    cursor: pointer; font-size: 12px; font-weight: 800; letter-spacing: 0.06em;
+    text-transform: uppercase; font-family: inherit; border-radius: 999px;
+    transition: all 0.18s ease;
+  }
+  .tabs button.on {
+    color: #04150c; background: linear-gradient(180deg, #7dff5a, var(--accent));
+    box-shadow: 0 0 20px rgba(57, 255, 20, 0.75);
+  }
+
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 20px; }
   @media (max-width: 1024px) { .layout { grid-template-columns: 1fr; } }
 
   .card {
-    background: var(--bg-elev); border: 1px solid var(--border);
-    border-radius: 12px; padding: 18px 20px; margin-bottom: 16px;
+    background: linear-gradient(180deg, #141c2b 0%, var(--bg-elev) 48%);
+    border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px 20px; margin-bottom: 16px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .card:hover {
+    border-color: rgba(57, 255, 20, 0.42);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
   }
   .card h2 {
     font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em;
@@ -83,42 +156,61 @@
     color: var(--text-faint); font-weight: 600; margin-bottom: 5px;
   }
   input, select, textarea {
-    width: 100%; background: var(--bg); border: 1px solid var(--border);
-    border-radius: 6px; color: var(--text); padding: 8px 10px; font-size: 13px; outline: none;
+    width: 100%; background: rgba(0,0,0,0.28); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); padding: 9px 11px; font-size: 13px; outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
   }
-  input:focus, select:focus, textarea:focus { border-color: var(--accent-dim); }
+  input:focus, select:focus, textarea:focus {
+    border-color: rgba(57, 255, 20, 0.75);
+    box-shadow: 0 0 0 3px rgba(57, 255, 20, 0.22);
+  }
   textarea { min-height: 140px; resize: vertical; }
 
   .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
 
-  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
   .seg button {
-    background: var(--bg); border: none; color: var(--text-dim); padding: 7px 14px;
-    cursor: pointer; font-size: 12px; font-weight: 600; font-family: inherit;
+    background: transparent; border: none; color: var(--text-dim); padding: 8px 14px;
+    cursor: pointer; font-size: 12px; font-weight: 700; font-family: inherit;
+    transition: background 0.15s, color 0.15s;
   }
-  .seg button.on { background: var(--accent-dim); color: #001018; }
+  .seg button.on { background: linear-gradient(180deg, #7dff5a, var(--accent)); color: #04150c; }
 
   .toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
   .toggle input { width: auto; }
 
   .btn {
-    background: var(--accent-dim); border: 1px solid var(--accent-dim); color: #001018;
-    border-radius: 6px; padding: 9px 16px; cursor: pointer; font-size: 12px;
-    font-weight: 700; letter-spacing: 0.04em; font-family: inherit;
+    background: linear-gradient(180deg, #7dff5a, var(--accent));
+    border: 1px solid var(--accent); color: #04150c;
+    border-radius: 8px; padding: 10px 16px; cursor: pointer; font-size: 12px;
+    font-weight: 800; letter-spacing: 0.04em; font-family: inherit;
+    box-shadow: 0 0 18px rgba(57, 255, 20, 0.42);
+    transition: transform 0.12s, box-shadow 0.15s;
   }
-  .btn.ghost { background: none; color: var(--text-dim); border-color: var(--border); }
-  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn:hover { box-shadow: 0 0 28px rgba(57, 255, 20, 0.65); }
+  .btn.ghost { background: none; color: var(--text-dim); border-color: var(--border); box-shadow: none; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
   .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
 
   pre.preview {
-    background: #060a11; border: 1px solid var(--border); border-radius: 8px;
-    padding: 14px 16px; font-size: 12.5px; line-height: 1.55; color: var(--text);
-    white-space: pre; overflow-x: auto; min-height: 320px;
+    background: linear-gradient(180deg, #071018 0%, #060a11 100%);
+    border: 1px solid rgba(57, 255, 20, 0.35);
+    border-radius: 10px;
+    padding: 16px 18px; font-size: 12.5px; line-height: 1.55; color: #eaffd6;
+    white-space: pre; overflow-x: auto; min-height: 360px;
+    box-shadow: inset 0 0 40px rgba(57, 255, 20, 0.12);
   }
   .errors { list-style: none; margin-top: 10px; }
   .errors li { color: var(--err); font-size: 12px; padding: 2px 0; }
-  .status-ok { color: var(--ok); font-size: 12px; font-weight: 600; }
+  .status-ok {
+    color: var(--ok); font-size: 12px; font-weight: 700;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .status-ok::before {
+    content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ok);
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.7);
+  }
 
   table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
   th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
@@ -132,8 +224,8 @@
 <body>
 <header>
   <div class="title">
-    <h1><span class="accent">ST 2110</span> SDP Generator</h1>
-    <span class="subtitle">Magnum-import text files — ST 2110-20 / -30 / -40, single-path or ST 2022-7</span>
+    <h1>ST 2110 <span class="accent">SDP Generator</span></h1>
+    <span class="subtitle">Build Magnum-import ST 2110-20 / -30 / -40 SDP files in seconds</span>
   </div>
   <nav class="app-tabs" aria-label="Tools">
     <a href="vpid.html#vpid">VPID</a>
@@ -147,6 +239,26 @@
 </header>
 
 <main>
+  <div class="tool-hero">
+    <div>
+      <h2>Magnum-ready ST 2110 SDPs</h2>
+      <p>Single essence or bulk from a device encap CSV. Resolution presets match VPID chips and auto-fill <code>a=fmtp</code> — tweak anything before you export.</p>
+    </div>
+    <span class="pill">Import-ready</span>
+  </div>
+
+  <details class="faq">
+    <summary>Quick FAQ — preset / ST 2022-7 / source IP</summary>
+    <dl>
+      <dt>Video preset</dt>
+      <dd>Picks a known picture format (e.g. 1080p59.94 HLG Rec.2020) and fills width, height, rate, sampling, depth, TCS, colorimetry. You can still edit every field.</dd>
+      <dt>ST 2022-7 primary + backup legs</dt>
+      <dd>On = one SDP with both redundant multicast paths (<code>a=group:DUP</code>). Off = single-path SDP.</dd>
+      <dt>Source IP</dt>
+      <dd>Optional SSM join (<code>a=source-filter</code>). Leave blank for ASM / when Magnum or the CSV already supplies it.</dd>
+    </dl>
+  </details>
+
   <div class="tabs">
     <button id="tab-single-btn" class="on" data-tab="single">Single</button>
     <button id="tab-bulk-btn" data-tab="bulk">Bulk (CSV)</button>

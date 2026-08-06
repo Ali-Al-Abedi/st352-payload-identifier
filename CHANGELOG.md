@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **UI polish + neon green theme (2026-08-06).** Atmospheric backdrop, hero banners,
+  pill tool tabs, stronger cards/preview, SDP Quick FAQ (preset / ST 2022-7 / source IP).
+  Accent shifted from cyan to neon lime (`#39ff14`). Applies to VPID + SDP (`vpid.html`,
+  `sdp.html`).
+
 - **SDP Single tab simplified (2026-08-06).** Preset-first video; session/transport/legs under **Session, transport & legs**. Editing a fmtp field switches preset to Custom.
 
 - **SDP: restore 2160p59.94 HLG Rec.2020 preset (`CE DA A0 01`) (2026-08-06).**

@@ -15,8 +15,8 @@
     --text: #e6edf6;
     --text-dim: #94a3b8;
     --text-faint: #64748b;
-    --accent: #00d4ff;
-    --accent-dim: #0891b2;
+    --accent: #39ff14;
+    --accent-dim: #0f9d3a;
     --ok: #22c55e;
     --warn: #f59e0b;
     --err: #ef4444;
@@ -27,7 +27,7 @@
     /* SDI transport tier tokens used by the level chip in the batch table. */
     --level-sd:          #78716c;
     --level-hd:          #94a3b8;
-    --level-3g-a:        #00d4ff;
+    --level-3g-a:        #39ff14;
     --level-3g-b:        #14b8a6;
     --level-3g-quad:     #38bdf8;
     --level-6g:          #22c55e;
@@ -36,7 +36,7 @@
     --level-12g-quad:    #d946ef;
     --level-12g-mux:     #f472b6;
     --level-compressed:  #f59e0b;
-    --bit-1: #00d4ff;
+    --bit-1: #39ff14;
     --bit-0: #475569;
     --bit-x: #f59e0b;
   }
@@ -44,28 +44,50 @@
   html, body { width: 100%; min-height: 100vh; }
   body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background: var(--bg);
+    background:
+      radial-gradient(1200px 600px at 12% -10%, rgba(57, 255, 20, 0.42), transparent 55%),
+      radial-gradient(900px 500px at 88% 0%, rgba(125, 255, 90, 0.08), transparent 50%),
+      radial-gradient(800px 400px at 50% 100%, rgba(15, 157, 58, 0.06), transparent 45%),
+      var(--bg);
+    background-attachment: fixed;
     color: var(--text);
     font-size: 14px;
     line-height: 1.5;
     overflow-x: hidden;
   }
+  body::before {
+    content: "";
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+      linear-gradient(rgba(36, 48, 66, 0.35) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(36, 48, 66, 0.35) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 20%, transparent 75%);
+    opacity: 0.35;
+  }
+  header, main, footer { position: relative; z-index: 1; }
   code, .mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; }
 
   header {
-    padding: 22px 32px;
+    padding: 26px 32px 22px;
     border-bottom: 1px solid var(--border);
-    background: linear-gradient(180deg, #0d1320 0%, var(--bg) 100%);
+    background:
+      linear-gradient(180deg, rgba(13, 19, 32, 0.95) 0%, rgba(11, 15, 23, 0.88) 100%);
+    backdrop-filter: blur(10px);
     display: flex; align-items: center; justify-content: space-between;
     flex-wrap: wrap; gap: 16px;
   }
-  header .title { display: flex; align-items: baseline; gap: 12px; }
+  header .title { display: flex; flex-direction: column; gap: 4px; }
   header h1 {
-    font-size: 22px; font-weight: 800; letter-spacing: -0.01em;
+    font-size: 26px; font-weight: 800; letter-spacing: -0.03em;
     color: var(--text);
+    line-height: 1.1;
   }
-  header h1 .accent { color: var(--accent); }
-  header .subtitle { color: var(--text-dim); font-size: 13px; }
+  header h1 .accent {
+    color: var(--accent);
+    text-shadow: 0 0 24px rgba(57, 255, 20, 0.6);
+  }
+  header .subtitle { color: var(--text-dim); font-size: 13px; max-width: 52ch; }
   header .meta { font-size: 12px; color: var(--text-faint); display: flex; gap: 16px; }
   header .meta a { color: var(--text-dim); text-decoration: none; }
   header .meta a:hover { color: var(--accent); }
@@ -76,11 +98,22 @@
      Single visual unit — the hex input lives at the top with full padding, the toolbar
      sits at the bottom on a slightly recessed background so it reads as a footer. */
   .hex-input-wrap {
-    background: var(--bg-elev);
+    background: linear-gradient(180deg, #141c2b 0%, var(--bg-elev) 100%);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 14px;
     margin-bottom: 20px;
     overflow: hidden;
+    box-shadow:
+      0 0 0 1px rgba(57, 255, 20, 0.22),
+      0 18px 50px rgba(0, 0, 0, 0.35);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .hex-input-wrap:focus-within {
+    border-color: rgba(57, 255, 20, 0.65);
+    box-shadow:
+      0 0 0 1px rgba(57, 255, 20, 0.65),
+      0 0 40px rgba(57, 255, 20, 0.22),
+      0 18px 50px rgba(0, 0, 0, 0.35);
   }
   .hex-input-body {
     padding: 18px 20px;
@@ -96,9 +129,10 @@
     outline: none;
     color: var(--accent);
     font-family: 'JetBrains Mono', ui-monospace, monospace;
-    font-size: 28px;
+    font-size: 34px;
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.12em;
+    text-shadow: 0 0 28px rgba(57, 255, 20, 0.5);
   }
   .hex-input::placeholder { color: var(--text-faint); font-weight: 400; }
 
@@ -131,8 +165,13 @@
     transition: all 0.15s ease;
   }
   .btn:hover { background: var(--bg-elev-2); color: var(--text); border-color: var(--border-strong); }
-  .btn.primary { background: var(--accent); color: #001218; border-color: var(--accent); font-weight: 600; }
-  .btn.primary:hover { background: #33dcff; }
+  .btn.primary {
+    background: linear-gradient(180deg, #7dff5a 0%, var(--accent) 100%);
+    color: #04150c; border-color: var(--accent); font-weight: 700;
+    box-shadow: 0 0 20px rgba(57, 255, 20, 0.5);
+  }
+  .btn.primary:hover { background: #b8ff9a; box-shadow: 0 0 28px rgba(57, 255, 20, 0.65); }
+  .btn:active { transform: translateY(1px); }
 
   /* Quick-start chip row — one-click load of common broadcast scenarios. */
   .quick-row {
@@ -161,7 +200,11 @@
     transition: all 0.15s ease;
     white-space: nowrap;
   }
-  .chip:hover { background: var(--bg-elev-2); color: var(--accent); border-color: var(--accent); }
+  .chip:hover {
+    background: rgba(57, 255, 20, 0.16); color: var(--accent); border-color: var(--accent);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  }
   .chip .chip-hex { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; color: var(--text-faint); margin-left: 6px; }
   .chip:hover .chip-hex { color: var(--text-dim); }
 
@@ -180,10 +223,46 @@
   }
 
   .card {
-    background: var(--bg-elev);
+    background: linear-gradient(180deg, #141c2b 0%, var(--bg-elev) 48%);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 14px;
     overflow: hidden;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  .card:hover {
+    border-color: rgba(57, 255, 20, 0.42);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  }
+  .tool-hero {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+    flex-wrap: wrap;
+    margin: 0 0 18px;
+    padding: 18px 20px;
+    border-radius: 14px;
+    border: 1px solid rgba(57, 255, 20, 0.42);
+    background:
+      linear-gradient(135deg, rgba(57, 255, 20, 0.22) 0%, rgba(15, 157, 58, 0.05) 45%, transparent 70%),
+      var(--bg-elev);
+    box-shadow: 0 10px 36px rgba(0, 0, 0, 0.28);
+  }
+  .tool-hero h2 {
+    font-size: 18px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 4px;
+  }
+  .tool-hero p { color: var(--text-dim); font-size: 13px; max-width: 62ch; }
+  .tool-hero .pill {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #04150c; background: var(--accent); padding: 6px 10px; border-radius: 999px;
+    white-space: nowrap; box-shadow: 0 0 18px rgba(57, 255, 20, 0.6);
+    animation: pill-glow 2.8s ease-in-out infinite;
+  }
+  @keyframes pill-glow {
+    0%, 100% { box-shadow: 0 0 16px rgba(57, 255, 20, 0.55), 0 0 40px rgba(57, 255, 20, 0.2); }
+    50% { box-shadow: 0 0 28px rgba(57, 255, 20, 0.9), 0 0 56px rgba(57, 255, 20, 0.35); }
+  }
+    50% { box-shadow: 0 0 26px rgba(57, 255, 20, 0.75); }
+  }
+  .friendly-label:not(.invalid) {
+    text-shadow: 0 0 28px rgba(57, 255, 20, 0.22);
   }
   .card-header {
     padding: 14px 18px;
@@ -636,32 +715,49 @@
 
   /* Site tool switcher — VPID Calculator ↔ ST 2110 SDP Generator */
   .app-tabs {
-    display: inline-flex; gap: 4px; padding: 4px;
-    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    display: inline-flex; gap: 4px; padding: 5px;
+    background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border); border-radius: 999px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
   }
   .app-tabs a {
-    color: var(--text-dim); text-decoration: none; font-size: 12px; font-weight: 700;
-    letter-spacing: 0.06em; text-transform: uppercase; padding: 7px 14px;
-    border-radius: 6px; transition: color 0.15s, background 0.15s;
+    color: var(--text-dim); text-decoration: none; font-size: 12px; font-weight: 800;
+    letter-spacing: 0.08em; text-transform: uppercase; padding: 8px 18px;
+    border-radius: 999px; transition: color 0.18s, background 0.18s, box-shadow 0.18s;
   }
   .app-tabs a:hover { color: var(--accent); }
-  .app-tabs a.on { color: #001018; background: var(--accent); }
+  .app-tabs a.on {
+    color: #04150c; background: linear-gradient(180deg, #7dff5a, var(--accent));
+    box-shadow: 0 0 22px rgba(57, 255, 20, 0.6);
+  }
 
   /* ---- SDP generator (inlined for GitHub Pages; scoped to #tool-sdp) ---- */
-#tool-sdp .tabs { display: flex; gap: 6px; margin-bottom: 18px; border-bottom: 1px solid var(--border); }
-#tool-sdp .tabs button {
-    background: none; border: none; border-bottom: 2px solid transparent;
-    color: var(--text-dim); padding: 10px 16px; cursor: pointer; font-size: 13px;
-    font-weight: 600; letter-spacing: 0.04em; font-family: inherit;
+#tool-sdp .tabs {
+    display: inline-flex; gap: 4px; margin-bottom: 18px; padding: 5px;
+    background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 999px;
   }
-#tool-sdp .tabs button.on { color: var(--accent); border-bottom-color: var(--accent); }
+#tool-sdp .tabs button {
+    background: none; border: none;
+    color: var(--text-dim); padding: 8px 16px; cursor: pointer; font-size: 12px;
+    font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+    font-family: inherit; border-radius: 999px; transition: all 0.18s ease;
+  }
+#tool-sdp .tabs button.on {
+    color: #04150c; background: linear-gradient(180deg, #7dff5a, var(--accent));
+    box-shadow: 0 0 20px rgba(57, 255, 20, 0.75);
+  }
 
-#tool-sdp .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
-  @media (max-width: 1024px) { .layout { grid-template-columns: 1fr; } }
+#tool-sdp .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 20px; }
+  @media (max-width: 1024px) { #tool-sdp .layout { grid-template-columns: 1fr; } }
 
 #tool-sdp .card {
-    background: var(--bg-elev); border: 1px solid var(--border);
-    border-radius: 12px; padding: 18px 20px; margin-bottom: 16px;
+    background: linear-gradient(180deg, #141c2b 0%, var(--bg-elev) 48%);
+    border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px 20px; margin-bottom: 16px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+#tool-sdp .card:hover {
+    border-color: rgba(57, 255, 20, 0.42);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
   }
 #tool-sdp .card h2 {
     font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em;
@@ -674,42 +770,65 @@
     color: var(--text-faint); font-weight: 600; margin-bottom: 5px;
   }
 #tool-sdp input, #tool-sdp select, #tool-sdp textarea {
-    width: 100%; background: var(--bg); border: 1px solid var(--border);
-    border-radius: 6px; color: var(--text); padding: 8px 10px; font-size: 13px; outline: none;
+    width: 100%; background: rgba(0,0,0,0.28); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); padding: 9px 11px; font-size: 13px; outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
   }
-#tool-sdp input:focus, #tool-sdp select:focus, #tool-sdp textarea:focus { border-color: var(--accent-dim); }
+#tool-sdp input:focus, #tool-sdp select:focus, #tool-sdp textarea:focus {
+    border-color: rgba(57, 255, 20, 0.75);
+    box-shadow: 0 0 0 3px rgba(57, 255, 20, 0.22);
+  }
 #tool-sdp textarea { min-height: 140px; resize: vertical; }
 
 #tool-sdp .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 #tool-sdp .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
 
-#tool-sdp .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+#tool-sdp .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
 #tool-sdp .seg button {
-    background: var(--bg); border: none; color: var(--text-dim); padding: 7px 14px;
-    cursor: pointer; font-size: 12px; font-weight: 600; font-family: inherit;
+    background: transparent; border: none; color: var(--text-dim); padding: 8px 14px;
+    cursor: pointer; font-size: 12px; font-weight: 700; font-family: inherit;
+    transition: background 0.15s, color 0.15s;
   }
-#tool-sdp .seg button.on { background: var(--accent-dim); color: #001018; }
+#tool-sdp .seg button.on {
+    background: linear-gradient(180deg, #7dff5a, var(--accent)); color: #04150c;
+  }
 
 #tool-sdp .toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
 #tool-sdp .toggle input { width: auto; }
 
 #tool-sdp .btn {
-    background: var(--accent-dim); border: 1px solid var(--accent-dim); color: #001018;
-    border-radius: 6px; padding: 9px 16px; cursor: pointer; font-size: 12px;
-    font-weight: 700; letter-spacing: 0.04em; font-family: inherit;
+    background: linear-gradient(180deg, #7dff5a, var(--accent));
+    border: 1px solid var(--accent); color: #04150c;
+    border-radius: 8px; padding: 10px 16px; cursor: pointer; font-size: 12px;
+    font-weight: 800; letter-spacing: 0.04em; font-family: inherit;
+    box-shadow: 0 0 18px rgba(57, 255, 20, 0.42);
+    transition: transform 0.12s, box-shadow 0.15s;
   }
-#tool-sdp .btn.ghost { background: none; color: var(--text-dim); border-color: var(--border); }
-#tool-sdp .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+#tool-sdp .btn:hover { box-shadow: 0 0 28px rgba(57, 255, 20, 0.65); }
+#tool-sdp .btn.ghost {
+    background: none; color: var(--text-dim); border-color: var(--border); box-shadow: none;
+  }
+#tool-sdp .btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
 #tool-sdp .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
 
 #tool-sdp pre.preview {
-    background: #060a11; border: 1px solid var(--border); border-radius: 8px;
-    padding: 14px 16px; font-size: 12.5px; line-height: 1.55; color: var(--text);
-    white-space: pre; overflow-x: auto; min-height: 320px;
+    background: linear-gradient(180deg, #071018 0%, #060a11 100%);
+    border: 1px solid rgba(57, 255, 20, 0.35);
+    border-radius: 10px;
+    padding: 16px 18px; font-size: 12.5px; line-height: 1.55; color: #eaffd6;
+    white-space: pre; overflow-x: auto; min-height: 360px;
+    box-shadow: inset 0 0 40px rgba(57, 255, 20, 0.12);
   }
 #tool-sdp .errors { list-style: none; margin-top: 10px; }
 #tool-sdp .errors li { color: var(--err); font-size: 12px; padding: 2px 0; }
-#tool-sdp .status-ok { color: var(--ok); font-size: 12px; font-weight: 600; }
+#tool-sdp .status-ok {
+    color: var(--ok); font-size: 12px; font-weight: 700;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+#tool-sdp .status-ok::before {
+    content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ok);
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.7);
+  }
 
 #tool-sdp table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
 #tool-sdp th, #tool-sdp td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
@@ -717,12 +836,28 @@
 #tool-sdp .badge-ok { color: var(--ok); font-weight: 700; }
 #tool-sdp .badge-err { color: var(--err); font-weight: 700; }
 #tool-sdp .hint { color: var(--text-faint); font-size: 11px; margin-top: 4px; }
+#tool-sdp .faq {
+    margin-top: 8px; margin-bottom: 16px; border: 1px solid var(--border);
+    border-radius: 12px; background: rgba(0,0,0,0.2); padding: 4px 14px;
+  }
+#tool-sdp .faq summary {
+    cursor: pointer; color: var(--text-dim); font-size: 12px; font-weight: 700;
+    padding: 10px 0; list-style: none;
+  }
+#tool-sdp .faq summary::-webkit-details-marker { display: none; }
+#tool-sdp .faq[open] summary { color: var(--accent); }
+#tool-sdp .faq dl { padding-bottom: 12px; }
+#tool-sdp .faq dt { color: var(--text); font-weight: 700; font-size: 12px; margin-top: 10px; }
+#tool-sdp .faq dd { color: var(--text-dim); font-size: 12px; margin: 3px 0 0; }
 #tool-sdp .hidden { display: none !important; }
   #tool-sdp { display: none; }
   body.show-sdp #tool-vpid { display: none; }
   body.show-sdp #tool-sdp { display: block; }
   body.show-sdp header .title .subtitle-vpid { display: none; }
   body.show-sdp header .title .subtitle-sdp { display: inline; }
+  body.show-sdp header h1 .brand-vpid { display: none; }
+  body.show-sdp header h1 .brand-sdp { display: inline; }
+  header h1 .brand-sdp { display: none; }
   header .title .subtitle-sdp { display: none; }
 </style>
 </head>
@@ -730,8 +865,12 @@
 
 <header>
   <div class="title">
-    <h1>VPID <span class="accent">Calculator</span></h1>
-    <span class="subtitle subtitle-vpid">SMPTE ST 352 Payload Identifier Decoder &amp; Encoder</span><span class="subtitle subtitle-sdp">Magnum-import ST 2110-20 / -30 / -40 SDP files</span>
+    <h1>
+      <span class="brand-vpid">VPID <span class="accent">Calculator</span></span>
+      <span class="brand-sdp">ST 2110 <span class="accent">SDP Generator</span></span>
+    </h1>
+    <span class="subtitle subtitle-vpid">Decode &amp; encode SMPTE ST 352 payload identifiers — broadcast-ready</span>
+    <span class="subtitle subtitle-sdp">Build Magnum-import ST 2110-20 / -30 / -40 SDP files in seconds</span>
   </div>
   <nav class="app-tabs" aria-label="Tools">
     <a class="on" href="#vpid" data-tool="vpid" aria-current="page">VPID</a>
@@ -740,13 +879,21 @@
   <div class="meta">
     <a href="#references">References</a>
     <a href="https://smpte-ra.org/" target="_blank" rel="noopener">SMPTE Registry</a>
-    <span>v1.0 · authoritative</span>
+    <span>v1.1 · ST 352 + SDP</span>
   </div>
 </header>
 
 <main>
 
 <div id="tool-vpid">
+
+  <div class="tool-hero">
+    <div>
+      <h2>ST 352 Payload Identifier</h2>
+      <p>Paste a VPID, click a quick-start chip, or build one bit-by-bit. Instant decode for SDI / HDR / colorimetry — shareable links included.</p>
+    </div>
+    <span class="pill">Live decode</span>
+  </div>
 
   <div class="hex-input-wrap">
     <div class="hex-input-body">
@@ -957,13 +1104,33 @@ Example:
     <p style="margin-top: 12px;">Bit-level definitions cite their originating standard on each decoded field, so any value can be traced to its source. Fields decoded from 6G-SDI VPIDs are marked with the citation <code>ST 2081-10 (Tek)</code> to distinguish them from fields confirmed against the official SMPTE PDFs. Codes signalled in the SMPTE-RA registry but without a published bit layout in this tool are flagged as "Recognised by registry — bit-level decoder not yet implemented". Round-trip integrity is verified by automated tests against known-good VPIDs.</p>
     <p style="margin-top: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-elev);">
       <strong>Known limitations.</strong>
-      Codes registered in the SMPTE-RA Payload Identifier Registry but <em>without</em> a published bit-level layout are surfaced through the registry-only fallback path with their full SMPTE-RA standard, description, and status — never with synthesised characteristics. <code>0xC0</code>/<code>0xC1</code> bit-level fields originate from the Tektronix "Creating 4K/UHD Content" poster (the original SMPTE ST 2081-10:2018 PDF was unavailable when those layouts were authored); each affected field is tagged <code>ST 2081-10 (Tek)</code> in the byte breakdown to make the provenance explicit. Bytes 2-4 of <code>0xD9</code>-<code>0xDE</code> (ST 2082-30 multiplex) are intentionally delegated to the underlying single-stream standard (ST 2081-10 / ST 425-1 Level A / ST 292-1) — the calculator surfaces the multiplex framing but not per-sub-stream bit decode. <strong>Glass-to-glass audit:</strong> 22 P0, 88 P1, 30 P2, 1 P3 findings — all fixed and verified (see <code>audit/SUMMARY.md</code>). <strong>Found a bug?</strong> Open an issue at <a href="https://github.com/Ali-Al-Abedi/vpid_calculator/issues" target="_blank" rel="noopener">github.com/Ali-Al-Abedi/vpid_calculator/issues</a>.
+      Codes registered in the SMPTE-RA Payload Identifier Registry but <em>without</em> a published bit-level layout are surfaced through the registry-only fallback path with their full SMPTE-RA standard, description, and status — never with synthesised characteristics. <code>0xC0</code>/<code>0xC1</code> bit-level fields originate from the Tektronix "Creating 4K/UHD Content" poster (the original SMPTE ST 2081-10:2018 PDF was unavailable when those layouts were authored); each affected field is tagged <code>ST 2081-10 (Tek)</code> in the byte breakdown to make the provenance explicit. Bytes 2-4 of <code>0xD9</code>-<code>0xDE</code> (ST 2082-30 multiplex) are intentionally delegated to the underlying single-stream standard (ST 2081-10 / ST 425-1 Level A / ST 292-1) — the calculator surfaces the multiplex framing but not per-sub-stream bit decode. <strong>Glass-to-glass audit:</strong> 22 P0, 88 P1, 30 P2, 1 P3 findings — all fixed and verified (see <code>audit/SUMMARY.md</code>). <strong>Found a bug?</strong> Open an issue at <a href="https://github.com/Ali-Al-Abedi/st352-payload-identifier/issues" target="_blank" rel="noopener">github.com/Ali-Al-Abedi/st352-payload-identifier/issues</a>.
     </p>
   </footer>
 
 </div><!-- /tool-vpid -->
 
 <div id="tool-sdp">
+
+  <div class="tool-hero">
+    <div>
+      <h2>Magnum-ready ST 2110 SDPs</h2>
+      <p>Single essence or bulk from a device encap CSV. Resolution presets match VPID chips and auto-fill <code>a=fmtp</code> — tweak anything before you export.</p>
+    </div>
+    <span class="pill">Import-ready</span>
+  </div>
+
+  <details class="faq">
+    <summary>Quick FAQ — preset / ST 2022-7 / source IP</summary>
+    <dl>
+      <dt>Video preset</dt>
+      <dd>Picks a known picture format (e.g. 1080p59.94 HLG Rec.2020) and fills width, height, rate, sampling, depth, TCS, colorimetry. You can still edit every field.</dd>
+      <dt>ST 2022-7 primary + backup legs</dt>
+      <dd>On = one SDP with both redundant multicast paths (<code>a=group:DUP</code>). Off = single-path SDP.</dd>
+      <dt>Source IP</dt>
+      <dd>Optional SSM join (<code>a=source-filter</code>). Leave blank for ASM / when Magnum or the CSV already supplies it.</dd>
+    </dl>
+  </details>
 
   <div class="tabs">
     <button id="tab-single-btn" class="on" data-tab="single">Single</button>
