@@ -25,8 +25,8 @@ commissioning, fault diagnosis, and contribution-feed analysis.
 The tools are static HTML + vanilla JavaScript (no build step):
 
 ```bash
-git clone https://github.com/Ali-Al-Abedi/st352-payload-id.git
-cd st352-payload-id
+git clone https://github.com/Ali-Al-Abedi/st352-payload-identifier.git
+cd st352-payload-identifier
 python3 -m http.server 8765
 open http://localhost:8765/vpid.html        # VPID Calculator
 open http://localhost:8765/vpid.html#sdp    # ST 2110 SDP Generator (same page)
