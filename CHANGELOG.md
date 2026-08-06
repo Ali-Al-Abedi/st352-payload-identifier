@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Bulk page simplified (2026-08-06).** One CSV file chooser only. Removed
+  per-device source-map upload and the crowded export-parameter panel from the
+  default view. Video preset + optional origin/PTP/source IPs under **More
+  options**. Paste CSV tucked behind a disclosure.
+
+### Changed
 - **SDP resolution presets match VPID chips (2026-08-06).** Selecting
   **1080p59.94 SDR** (`89 CA 80 01`) or **720p59.94 SDR** (`84 CA 80 01`)
   auto-fills width/height/exactframerate/sampling/depth/TCS/colorimetry/SSN

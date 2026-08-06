@@ -1108,125 +1108,62 @@ Example:
   <section id="tab-bulk" class="hidden">
     <div class="card">
       <h2>Bulk generate from CSV</h2>
-      <div class="btn-row">
-        <button class="btn ghost" id="tmplBtn">Download CSV template</button>
-      </div>
-      <div class="field" style="margin-top:12px">
-        <label>Paste CSV or upload a file</label>
-        <textarea id="csvText" placeholder="Native template (type,session_name,...) OR a device encap export (Device,Media Port,Stream Type,Destination IP,...)"></textarea>
-        <div class="hint">Two formats are auto-detected: (1) the native template — one row = one essence; (2) a device encap stream-table export — Video/Audio/ANC rows are mapped to ST 2110-20/-30/-40, compressed/SDI-encap rows are skipped, and ENET-1/ENET-2 legs are paired into ST 2022-7.</div>
+      <p class="hint" style="margin-bottom:12px">Upload a device encap export or the CSV template. One file → ZIP of Magnum-import SDPs. Filenames: <code>{multicast}_{port}.txt</code>.</p>
+
+      <div class="field">
+        <label>CSV file</label>
+        <input type="file" id="csvFile" accept=".csv,text/csv" style="width:auto">
       </div>
 
-      <details class="card" style="margin:0 0 12px" open>
-        <summary style="cursor:pointer;color:var(--text-dim);font-size:12px;font-weight:600">Export parameters (applied to every generated file)</summary>
+      <div class="row" style="margin-top:4px">
+        <div class="field">
+          <label>Video preset</label>
+          <select id="impVideoPreset">
+            <option value="1080p5994">1080p59.94 SDR — 89 CA 80 01</option>
+            <option value="720p5994">720p59.94 SDR — 84 CA 80 01</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="toggle" style="margin-top:22px"><input type="checkbox" id="impPairLegs" checked> Pair primary/backup legs (ST 2022-7)</label>
+        </div>
+      </div>
+
+      <details style="margin:8px 0 14px">
+        <summary style="cursor:pointer;color:var(--text-dim);font-size:12px;font-weight:600">More options</summary>
         <div style="margin-top:12px">
-          <div class="hint" style="margin-bottom:10px">These fields write into the SDP text of every exported file. Multicast addresses still come from the CSV; blank optional fields keep auto/CSV values. Filenames are <code>{primary_multicast}_{port}.txt</code>.</div>
-
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);font-weight:700;margin:4px 0 6px">o= origin</div>
           <div class="row">
             <div class="field"><label>Origin user</label><input id="impOriginUser" value="Evertz"></div>
             <div class="field"><label>Origin IP</label><input id="impOriginIp" value="10.198.24.151"></div>
           </div>
-          <div class="row">
-            <div class="field"><label>Session id (blank = auto)</label><input id="impSessId" placeholder="auto"></div>
-            <div class="field"><label>Session version (blank = auto)</label><input id="impSessVer" placeholder="auto"></div>
-          </div>
-
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);font-weight:700;margin:10px 0 6px">s= session name &amp; a=group:DUP</div>
           <div class="field">
             <label>Session name (s=)</label>
-            <input id="impSessionName" placeholder="blank = Media Port / CSV session_name; tokens: {device} {mediaPort} {type} {index}">
+            <input id="impSessionName" placeholder="blank = from CSV; tokens: {device} {mediaPort} {type} {index}">
           </div>
           <div class="row">
-            <div class="field"><label>DUP label A</label><input id="impGroupA" placeholder="1P"></div>
-            <div class="field"><label>DUP label B</label><input id="impGroupB" placeholder="1S"></div>
-          </div>
-
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);font-weight:700;margin:10px 0 6px">Transport</div>
-          <div class="row-3">
-            <div class="field"><label>Force port (blank = CSV)</label><input id="impPort" placeholder="1234"></div>
-            <div class="field"><label>c= suffix</label><input id="impTtlLayers" value="64/1"></div>
-            <div class="field"><label class="toggle" style="margin-top:24px"><input type="checkbox" id="impPairLegs" checked> Pair ENET legs (ST 2022-7)</label></div>
-          </div>
-          <div class="row-3">
-            <div class="field"><label>PT video</label><input id="impPtVideo" type="number" value="96" min="96" max="127"></div>
-            <div class="field"><label>PT audio</label><input id="impPtAudio" type="number" value="97" min="96" max="127"></div>
-            <div class="field"><label>PT ANC</label><input id="impPtAnc" type="number" value="100" min="96" max="127"></div>
-          </div>
-
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);font-weight:700;margin:10px 0 6px">a=ts-refclk (PTP)</div>
-          <div class="row">
-            <div class="field"><label>GMID</label><input id="impGmid" value="00-02-C5-FF-FE-2E-43-75"></div>
-            <div class="field"><label>Domain</label><input id="impPtpDomain" type="number" value="100"></div>
-          </div>
-
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);font-weight:700;margin:10px 0 6px">a=source-filter</div>
-          <div class="row">
-            <div class="field"><label>Source IP — primary (global)</label><input id="impSrcPrimary" placeholder="e.g. 10.198.32.165"></div>
-            <div class="field"><label>Source IP — secondary (global)</label><input id="impSrcSecondary" placeholder="e.g. 10.198.64.165"></div>
-          </div>
-          <div class="field">
-            <label>Per-device source map (CSV, optional — overrides the globals)</label>
-            <textarea id="impSrcMap" style="min-height:80px" placeholder="key,source_primary,source_secondary&#10;BE-106_IPG,10.198.32.165,10.198.64.165"></textarea>
-            <div class="btn-row"><input type="file" id="impSrcMapFile" accept=".csv,text/csv" style="width:auto"></div>
-            <div class="hint">Keyed by Device. Map wins over global; blank = omit source-filter (ASM).</div>
-          </div>
-
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);font-weight:700;margin:10px 0 6px">a=fmtp video (ST 2110-20)</div>
-          <div class="row-3">
-            <div class="field"><label>Preset</label>
-              <select id="impVideoPreset"><option value="1080p5994">1080p59.94 SDR — 89 CA 80 01</option><option value="720p5994">720p59.94 SDR — 84 CA 80 01</option><option value="custom">Custom</option></select>
-            </div>
-            <div class="field"><label>Dialect</label>
-              <select id="impVideoDialect"><option value="evertz">Evertz (BPM/TPN order)</option><option value="magnum">Magnum-authored</option></select>
-            </div>
-            <div class="field"><label>Sampling</label><input id="impVideoSampling" value="YCbCr-4:2:2"></div>
-          </div>
-          <div class="row-3">
-            <div class="field"><label>Width</label><input id="impVideoWidth" type="number" value="1920"></div>
-            <div class="field"><label>Height</label><input id="impVideoHeight" type="number" value="1080"></div>
-            <div class="field"><label>exactframerate</label><input id="impVideoRate" value="60000/1001"></div>
-          </div>
-          <div class="row-3">
-            <div class="field"><label>Depth</label><input id="impVideoDepth" type="number" value="10"></div>
-            <div class="field"><label>TCS</label><input id="impVideoTcs" value="SDR"></div>
-            <div class="field"><label>Colorimetry</label><input id="impVideoColorimetry" value="BT709"></div>
-          </div>
-          <div class="row-3">
-            <div class="field"><label>PM</label>
-              <select id="impVideoPm"><option value="2110BPM">2110BPM</option><option value="2110GPM">2110GPM</option></select>
-            </div>
-            <div class="field"><label>TP</label>
-              <select id="impVideoTp"><option value="2110TPN">2110TPN</option><option value="2110TPW">2110TPW</option></select>
-            </div>
-            <div class="field"><label>SSN</label><input id="impVideoSsn" value="ST2110-20:2017"></div>
-          </div>
-
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);font-weight:700;margin:10px 0 6px">a=fmtp / rtpmap audio (ST 2110-30)</div>
-          <div class="row-3">
-            <div class="field"><label>Encoding</label>
-              <select id="impAudioEncoding"><option>L24</option><option>L16</option></select>
-            </div>
-            <div class="field"><label>Sample rate</label><input id="impAudioRate" type="number" value="48000"></div>
-            <div class="field"><label>Channels</label><input id="impAudioChannels" type="number" value="4" min="1" max="64"></div>
+            <div class="field"><label>PTP GMID</label><input id="impGmid" value="00-02-C5-FF-FE-2E-43-75"></div>
+            <div class="field"><label>PTP domain</label><input id="impPtpDomain" type="number" value="100"></div>
           </div>
           <div class="row">
-            <div class="field"><label>Channel order</label><input id="impAudioChannelOrder" value="SMPTE2110.(SGRP)"></div>
-            <div class="field"><label>ptime</label><input id="impAudioPtime" value="0.125"></div>
+            <div class="field"><label>Source IP — primary</label><input id="impSrcPrimary" placeholder="optional, for a=source-filter"></div>
+            <div class="field"><label>Source IP — secondary</label><input id="impSrcSecondary" placeholder="optional"></div>
           </div>
-
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);font-weight:700;margin:10px 0 6px">a=fmtp ANC (ST 2110-40)</div>
-          <div class="field"><label>VPID_Code</label><input id="impAncVpid" type="number" value="137"></div>
+          <div class="hint">Leave sources blank to omit source-filter (ASM). CSV Source IP columns are used when present.</div>
         </div>
       </details>
 
       <div class="btn-row">
-        <input type="file" id="csvFile" accept=".csv,text/csv" style="width:auto">
-        <button class="btn" id="parseBtn">Validate rows</button>
-        <button class="btn" id="zipBtn" disabled>Download ZIP (valid rows)</button>
+        <button class="btn ghost" id="tmplBtn">Download CSV template</button>
+        <button class="btn" id="parseBtn">Generate</button>
+        <button class="btn" id="zipBtn" disabled>Download ZIP</button>
       </div>
       <div id="csvSummary" class="hint" style="margin-top:10px"></div>
       <div id="csvResults"></div>
+
+      <!-- Optional paste for power users; hidden from the main flow -->
+      <details style="margin-top:16px">
+        <summary style="cursor:pointer;color:var(--text-faint);font-size:11px">Paste CSV instead</summary>
+        <textarea id="csvText" style="margin-top:8px;min-height:100px" placeholder="Paste CSV here, then click Generate"></textarea>
+      </details>
     </div>
   </section>
 
@@ -10866,43 +10803,43 @@ const esc = (s) => String(s).replace(/</g, '&lt;');
 
 function readImportOptions() {
   const preset = $('impVideoPreset').value;
-  const pr = preset !== 'custom' ? applyVideoPreset(preset, {}) : {};
+  const pr = applyVideoPreset(preset, {});
   return {
     originUser: $('impOriginUser').value.trim(),
     originIp: $('impOriginIp').value.trim(),
-    sessId: $('impSessId').value.trim(),
-    sessVer: $('impSessVer').value.trim(),
+    sessId: '',
+    sessVer: '',
     sessionNameTemplate: $('impSessionName').value.trim(),
-    groupLabelA: $('impGroupA').value.trim(),
-    groupLabelB: $('impGroupB').value.trim(),
+    groupLabelA: '1P',
+    groupLabelB: '1S',
     gmid: $('impGmid').value.trim(),
     ptpDomain: Number($('impPtpDomain').value),
     sourcePrimary: $('impSrcPrimary').value.trim(),
     sourceSecondary: $('impSrcSecondary').value.trim(),
-    sourceMap: $('impSrcMap').value.trim() ? parseSourceMap($('impSrcMap').value) : null,
-    port: $('impPort').value.trim(),
-    ttlLayers: $('impTtlLayers').value.trim(),
-    payloadTypeVideo: Number($('impPtVideo').value),
-    payloadTypeAudio: Number($('impPtAudio').value),
-    payloadTypeAnc: Number($('impPtAnc').value),
-    videoPreset: preset === 'custom' ? '' : preset,
-    videoDialect: $('impVideoDialect').value,
-    videoSampling: $('impVideoSampling').value.trim() || pr.sampling,
-    videoWidth: $('impVideoWidth').value.trim() || pr.width,
-    videoHeight: $('impVideoHeight').value.trim() || pr.height,
-    videoExactframerate: $('impVideoRate').value.trim() || pr.exactframerate,
-    videoDepth: $('impVideoDepth').value.trim() || pr.depth,
-    videoTcs: $('impVideoTcs').value.trim() || pr.tcs,
-    videoColorimetry: $('impVideoColorimetry').value.trim() || pr.colorimetry,
-    videoPm: $('impVideoPm').value,
-    videoTp: $('impVideoTp').value,
-    videoSsn: $('impVideoSsn').value.trim() || pr.ssn,
-    audioEncoding: $('impAudioEncoding').value,
-    audioRate: Number($('impAudioRate').value),
-    audioChannels: Number($('impAudioChannels').value),
-    audioChannelOrder: $('impAudioChannelOrder').value.trim(),
-    audioPtime: $('impAudioPtime').value.trim(),
-    ancVpidCode: Number($('impAncVpid').value),
+    sourceMap: null,
+    port: '',
+    ttlLayers: '64/1',
+    payloadTypeVideo: 96,
+    payloadTypeAudio: 97,
+    payloadTypeAnc: 100,
+    videoPreset: preset,
+    videoDialect: 'evertz',
+    videoSampling: pr.sampling,
+    videoWidth: pr.width,
+    videoHeight: pr.height,
+    videoExactframerate: pr.exactframerate,
+    videoDepth: pr.depth,
+    videoTcs: pr.tcs,
+    videoColorimetry: pr.colorimetry,
+    videoPm: '2110BPM',
+    videoTp: '2110TPN',
+    videoSsn: pr.ssn,
+    audioEncoding: 'L24',
+    audioRate: 48000,
+    audioChannels: 4,
+    audioChannelOrder: 'SMPTE2110.(SGRP)',
+    audioPtime: '0.125',
+    ancVpidCode: 137,
     pairLegs: $('impPairLegs').checked,
   };
 }
@@ -10997,26 +10934,6 @@ $('csvFile').addEventListener('change', (e) => {
   const reader = new FileReader();
   reader.onload = () => { $('csvText').value = reader.result; runBulk(); };
   reader.readAsText(f);
-});
-$('impSrcMapFile').addEventListener('change', (e) => {
-  const f = e.target.files[0];
-  if (!f) return;
-  const reader = new FileReader();
-  reader.onload = () => { $('impSrcMap').value = reader.result; };
-  reader.readAsText(f);
-});
-$('impVideoPreset').addEventListener('change', () => {
-  const name = $('impVideoPreset').value;
-  if (name === 'custom' || !VIDEO_PRESETS[name]) return;
-  const p = applyVideoPreset(name, {});
-  $('impVideoWidth').value = p.width;
-  $('impVideoHeight').value = p.height;
-  $('impVideoRate').value = p.exactframerate;
-  $('impVideoSampling').value = p.sampling;
-  $('impVideoDepth').value = p.depth;
-  $('impVideoTcs').value = p.tcs;
-  $('impVideoColorimetry').value = p.colorimetry;
-  $('impVideoSsn').value = p.ssn;
 });
 $('zipBtn').addEventListener('click', () => {
   if (validBulk.length === 0) return;
