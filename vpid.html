@@ -1042,6 +1042,8 @@ Example:
               <option value="720p5994">720p59.94 SDR — 84 CA 80 01</option>
               <option value="2160p5994">2160p59.94 SDR — A1 CA 00 01</option>
               <option value="2160p5994hlg">2160p59.94 HLG Rec.2020 — CE DA A0 01</option>
+            <option value="2160p5994pq">2160p59.94 PQ Rec.2020 — CE EA A0 01</option>
+              <option value="2160p5994pq">2160p59.94 PQ Rec.2020 — CE EA A0 01</option>
               <option value="custom">Custom</option>
             </select>
           </div>
@@ -1127,6 +1129,7 @@ Example:
             <option value="720p5994">720p59.94 SDR — 84 CA 80 01</option>
             <option value="2160p5994">2160p59.94 SDR — A1 CA 00 01</option>
             <option value="2160p5994hlg">2160p59.94 HLG Rec.2020 — CE DA A0 01</option>
+            <option value="2160p5994pq">2160p59.94 PQ Rec.2020 — CE EA A0 01</option>
           </select>
         </div>
         <div class="field">
@@ -9726,6 +9729,19 @@ const VIDEO_PRESETS = {
     sampling: 'YCbCr-4:2:2',
     depth: 10,
     tcs: 'HLG',
+    colorimetry: 'BT2020',
+    ssn: 'ST2110-20:2017',
+  },
+  '2160p5994pq': {
+    label: '2160p59.94 PQ Rec.2020',
+    vpid: 'CEEAA001',
+    vpidSpaced: 'CE EA A0 01',
+    width: 3840,
+    height: 2160,
+    exactframerate: '60000/1001',
+    sampling: 'YCbCr-4:2:2',
+    depth: 10,
+    tcs: 'PQ',
     colorimetry: 'BT2020',
     ssn: 'ST2110-20:2017',
   },

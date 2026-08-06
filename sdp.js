@@ -94,6 +94,19 @@ export const VIDEO_PRESETS = {
     colorimetry: 'BT2020',
     ssn: 'ST2110-20:2017',
   },
+  '2160p5994pq': {
+    label: '2160p59.94 PQ Rec.2020',
+    vpid: 'CEEAA001',
+    vpidSpaced: 'CE EA A0 01',
+    width: 3840,
+    height: 2160,
+    exactframerate: '60000/1001',
+    sampling: 'YCbCr-4:2:2',
+    depth: 10,
+    tcs: 'PQ',
+    colorimetry: 'BT2020',
+    ssn: 'ST2110-20:2017',
+  },
 };
 
 /** Apply a named VIDEO_PRESETS entry onto a video field bag (does not clear unknown keys). */
