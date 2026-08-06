@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **GitHub Pages unblocked (2026-08-06).** Added root `.nojekyll` and switched
+  Pages to legacy deploy from `main`. Live site now serves the simplified Bulk UI.
+
 - **Bulk page simplified (2026-08-06).** One CSV file chooser only. Removed
   per-device source-map upload and the crowded export-parameter panel from the
   default view. Video preset + optional origin/PTP/source IPs under **More
