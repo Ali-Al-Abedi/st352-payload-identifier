@@ -425,6 +425,8 @@ test('encap import options override defaults (720p, gmid)', () => {
 
 test('VIDEO_PRESETS match VPID chips (89CA8001 / 84CA8001) essence fields', () => {
   assert.equal(VIDEO_PRESETS['1080p5994'].vpid, '89CA8001');
+  assert.equal(VIDEO_PRESETS['1080p5994hlg'].vpid, '89DA8001');
+  assert.equal(applyVideoPreset('1080p5994hlg', {}).tcs, 'HLG');
   assert.equal(VIDEO_PRESETS['720p5994'].vpid, '84CA8001');
   const p1080 = applyVideoPreset('1080p5994', {});
   assert.deepEqual(

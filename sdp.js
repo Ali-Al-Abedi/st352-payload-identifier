@@ -26,7 +26,7 @@ export const EOL = '\r\n';
 // ST 2110-20 resolution presets — essence fields match the VPID Calculator
 // chips: 1080p59.94 SDR = 89 CA 80 01, 720p59.94 SDR = 84 CA 80 01.
 // PM/TP follow Magnum/Evertz import dialect (BPM/TPN); user can still edit.
-// Essence fields match VPID Calculator chips (same decode as 89CA8001 / 84CA8001).
+// Essence fields match VPID Calculator chips.
 // PM/TP are packing/dialect — left to VIDEO_DEFAULTS / VIDEO_EVERTZ_DEFAULTS / UI.
 export const VIDEO_PRESETS = {
   '1080p5994': {
@@ -39,6 +39,19 @@ export const VIDEO_PRESETS = {
     sampling: 'YCbCr-4:2:2',
     depth: 10,
     tcs: 'SDR',
+    colorimetry: 'BT709',
+    ssn: 'ST2110-20:2017',
+  },
+  '1080p5994hlg': {
+    label: '1080p59.94 HLG',
+    vpid: '89DA8001',
+    vpidSpaced: '89 DA 80 01',
+    width: 1920,
+    height: 1080,
+    exactframerate: '60000/1001',
+    sampling: 'YCbCr-4:2:2',
+    depth: 10,
+    tcs: 'HLG',
     colorimetry: 'BT709',
     ssn: 'ST2110-20:2017',
   },
