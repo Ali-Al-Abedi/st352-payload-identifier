@@ -22,17 +22,18 @@ commissioning, fault diagnosis, and contribution-feed analysis.
 
 ## Try it
 
-The whole tool is a single static HTML file with vanilla JavaScript and CSS:
+The tools are static HTML + vanilla JavaScript (no build step):
 
 ```bash
 git clone https://github.com/Ali-Al-Abedi/vpid_calculator.git
 cd vpid_calculator
 python3 -m http.server 8765
-open http://localhost:8765/vpid.html
+open http://localhost:8765/vpid.html   # VPID Calculator
+open http://localhost:8765/sdp.html    # ST 2110 SDP Generator
 ```
 
-Or just open `vpid.html` directly in any modern browser — there is no build
-step, no bundler, no `node_modules`.
+Or just open `vpid.html` / `sdp.html` directly in any modern browser — there is no build
+step, no bundler, no `node_modules`. Use the **VPID | SDP** tabs in the header to switch.
 
 ### Power features
 
@@ -44,6 +45,7 @@ step, no bundler, no `node_modules`.
 | **Compare two VPIDs** | Side-by-side decode + byte / bit XOR diff + per-field diff. The exact view you want when a downstream device reports a mismatch and you need to see which bit flipped. |
 | **JSON / CSV export** | Single-VPID and batch exports of the decoded characteristics + per-field byte breakdown. Drop straight into your monitoring or test-rig pipeline. |
 | **ST 2110-20 SDP fmtp** | Generates the matching `a=fmtp:96 sampling=…; width=…; height=…; exactframerate=…; depth=…; TCS=…; colorimetry=…; PM=2110GPM; SSN=ST2110-20:2017; PAR=1:1` line per RFC 4175 + ST 2110-20 §7. Copyable in one click for SDP authoring / validation. |
+| **ST 2110 SDP Generator** | Header **SDP** tab → `sdp.html`. Full Magnum-import SDP files for ST 2110-20/-30/-40 (single-path or ST 2022-7), Single + Bulk CSV / device encap import, export-parameter overrides, ZIP as `{multicast}_{port}.txt`. |
 
 ## What it covers
 

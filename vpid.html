@@ -633,6 +633,19 @@
     z-index: 100;
   }
   .tooltip:hover::after { opacity: 1; }
+
+  /* Site tool switcher — VPID Calculator ↔ ST 2110 SDP Generator */
+  .app-tabs {
+    display: inline-flex; gap: 4px; padding: 4px;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  }
+  .app-tabs a {
+    color: var(--text-dim); text-decoration: none; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase; padding: 7px 14px;
+    border-radius: 6px; transition: color 0.15s, background 0.15s;
+  }
+  .app-tabs a:hover { color: var(--accent); }
+  .app-tabs a.on { color: #001018; background: var(--accent); }
 </style>
 </head>
 <body>
@@ -642,6 +655,10 @@
     <h1>VPID <span class="accent">Calculator</span></h1>
     <span class="subtitle">SMPTE ST 352 Payload Identifier Decoder &amp; Encoder</span>
   </div>
+  <nav class="app-tabs" aria-label="Tools">
+    <a class="on" href="vpid.html" aria-current="page">VPID</a>
+    <a href="sdp.html">SDP</a>
+  </nav>
   <div class="meta">
     <a href="#references">References</a>
     <a href="https://smpte-ra.org/" target="_blank" rel="noopener">SMPTE Registry</a>
