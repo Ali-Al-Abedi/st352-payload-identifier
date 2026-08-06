@@ -1038,7 +1038,7 @@ Example:
             <label>Resolution preset</label>
             <select id="videoPreset">
               <option value="1080p5994">1080p59.94 SDR — 89 CA 80 01</option>
-              <option value="1080p5994hlg">1080p59.94 HLG — 89 DA 80 01</option>
+              <option value="1080p5994hlg">1080p59.94 HLG Rec.2020 — 89 DA A0 01</option>
               <option value="720p5994">720p59.94 SDR — 84 CA 80 01</option>
               <option value="custom">Custom</option>
             </select>
@@ -1121,7 +1121,7 @@ Example:
           <label>Video preset</label>
           <select id="impVideoPreset">
             <option value="1080p5994">1080p59.94 SDR — 89 CA 80 01</option>
-            <option value="1080p5994hlg">1080p59.94 HLG — 89 DA 80 01</option>
+            <option value="1080p5994hlg">1080p59.94 HLG Rec.2020 — 89 DA A0 01</option>
             <option value="720p5994">720p59.94 SDR — 84 CA 80 01</option>
           </select>
         </div>
@@ -9674,16 +9674,16 @@ const VIDEO_PRESETS = {
     ssn: 'ST2110-20:2017',
   },
   '1080p5994hlg': {
-    label: '1080p59.94 HLG',
-    vpid: '89DA8001',
-    vpidSpaced: '89 DA 80 01',
+    label: '1080p59.94 HLG Rec.2020',
+    vpid: '89DAA001',
+    vpidSpaced: '89 DA A0 01',
     width: 1920,
     height: 1080,
     exactframerate: '60000/1001',
     sampling: 'YCbCr-4:2:2',
     depth: 10,
     tcs: 'HLG',
-    colorimetry: 'BT709',
+    colorimetry: 'BT2020',
     ssn: 'ST2110-20:2017',
   },
   '720p5994': {
