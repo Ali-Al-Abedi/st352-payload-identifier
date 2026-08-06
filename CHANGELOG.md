@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **SDP Single tab simplified (2026-08-06).** Preset-first video; session/transport/legs under **Session, transport & legs**. Editing a fmtp field switches preset to Custom.
+
 - **SDP: restore 2160p59.94 HLG Rec.2020 preset (`CE DA A0 01`) (2026-08-06).**
 
 - **SDP presets trimmed (2026-08-06).** Dropped UHD SDR/HLG; UHD kept as PQ Rec.2020 only (`CE EA A0 01`).
