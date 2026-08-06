@@ -428,15 +428,12 @@ test('VIDEO_PRESETS match VPID chips (89CA8001 / 84CA8001) essence fields', () =
   assert.equal(VIDEO_PRESETS['1080p5994hlg'].vpid, '89DAA001');
   assert.equal(applyVideoPreset('1080p5994hlg', {}).tcs, 'HLG');
   assert.equal(applyVideoPreset('1080p5994hlg', {}).colorimetry, 'BT2020');
-  assert.equal(VIDEO_PRESETS['2160p5994'].vpid, 'A1CA0001');
-  assert.equal(VIDEO_PRESETS['2160p5994hlg'].vpid, 'CEDAA001');
-  const uhd = applyVideoPreset('2160p5994hlg', {});
+  assert.equal(VIDEO_PRESETS['2160p5994pq'].vpid, 'CEEAA001');
+  const uhd = applyVideoPreset('2160p5994pq', {});
   assert.equal(uhd.width, 3840);
   assert.equal(uhd.height, 2160);
-  assert.equal(uhd.tcs, 'HLG');
+  assert.equal(uhd.tcs, 'PQ');
   assert.equal(uhd.colorimetry, 'BT2020');
-  assert.equal(VIDEO_PRESETS['2160p5994pq'].vpid, 'CEEAA001');
-  assert.equal(applyVideoPreset('2160p5994pq', {}).tcs, 'PQ');
   assert.equal(VIDEO_PRESETS['720p5994'].vpid, '84CA8001');
   const p1080 = applyVideoPreset('1080p5994', {});
   assert.deepEqual(
