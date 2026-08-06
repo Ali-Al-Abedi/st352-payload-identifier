@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **SDP resolution presets match VPID chips (2026-08-06).** Selecting
+  **1080p59.94 SDR** (`89 CA 80 01`) or **720p59.94 SDR** (`84 CA 80 01`)
+  auto-fills width/height/exactframerate/sampling/depth/TCS/colorimetry/SSN
+  on Single + Bulk. Fields stay editable. PM/TP stay dialect-controlled
+  (Magnum GPM/TPW vs Evertz BPM/TPN). Inlined into `vpid.html` for Pages.
+
 ### Added
 - **ST 2110 SDP Generator tab (2026-08-06).** Header **VPID | SDP** switcher on
   `vpid.html` (`#vpid` / `#sdp`). The SDP tool is **inlined into `vpid.html`** so
@@ -14,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Standalone `sdp.html` + `sdp.js` remain for local use. Magnum-import generation
   for ST 2110-20/-30/-40, single-path or ST 2022-7, Single + Bulk (CSV / device
   encap export), export-parameter overrides, `{multicast}_{port}.txt` ZIP naming.
-  Fixture tests: `node --test tests/test_sdp.mjs` (22/22).
+  Fixture tests: `node --test tests/test_sdp.mjs` (23/23).
 
 ## [1.0.0] — 2026-05-09
 

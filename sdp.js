@@ -23,12 +23,56 @@ export const EOL = '\r\n';
 // Presets
 // ---------------------------------------------------------------------------
 
-// ST 2110-20 video resolution presets. Everything else (sampling/depth/etc.)
-// is shared 10-bit 4:2:2 SDR BT.709 as per the supplied upstream source.
+// ST 2110-20 resolution presets — essence fields match the VPID Calculator
+// chips: 1080p59.94 SDR = 89 CA 80 01, 720p59.94 SDR = 84 CA 80 01.
+// PM/TP follow Magnum/Evertz import dialect (BPM/TPN); user can still edit.
+// Essence fields match VPID Calculator chips (same decode as 89CA8001 / 84CA8001).
+// PM/TP are packing/dialect — left to VIDEO_DEFAULTS / VIDEO_EVERTZ_DEFAULTS / UI.
 export const VIDEO_PRESETS = {
-  '1080p5994': { width: 1920, height: 1080, exactframerate: '60000/1001' },
-  '720p5994': { width: 1280, height: 720, exactframerate: '60000/1001' },
+  '1080p5994': {
+    label: '1080p59.94 SDR',
+    vpid: '89CA8001',
+    vpidSpaced: '89 CA 80 01',
+    width: 1920,
+    height: 1080,
+    exactframerate: '60000/1001',
+    sampling: 'YCbCr-4:2:2',
+    depth: 10,
+    tcs: 'SDR',
+    colorimetry: 'BT709',
+    ssn: 'ST2110-20:2017',
+  },
+  '720p5994': {
+    label: '720p59.94 SDR',
+    vpid: '84CA8001',
+    vpidSpaced: '84 CA 80 01',
+    width: 1280,
+    height: 720,
+    exactframerate: '60000/1001',
+    sampling: 'YCbCr-4:2:2',
+    depth: 10,
+    tcs: 'SDR',
+    colorimetry: 'BT709',
+    ssn: 'ST2110-20:2017',
+  },
 };
+
+/** Apply a named VIDEO_PRESETS entry onto a video field bag (does not clear unknown keys). */
+export function applyVideoPreset(name, video = {}) {
+  const p = VIDEO_PRESETS[name];
+  if (!p) return { ...video };
+  return {
+    ...video,
+    width: p.width,
+    height: p.height,
+    exactframerate: p.exactframerate,
+    sampling: p.sampling,
+    depth: p.depth,
+    tcs: p.tcs,
+    colorimetry: p.colorimetry,
+    ssn: p.ssn,
+  };
+}
 
 export const VIDEO_DEFAULTS = {
   dialect: 'magnum', // 'magnum' | 'evertz' — controls fmtp order + attribute order
@@ -404,10 +448,10 @@ export function applyBulkOverrides(rawSpec, options = {}) {
 
   if (spec.type === 'video') {
     if (o.payloadTypeVideo !== undefined && o.payloadTypeVideo !== '') spec.payloadType = Number(o.payloadTypeVideo);
-    const pr = o.videoPreset ? (VIDEO_PRESETS[o.videoPreset] || {}) : {};
-    spec.video = {
-      ...spec.video,
-      ...(pr.width ? { width: pr.width, height: pr.height, exactframerate: pr.exactframerate } : {}),
+    let video = { ...spec.video };
+    if (o.videoPreset) video = applyVideoPreset(o.videoPreset, video);
+    video = {
+      ...video,
       ...(o.videoSampling ? { sampling: o.videoSampling } : {}),
       ...(o.videoWidth ? { width: Number(o.videoWidth) } : {}),
       ...(o.videoHeight ? { height: Number(o.videoHeight) } : {}),
@@ -420,6 +464,7 @@ export function applyBulkOverrides(rawSpec, options = {}) {
       ...(o.videoTp ? { tp: o.videoTp } : {}),
       ...(o.videoDialect ? { dialect: o.videoDialect } : {}),
     };
+    spec.video = video;
   } else if (spec.type === 'audio') {
     if (o.payloadTypeAudio !== undefined && o.payloadTypeAudio !== '') spec.payloadType = Number(o.payloadTypeAudio);
     spec.audio = {
@@ -565,17 +610,19 @@ export function rowToSpec(rec) {
   };
 
   if (type === 'video') {
-    const preset = VIDEO_PRESETS[String(rec.video_preset || '').trim()] || {};
+    const fromPreset = String(rec.video_preset || '').trim()
+      ? applyVideoPreset(String(rec.video_preset).trim(), {})
+      : {};
     spec.video = {
-      sampling: rec.video_sampling || VIDEO_DEFAULTS.sampling,
-      width: rec.video_width || preset.width || VIDEO_DEFAULTS.width,
-      height: rec.video_height || preset.height || VIDEO_DEFAULTS.height,
-      depth: rec.video_depth || VIDEO_DEFAULTS.depth,
-      exactframerate: rec.video_exactframerate || preset.exactframerate || VIDEO_DEFAULTS.exactframerate,
-      tcs: rec.video_tcs || VIDEO_DEFAULTS.tcs,
-      colorimetry: rec.video_colorimetry || VIDEO_DEFAULTS.colorimetry,
+      sampling: rec.video_sampling || fromPreset.sampling || VIDEO_DEFAULTS.sampling,
+      width: rec.video_width || fromPreset.width || VIDEO_DEFAULTS.width,
+      height: rec.video_height || fromPreset.height || VIDEO_DEFAULTS.height,
+      depth: rec.video_depth || fromPreset.depth || VIDEO_DEFAULTS.depth,
+      exactframerate: rec.video_exactframerate || fromPreset.exactframerate || VIDEO_DEFAULTS.exactframerate,
+      tcs: rec.video_tcs || fromPreset.tcs || VIDEO_DEFAULTS.tcs,
+      colorimetry: rec.video_colorimetry || fromPreset.colorimetry || VIDEO_DEFAULTS.colorimetry,
       pm: rec.video_pm || VIDEO_DEFAULTS.pm,
-      ssn: rec.video_ssn || VIDEO_DEFAULTS.ssn,
+      ssn: rec.video_ssn || fromPreset.ssn || VIDEO_DEFAULTS.ssn,
       tp: rec.video_tp || VIDEO_DEFAULTS.tp,
     };
   } else if (type === 'audio') {
@@ -781,7 +828,7 @@ export function encapToSpecs(text, options = {}) {
       spec.groupLabels = o.videoGroupLabels.slice();
     }
     if (g.type === 'video') {
-      const pr = VIDEO_PRESETS[o.videoPreset] || {};
+      const pr = applyVideoPreset(o.videoPreset || '1080p5994', {});
       spec.payloadType = o.payloadTypeVideo !== undefined && o.payloadTypeVideo !== ''
         ? Number(o.payloadTypeVideo) : TYPE_DEFAULTS.video.payloadType;
       if (o.ttlLayers) spec.ttlLayers = o.ttlLayers;
@@ -789,17 +836,18 @@ export function encapToSpecs(text, options = {}) {
       spec.video = {
         ...VIDEO_DEFAULTS,
         ...VIDEO_EVERTZ_DEFAULTS,
+        ...pr,
         dialect: o.videoDialect || VIDEO_EVERTZ_DEFAULTS.dialect,
-        width: pr.width || VIDEO_DEFAULTS.width,
-        height: pr.height || VIDEO_DEFAULTS.height,
-        exactframerate: pr.exactframerate || VIDEO_DEFAULTS.exactframerate,
-        sampling: o.videoSampling || VIDEO_DEFAULTS.sampling,
-        depth: o.videoDepth !== undefined && o.videoDepth !== '' ? Number(o.videoDepth) : VIDEO_DEFAULTS.depth,
-        tcs: o.videoTcs || VIDEO_DEFAULTS.tcs,
-        colorimetry: o.videoColorimetry || VIDEO_DEFAULTS.colorimetry,
+        sampling: o.videoSampling || pr.sampling,
+        depth: o.videoDepth !== undefined && o.videoDepth !== '' ? Number(o.videoDepth) : pr.depth,
+        tcs: o.videoTcs || pr.tcs,
+        colorimetry: o.videoColorimetry || pr.colorimetry,
         pm: o.videoPm || VIDEO_EVERTZ_DEFAULTS.pm,
-        ssn: o.videoSsn || VIDEO_DEFAULTS.ssn,
+        ssn: o.videoSsn || pr.ssn,
         tp: o.videoTp || VIDEO_EVERTZ_DEFAULTS.tp,
+        width: o.videoWidth ? Number(o.videoWidth) : pr.width,
+        height: o.videoHeight ? Number(o.videoHeight) : pr.height,
+        exactframerate: o.videoExactframerate || pr.exactframerate,
       };
     } else if (g.type === 'audio') {
       spec.payloadType = o.payloadTypeAudio !== undefined && o.payloadTypeAudio !== ''

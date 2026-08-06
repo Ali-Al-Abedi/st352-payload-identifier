@@ -219,8 +219,8 @@
           <div class="field">
             <label>Resolution preset</label>
             <select id="videoPreset">
-              <option value="1080p5994">1080p59.94</option>
-              <option value="720p5994">720p59.94</option>
+              <option value="1080p5994">1080p59.94 SDR — 89 CA 80 01</option>
+              <option value="720p5994">720p59.94 SDR — 84 CA 80 01</option>
               <option value="custom">Custom</option>
             </select>
           </div>
@@ -357,7 +357,7 @@
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);font-weight:700;margin:10px 0 6px">a=fmtp video (ST 2110-20)</div>
           <div class="row-3">
             <div class="field"><label>Preset</label>
-              <select id="impVideoPreset"><option value="1080p5994">1080p59.94</option><option value="720p5994">720p59.94</option><option value="custom">Custom</option></select>
+              <select id="impVideoPreset"><option value="1080p5994">1080p59.94 SDR — 89 CA 80 01</option><option value="720p5994">720p59.94 SDR — 84 CA 80 01</option><option value="custom">Custom</option></select>
             </div>
             <div class="field"><label>Dialect</label>
               <select id="impVideoDialect"><option value="evertz">Evertz (BPM/TPN order)</option><option value="magnum">Magnum-authored</option></select>
@@ -416,7 +416,7 @@
 <script type="module">
 import {
   buildSdp, sdpFilename, exportFilename, validateSpec, applyBulkOverrides,
-  VIDEO_PRESETS, csvTemplate, csvToSpecs, makeZip,
+  VIDEO_PRESETS, applyVideoPreset, csvTemplate, csvToSpecs, makeZip,
   parseCsv, isEncapHeader, encapToSpecs, parseSourceMap,
 } from './sdp.js';
 
@@ -448,11 +448,16 @@ const SEED = {
 let currentType = 'video';
 
 function applyPreset(name) {
-  const p = VIDEO_PRESETS[name];
-  if (!p) return;
+  const p = applyVideoPreset(name, {});
+  if (!VIDEO_PRESETS[name]) return;
   $('videoWidth').value = p.width;
   $('videoHeight').value = p.height;
   $('videoRate').value = p.exactframerate;
+  $('videoSampling').value = p.sampling;
+  $('videoDepth').value = p.depth;
+  $('videoTcs').value = p.tcs;
+  $('videoColorimetry').value = p.colorimetry;
+  $('videoSsn').value = p.ssn;
 }
 
 function seedType(type) {
@@ -466,13 +471,9 @@ function seedType(type) {
     el.classList.toggle('hidden', el.dataset.for !== type));
 
   if (type === 'video') {
-    $('videoSampling').value = 'YCbCr-4:2:2';
-    $('videoDepth').value = 10;
-    $('videoTcs').value = 'SDR';
-    $('videoColorimetry').value = 'BT709';
+    // Magnum-authored sample packing; resolution preset fills essence (VPID-matched).
     $('videoPm').value = '2110GPM';
     $('videoTp').value = '2110TPW';
-    $('videoSsn').value = 'ST2110-20:2017';
     $('videoPreset').value = '1080p5994';
     applyPreset('1080p5994');
   } else if (type === 'audio') {
@@ -615,7 +616,7 @@ const esc = (s) => String(s).replace(/</g, '&lt;');
 
 function readImportOptions() {
   const preset = $('impVideoPreset').value;
-  const pr = VIDEO_PRESETS[preset] || {};
+  const pr = preset !== 'custom' ? applyVideoPreset(preset, {}) : {};
   return {
     originUser: $('impOriginUser').value.trim(),
     originIp: $('impOriginIp').value.trim(),
@@ -636,16 +637,16 @@ function readImportOptions() {
     payloadTypeAnc: Number($('impPtAnc').value),
     videoPreset: preset === 'custom' ? '' : preset,
     videoDialect: $('impVideoDialect').value,
-    videoSampling: $('impVideoSampling').value.trim(),
+    videoSampling: $('impVideoSampling').value.trim() || pr.sampling,
     videoWidth: $('impVideoWidth').value.trim() || pr.width,
     videoHeight: $('impVideoHeight').value.trim() || pr.height,
     videoExactframerate: $('impVideoRate').value.trim() || pr.exactframerate,
-    videoDepth: $('impVideoDepth').value.trim(),
-    videoTcs: $('impVideoTcs').value.trim(),
-    videoColorimetry: $('impVideoColorimetry').value.trim(),
+    videoDepth: $('impVideoDepth').value.trim() || pr.depth,
+    videoTcs: $('impVideoTcs').value.trim() || pr.tcs,
+    videoColorimetry: $('impVideoColorimetry').value.trim() || pr.colorimetry,
     videoPm: $('impVideoPm').value,
     videoTp: $('impVideoTp').value,
-    videoSsn: $('impVideoSsn').value.trim(),
+    videoSsn: $('impVideoSsn').value.trim() || pr.ssn,
     audioEncoding: $('impAudioEncoding').value,
     audioRate: Number($('impAudioRate').value),
     audioChannels: Number($('impAudioChannels').value),
@@ -755,11 +756,17 @@ $('impSrcMapFile').addEventListener('change', (e) => {
   reader.readAsText(f);
 });
 $('impVideoPreset').addEventListener('change', () => {
-  const p = VIDEO_PRESETS[$('impVideoPreset').value];
-  if (!p) return;
+  const name = $('impVideoPreset').value;
+  if (name === 'custom' || !VIDEO_PRESETS[name]) return;
+  const p = applyVideoPreset(name, {});
   $('impVideoWidth').value = p.width;
   $('impVideoHeight').value = p.height;
   $('impVideoRate').value = p.exactframerate;
+  $('impVideoSampling').value = p.sampling;
+  $('impVideoDepth').value = p.depth;
+  $('impVideoTcs').value = p.tcs;
+  $('impVideoColorimetry').value = p.colorimetry;
+  $('impVideoSsn').value = p.ssn;
 });
 $('zipBtn').addEventListener('click', () => {
   if (validBulk.length === 0) return;

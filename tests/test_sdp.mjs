@@ -27,6 +27,8 @@ import {
   parseSourceMap,
   exportFilename,
   applyBulkOverrides,
+  VIDEO_PRESETS,
+  applyVideoPreset,
 } from '../sdp.js';
 
 const VIDEO_SPEC = {
@@ -419,6 +421,20 @@ test('encap import options override defaults (720p, gmid)', () => {
   const lines = buildSdpLines(video);
   assert.ok(lines.some((l) => l.includes('width=1280; height=720')));
   assert.ok(lines.includes('a=ts-refclk:ptp=IEEE1588-2008:00-02-C5-FF-FE-2E-43-75:127'));
+});
+
+test('VIDEO_PRESETS match VPID chips (89CA8001 / 84CA8001) essence fields', () => {
+  assert.equal(VIDEO_PRESETS['1080p5994'].vpid, '89CA8001');
+  assert.equal(VIDEO_PRESETS['720p5994'].vpid, '84CA8001');
+  const p1080 = applyVideoPreset('1080p5994', {});
+  assert.deepEqual(
+    { w: p1080.width, h: p1080.height, r: p1080.exactframerate, s: p1080.sampling, d: p1080.depth, t: p1080.tcs, c: p1080.colorimetry },
+    { w: 1920, h: 1080, r: '60000/1001', s: 'YCbCr-4:2:2', d: 10, t: 'SDR', c: 'BT709' },
+  );
+  const p720 = applyVideoPreset('720p5994', { pm: 'keep-me' });
+  assert.equal(p720.width, 1280);
+  assert.equal(p720.height, 720);
+  assert.equal(p720.pm, 'keep-me'); // packing left to caller / dialect
 });
 
 test('encap import with overrides reproduces the Magnum ANC SDP exactly', () => {
