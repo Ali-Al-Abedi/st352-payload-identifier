@@ -334,7 +334,6 @@
       </details>
 
       <div class="btn-row">
-        <button class="btn ghost" id="tmplBtn">Download CSV template</button>
         <button class="btn" id="parseBtn">Generate</button>
         <button class="btn" id="zipBtn" disabled>Download ZIP</button>
       </div>
@@ -353,7 +352,7 @@
 <script type="module">
 import {
   buildSdp, sdpFilename, exportFilename, validateSpec, applyBulkOverrides,
-  VIDEO_PRESETS, applyVideoPreset, csvTemplate, csvToSpecs, makeZip,
+  VIDEO_PRESETS, applyVideoPreset, csvToSpecs, makeZip,
   parseCsv, isEncapHeader, encapToSpecs,
 } from './sdp.js';
 
@@ -676,7 +675,6 @@ function runBulk() {
   $('csvSummary').textContent = `Native template detected. ${valid}/${parsed.records.length} rows valid — ${valid} file(s) will be packaged${invalid ? `, ${invalid} invalid` : ''}.`;
 }
 
-$('tmplBtn').addEventListener('click', () => download('st2110_sdp_template.csv', 'text/csv', csvTemplate()));
 $('parseBtn').addEventListener('click', runBulk);
 $('csvFile').addEventListener('change', (e) => {
   const f = e.target.files[0];

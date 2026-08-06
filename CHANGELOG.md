@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Bulk: removed Download CSV template (2026-08-06).** Encap export / paste only.
+
 - **GitHub Pages unblocked (2026-08-06).** Added root `.nojekyll` and switched
   Pages to legacy deploy from `main`. Live site now serves the simplified Bulk UI.
 
