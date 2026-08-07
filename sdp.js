@@ -512,9 +512,20 @@ export function applyBulkOverrides(rawSpec, options = {}) {
   if (o.port !== undefined && o.port !== '') spec.port = Number(o.port);
 
   if (o.sourcePrimary || o.sourceSecondary) {
-    if (spec.legs[0]) spec.legs[0] = { ...spec.legs[0], source: o.sourcePrimary || spec.legs[0].source };
-    if (spec.legs[1] && o.sourceSecondary) {
-      spec.legs[1] = { ...spec.legs[1], source: o.sourceSecondary };
+    // Single-path backup files only have legs[0] — do not stamp sourcePrimary on them.
+    if (spec.redundant) {
+      if (spec.legs[0] && o.sourcePrimary) {
+        spec.legs[0] = { ...spec.legs[0], source: o.sourcePrimary };
+      }
+      if (spec.legs[1] && o.sourceSecondary) {
+        spec.legs[1] = { ...spec.legs[1], source: o.sourceSecondary };
+      }
+    } else if (spec.legRole === 'backup') {
+      if (spec.legs[0] && o.sourceSecondary) {
+        spec.legs[0] = { ...spec.legs[0], source: o.sourceSecondary };
+      }
+    } else if (spec.legs[0] && o.sourcePrimary) {
+      spec.legs[0] = { ...spec.legs[0], source: o.sourcePrimary };
     }
   }
 
@@ -978,18 +989,31 @@ export function encapToSpecs(text, options = {}) {
     if (g.primary && g.secondary && o.pairLegs) {
       units.push({
         redundant: true,
+        legRole: 'both',
         legs: [
           { mcast: g.primary.mcast, source: primSrcBase },
           { mcast: g.secondary.mcast, source: secSrcBase },
         ],
       });
     } else if (g.primary && g.secondary && !o.pairLegs) {
-      units.push({ redundant: false, legs: [{ mcast: g.primary.mcast, source: primSrcBase }] });
-      units.push({ redundant: false, legs: [{ mcast: g.secondary.mcast, source: secSrcBase }] });
+      units.push({
+        redundant: false,
+        legRole: 'primary',
+        legs: [{ mcast: g.primary.mcast, source: primSrcBase }],
+      });
+      units.push({
+        redundant: false,
+        legRole: 'backup',
+        legs: [{ mcast: g.secondary.mcast, source: secSrcBase }],
+      });
     } else {
       const keptIsBackup = !g.primary && !!g.secondary;
       const keptSrc = keptIsBackup ? (secSrcBase || keptLeg.source || '') : (primSrcBase || keptLeg.source || '');
-      units.push({ redundant: false, legs: [{ mcast: keptLeg.mcast, source: keptSrc }] });
+      units.push({
+        redundant: false,
+        legRole: keptIsBackup ? 'backup' : 'primary',
+        legs: [{ mcast: keptLeg.mcast, source: keptSrc }],
+      });
     }
 
     if (o.pairLegs && !(g.primary && g.secondary)) {
@@ -1020,7 +1044,7 @@ export function encapToSpecs(text, options = {}) {
     }
 
     for (const unit of units) {
-      const { redundant, legs } = unit;
+      const { redundant, legs, legRole } = unit;
       const draftSpec = { type: g.type, redundant, port: g.port || 1234, legs };
       const exportedFiles = exportFilenames(draftSpec);
       const missingSsm = (src) => !hasSource({ source: src });
@@ -1051,6 +1075,7 @@ export function encapToSpecs(text, options = {}) {
       const spec = {
         type: g.type,
         redundant,
+        legRole: legRole || 'primary',
         sessionName,
         nameCtx,
         origin: { user: o.originUser, ip: o.originIp, sessId: sess, sessVer: sessV },

@@ -716,6 +716,36 @@ test('pairLegs false exports primary and backup as two single-path specs', () =>
   assert.equal(warnings.length, 0);
 });
 
+test('pairLegs false + dual Source IP: backup SDP keeps secondary SSM (packageSpecs path)', () => {
+  // Regresses: applyBulkOverrides stamped sourcePrimary on every legs[0], so the
+  // backup single-path file got 1.2.3.4 instead of 5.6.7.8.
+  const csv = [
+    'Device,Media Port,Ethernet,Stream Type,Stream Index,Destination IP,Destination Port,Source IP,Bitrate (Mbps),Backup',
+    'DEV,VID-1,ENET-1,Video,,238.0.140.11,1234,10.198.32.16,3000.0,False',
+    'DEV,VID-1,ENET-2,Video,,238.0.140.12,1234,10.198.64.16,3000.0,True',
+  ].join('\n') + '\n';
+  const opts = {
+    pairLegs: false,
+    sourcePrimary: '1.2.3.4',
+    sourceSecondary: '5.6.7.8',
+    videoPreset: '1080p5994',
+    originUser: 'Evertz',
+    originIp: '10.1.1.1',
+    gmid: '00-02-C5-FF-FE-2E-43-75',
+    ptpDomain: 100,
+  };
+  const { specs } = encapToSpecs(csv, opts);
+  assert.equal(specs.length, 2);
+  assert.equal(specs[0].legRole, 'primary');
+  assert.equal(specs[1].legRole, 'backup');
+  const primary = applyBulkOverrides(specs[0], opts);
+  const backup = applyBulkOverrides(specs[1], opts);
+  assert.equal(primary.legs[0].source, '1.2.3.4');
+  assert.equal(backup.legs[0].source, '5.6.7.8');
+  assert.ok(buildSdpLines(primary).includes('a=source-filter: incl IN IP4 238.0.140.11 1.2.3.4'));
+  assert.ok(buildSdpLines(backup).includes('a=source-filter: incl IN IP4 238.0.140.12 5.6.7.8'));
+});
+
 test('same multicast on both 2022-7 legs still yields two ZIP names', () => {
   const spec = {
     type: 'anc',

@@ -53,6 +53,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   use muted sage; menus/tabs use light chrome — no longer one near-white for everything.
 
 ### Fixed
+- **pairLegs off + dual Source IP (2026-08-07).** Unpaired primary/backup single-path
+  SDPs no longer both get `sourcePrimary` SSM. Backup file uses `sourceSecondary`
+  (`legRole` on the spec; `applyBulkOverrides` respects it).
 - **CI VPID self-test (2026-08-06).** Guard `window.copyToClipboard` for Node extract —
   bare `window.` assignment crashed the GitHub Actions self-test (`window is not defined`).
 
