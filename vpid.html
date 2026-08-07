@@ -9611,10 +9611,11 @@ function flashBtn(btn, text, original, ms) {
 
 /** Clipboard write that works on HTTP (navigator.clipboard needs a secure context). */
 async function copyToClipboard(text) {
-  if (navigator.clipboard && window.isSecureContext) {
+  if (typeof navigator !== 'undefined' && navigator.clipboard && typeof window !== 'undefined' && window.isSecureContext) {
     await navigator.clipboard.writeText(text);
     return;
   }
+  if (typeof document === 'undefined') throw new Error('copy failed');
   const ta = document.createElement('textarea');
   ta.value = text;
   ta.setAttribute('readonly', '');
@@ -9627,7 +9628,7 @@ async function copyToClipboard(text) {
   finally { document.body.removeChild(ta); }
   if (!ok) throw new Error('copy failed');
 }
-window.copyToClipboard = copyToClipboard;
+if (typeof window !== 'undefined') window.copyToClipboard = copyToClipboard;
 
 document.addEventListener('DOMContentLoaded', () => {
   $('#hexInput').addEventListener('input', handleHexChange);

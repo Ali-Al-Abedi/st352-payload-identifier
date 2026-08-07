@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **CI VPID self-test (2026-08-06).** Guard `window.copyToClipboard` for Node extract —
+  bare `window.` assignment crashed the GitHub Actions self-test (`window is not defined`).
+
+### Fixed
 - **Single download uses `.txt` (2026-08-06).** Magnum-import filename extension matched
   Bulk (`*.txt`) instead of `.sdp`. Button label: **Download .txt**.
 
