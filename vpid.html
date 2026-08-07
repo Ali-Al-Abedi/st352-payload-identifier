@@ -844,6 +844,7 @@
 #tool-sdp th { color: var(--text-faint); text-transform: uppercase; font-size: 10px; letter-spacing: 0.08em; }
 #tool-sdp .badge-ok { color: var(--ok); font-weight: 700; }
 #tool-sdp .badge-err { color: var(--err); font-weight: 700; }
+#tool-sdp .badge-warn { color: var(--warn); font-weight: 600; }
 #tool-sdp .hint { color: var(--text-faint); font-size: 11px; margin-top: 4px; }
 #tool-sdp #csvSummary {
     color: var(--text); font-size: 13px; font-weight: 600; margin-top: 10px;
@@ -1135,7 +1136,7 @@ Example:
       <dt>ST 2022-7 primary + backup legs</dt>
       <dd>On = one file with both redundant multicast paths (<code>a=group:DUP</code>). Off = single-path SDP.</dd>
       <dt>Source IP</dt>
-      <dd>Optional SSM join (<code>a=source-filter</code>). Leave blank for ASM, or when Magnum / the encap CSV already has the source.</dd>
+      <dd>Optional SSM join (<code>a=source-filter</code>). Leave blank for ASM, or when Magnum / the encap CSV already has the source. Bulk checkbox <strong>Require SSM</strong> skips rows with blank/0.0.0.0 source instead of exporting ASM.</dd>
       <dt>Magnum import</dt>
       <dd>Download as <code>.txt</code> (Single) or a ZIP of <code>.txt</code> files (Bulk), then import in Magnum. Prove one import before demos — dialect mismatch is the real risk, not this UI.</dd>
     </dl>
@@ -1301,6 +1302,7 @@ Example:
         </div>
         <div class="field">
           <label class="toggle" style="margin-top:22px"><input type="checkbox" id="impPairLegs" checked> Pair primary/backup legs (ST 2022-7)</label>
+          <label class="toggle" style="margin-top:10px"><input type="checkbox" id="impRequireSsm"> Require SSM (source IP) — skip ASM rows</label>
         </div>
       </div>
 
@@ -10637,6 +10639,7 @@ const ENCAP_IMPORT_DEFAULTS = {
   audioPtime: '0.125',
   ancVpidCode: 137,
   pairLegs: true,
+  requireSsm: false,
 };
 
 function renderNameTemplate(tpl, ctx) {
@@ -10685,7 +10688,7 @@ function isEncapHeader(header) {
 function encapToSpecs(text, options = {}) {
   const o = { ...ENCAP_IMPORT_DEFAULTS, ...options };
   const rows = parseCsv(text);
-  if (rows.length === 0) return { specs: [], skipped: {}, mapped: 0 };
+  if (rows.length === 0) return { specs: [], skipped: {}, warnings: [], mapped: 0 };
 
   const header = rows[0].map((x) => String(x).trim());
   const idx = {};
@@ -10694,6 +10697,8 @@ function encapToSpecs(text, options = {}) {
 
   const skipped = {};
   const bump = (reason) => { skipped[reason] = (skipped[reason] || 0) + 1; };
+  const warnings = [];
+  const warn = (flow, message) => { warnings.push({ flow, message }); };
 
   // Group legs by essence identity, preserving first-seen order.
   const groups = new Map();
@@ -10705,16 +10710,26 @@ function encapToSpecs(text, options = {}) {
     const mcast = col(r, 'destination ip');
     if (!isMulticastV4(mcast)) { bump('invalid/blank destination ip'); continue; }
 
+    const portRaw = col(r, 'destination port');
+    const port = Number(portRaw);
+    if (!portRaw || !Number.isInteger(port) || port < 1 || port > 65535) {
+      bump('blank/invalid destination port');
+      continue;
+    }
+
     const device = col(r, 'device');
     const mport = col(r, 'media port');
     const sidx = col(r, 'stream index');
-    const port = Number(col(r, 'destination port')) || 1234;
     const source = col(r, 'source ip');
     const isBackup = /^true$/i.test(col(r, 'backup'));
 
     const key = [device, mport, mapped, sidx].join('|');
     let g = groups.get(key);
     if (!g) { g = { type: mapped, device, mport, sidx, port, primary: null, secondary: null }; groups.set(key, g); }
+    else if (g.port !== port) {
+      // Keep first-seen port; note mismatch.
+      warn(`${device}|${mport}|${mapped}|${sidx || ''}`, `Destination Port mismatch across legs (${g.port} vs ${port}) — using ${g.port}`);
+    }
     const leg = { mcast, source };
     if (isBackup) g.secondary = leg; else g.primary = leg;
   }
@@ -10722,12 +10737,36 @@ function encapToSpecs(text, options = {}) {
   let counter = 1;
   const specs = [];
   for (const g of groups.values()) {
-    const primary = g.primary || g.secondary; // fall back if only a backup leg exists
+    const flow = `${g.device || '(no device)'}|${g.mport || '(no media port)'}|${g.type}|${g.sidx || ''}`;
+    if (!g.device) warn(flow, 'Device blank — session naming may be weak');
+    if (!g.mport) warn(flow, 'Media Port blank — session naming may be weak');
+
+    const primary = g.primary || g.secondary;
+    if (!primary) { bump('no primary/backup leg'); continue; }
+
     const redundant = !!(o.pairLegs && g.primary && g.secondary);
+    if (o.pairLegs && !(g.primary && g.secondary)) {
+      warn(flow, 'ST 2022-7 pairing on but only one leg present — exported as single-path');
+    }
+
     // Source-filter precedence: per-device map > global override > (blank) export source.
     const dm = (o.sourceMap && o.sourceMap[g.device]) || null;
     const primSrc = (dm && dm.primary) || o.sourcePrimary || primary.source;
     const secSrc = (dm && dm.secondary) || o.sourceSecondary || (g.secondary && g.secondary.source) || '';
+
+    const missingSsm = (src) => !hasSource({ source: src });
+    if (missingSsm(primSrc) || (redundant && missingSsm(secSrc))) {
+      if (o.requireSsm) {
+        bump('missing source IP (Require SSM)');
+        continue;
+      }
+      if (missingSsm(primSrc)) {
+        warn(flow, 'Source IP blank/0.0.0.0 → ASM (no a=source-filter)');
+      } else if (redundant && missingSsm(secSrc)) {
+        warn(flow, 'Backup Source IP blank/0.0.0.0 → ASM on backup leg');
+      }
+    }
+
     const legs = [{ mcast: primary.mcast, source: primSrc }];
     if (redundant) legs.push({ mcast: g.secondary.mcast, source: secSrc });
 
@@ -10792,7 +10831,7 @@ function encapToSpecs(text, options = {}) {
     }
     specs.push(spec);
   }
-  return { specs, skipped, mapped: specs.length };
+  return { specs, skipped, warnings, mapped: specs.length };
 }
 
 // ---------------------------------------------------------------------------
@@ -11146,12 +11185,13 @@ function readImportOptions() {
     audioPtime: '0.125',
     ancVpidCode: 137,
     pairLegs: $('impPairLegs').checked,
+    requireSsm: $('impRequireSsm').checked,
   };
 }
 
 // Turn a flat list of specs into downloadable files + a summarised report,
 // capping the rendered error list so very large imports stay responsive.
-function packageSpecs(specs, results, skipped) {
+function packageSpecs(specs, results, skipped, warnings) {
   const used = new Set();
   const byType = { video: 0, audio: 0, anc: 0 };
   const errorSamples = [];
@@ -11180,8 +11220,14 @@ function packageSpecs(specs, results, skipped) {
   if (skipped && Object.keys(skipped).length) {
     const rows = Object.entries(skipped).sort((a, b) => b[1] - a[1])
       .map(([k, v]) => `<tr><td>${esc(k)}</td><td>${v}</td></tr>`).join('');
-    html += '<h2 style="margin-top:16px">Skipped (not ST 2110-20/-30/-40)</h2>' +
+    html += '<h2 style="margin-top:16px">Skipped</h2>' +
       `<table><thead><tr><th>Stream type / reason</th><th>Rows</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+  if (warnings && warnings.length) {
+    const show = warnings.slice(0, 200);
+    const rows = show.map((w) => `<tr><td class="badge-warn">${esc(w.flow || '')}</td><td>${esc(w.message)}</td></tr>`).join('');
+    html += `<h2 style="margin-top:16px">Warnings (${warnings.length}${warnings.length > show.length ? `, showing first ${show.length}` : ''})</h2>` +
+      `<table><thead><tr><th>Flow</th><th>Message</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
   if (errorSamples.length) {
     const rows = errorSamples.map((e) => `<tr><td>${e.i}</td><td class="badge-err">${esc(e.type)}</td><td>${esc(e.err)}</td></tr>`).join('');
@@ -11228,10 +11274,15 @@ function runBulk() {
     let out;
     try { out = encapToSpecs(text, readImportOptions()); }
     catch (err) { $('csvSummary').textContent = 'Encap import error: ' + err.message; return; }
-    const { valid } = packageSpecs(out.specs, results, out.skipped);
-    const skippedTotal = Object.values(out.skipped).reduce((a, b) => a + b, 0);
+    const { valid } = packageSpecs(out.specs, results, out.skipped, out.warnings);
+    const skippedTotal = Object.values(out.skipped || {}).reduce((a, b) => a + b, 0);
+    const warnN = (out.warnings || []).length;
     $('csvSummary').textContent =
-      `Device encap export detected. Mapped ${out.mapped} ST 2110 essence(s) → ${valid} file(s); ${skippedTotal} non-2110 row(s) skipped.`;
+      `Device encap: ${valid} ready` +
+      (skippedTotal ? `, ${skippedTotal} skipped` : '') +
+      (warnN ? `, ${warnN} warning(s)` : '') +
+      (valid !== out.mapped ? ` (${out.mapped} mapped, ${out.mapped - valid} failed validate)` : '') +
+      '.';
     return;
   }
 

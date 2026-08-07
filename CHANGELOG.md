@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Bulk Magnum encap: tiered validation + Require SSM (2026-08-07).** Hard-skip bad
+  multicast / blank destination port / Require-SSM missing source; soft-warn ASM
+  (blank/`0.0.0.0` source), incomplete 2022-7 pairs, blank Device/Media Port, port
+  mismatch. Bulk summary shows ready / skipped / warnings; checkbox **Require SSM**.
+
 ### Fixed
 - **CI VPID self-test (2026-08-06).** Guard `window.copyToClipboard` for Node extract —
   bare `window.` assignment crashed the GitHub Actions self-test (`window is not defined`).

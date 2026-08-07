@@ -751,6 +751,7 @@ export const ENCAP_IMPORT_DEFAULTS = {
   audioPtime: '0.125',
   ancVpidCode: 137,
   pairLegs: true,
+  requireSsm: false, // true => skip essences with blank/0.0.0.0 source instead of ASM warn
 };
 
 function renderNameTemplate(tpl, ctx) {
@@ -791,15 +792,20 @@ export function isEncapHeader(header) {
 }
 
 /**
- * Convert a device encap CSV into { specs, skipped, mapped }.
- *  - specs:   array of SDP specs ready for validateSpec/buildSdp
- *  - skipped: { <reason>: count } for rows not turned into 2110 SDPs
- *  - mapped:  number of specs produced
+ * Convert a device encap CSV into { specs, skipped, warnings, mapped }.
+ *  - specs:    SDP specs ready for validateSpec/buildSdp
+ *  - skipped:  { <reason>: count } for rows/essences not exported
+ *  - warnings: [{ flow, message }] soft issues (ASM, incomplete 2022-7 pair, blank names)
+ *  - mapped:   number of specs produced
+ *
+ * Hard skips: non-2110 stream type, bad multicast, blank/invalid destination port,
+ *             Require-SSM with no real source.
+ * Soft warns: blank/0.0.0.0 source (ASM), 2022-7 on with only one leg, blank Device/Media Port.
  */
 export function encapToSpecs(text, options = {}) {
   const o = { ...ENCAP_IMPORT_DEFAULTS, ...options };
   const rows = parseCsv(text);
-  if (rows.length === 0) return { specs: [], skipped: {}, mapped: 0 };
+  if (rows.length === 0) return { specs: [], skipped: {}, warnings: [], mapped: 0 };
 
   const header = rows[0].map((x) => String(x).trim());
   const idx = {};
@@ -808,6 +814,8 @@ export function encapToSpecs(text, options = {}) {
 
   const skipped = {};
   const bump = (reason) => { skipped[reason] = (skipped[reason] || 0) + 1; };
+  const warnings = [];
+  const warn = (flow, message) => { warnings.push({ flow, message }); };
 
   // Group legs by essence identity, preserving first-seen order.
   const groups = new Map();
@@ -819,16 +827,26 @@ export function encapToSpecs(text, options = {}) {
     const mcast = col(r, 'destination ip');
     if (!isMulticastV4(mcast)) { bump('invalid/blank destination ip'); continue; }
 
+    const portRaw = col(r, 'destination port');
+    const port = Number(portRaw);
+    if (!portRaw || !Number.isInteger(port) || port < 1 || port > 65535) {
+      bump('blank/invalid destination port');
+      continue;
+    }
+
     const device = col(r, 'device');
     const mport = col(r, 'media port');
     const sidx = col(r, 'stream index');
-    const port = Number(col(r, 'destination port')) || 1234;
     const source = col(r, 'source ip');
     const isBackup = /^true$/i.test(col(r, 'backup'));
 
     const key = [device, mport, mapped, sidx].join('|');
     let g = groups.get(key);
     if (!g) { g = { type: mapped, device, mport, sidx, port, primary: null, secondary: null }; groups.set(key, g); }
+    else if (g.port !== port) {
+      // Keep first-seen port; note mismatch.
+      warn(`${device}|${mport}|${mapped}|${sidx || ''}`, `Destination Port mismatch across legs (${g.port} vs ${port}) — using ${g.port}`);
+    }
     const leg = { mcast, source };
     if (isBackup) g.secondary = leg; else g.primary = leg;
   }
@@ -836,12 +854,36 @@ export function encapToSpecs(text, options = {}) {
   let counter = 1;
   const specs = [];
   for (const g of groups.values()) {
-    const primary = g.primary || g.secondary; // fall back if only a backup leg exists
+    const flow = `${g.device || '(no device)'}|${g.mport || '(no media port)'}|${g.type}|${g.sidx || ''}`;
+    if (!g.device) warn(flow, 'Device blank — session naming may be weak');
+    if (!g.mport) warn(flow, 'Media Port blank — session naming may be weak');
+
+    const primary = g.primary || g.secondary;
+    if (!primary) { bump('no primary/backup leg'); continue; }
+
     const redundant = !!(o.pairLegs && g.primary && g.secondary);
+    if (o.pairLegs && !(g.primary && g.secondary)) {
+      warn(flow, 'ST 2022-7 pairing on but only one leg present — exported as single-path');
+    }
+
     // Source-filter precedence: per-device map > global override > (blank) export source.
     const dm = (o.sourceMap && o.sourceMap[g.device]) || null;
     const primSrc = (dm && dm.primary) || o.sourcePrimary || primary.source;
     const secSrc = (dm && dm.secondary) || o.sourceSecondary || (g.secondary && g.secondary.source) || '';
+
+    const missingSsm = (src) => !hasSource({ source: src });
+    if (missingSsm(primSrc) || (redundant && missingSsm(secSrc))) {
+      if (o.requireSsm) {
+        bump('missing source IP (Require SSM)');
+        continue;
+      }
+      if (missingSsm(primSrc)) {
+        warn(flow, 'Source IP blank/0.0.0.0 → ASM (no a=source-filter)');
+      } else if (redundant && missingSsm(secSrc)) {
+        warn(flow, 'Backup Source IP blank/0.0.0.0 → ASM on backup leg');
+      }
+    }
+
     const legs = [{ mcast: primary.mcast, source: primSrc }];
     if (redundant) legs.push({ mcast: g.secondary.mcast, source: secSrc });
 
@@ -906,7 +948,7 @@ export function encapToSpecs(text, options = {}) {
     }
     specs.push(spec);
   }
-  return { specs, skipped, mapped: specs.length };
+  return { specs, skipped, warnings, mapped: specs.length };
 }
 
 // ---------------------------------------------------------------------------

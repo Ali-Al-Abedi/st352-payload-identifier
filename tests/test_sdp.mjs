@@ -535,3 +535,31 @@ test('source map wins over global source override', () => {
   assert.ok(buildSdpLines(mapped).includes('a=source-filter: incl IN IP4 238.0.139.118 10.9.9.1'));
   assert.ok(buildSdpLines(fallback).includes('a=source-filter: incl IN IP4 238.0.140.10 10.5.5.5'));
 });
+
+test('encap blank source warns ASM; Require SSM hard-skips', () => {
+  const { specs, warnings, mapped } = encapToSpecs(ENCAP_CSV);
+  assert.equal(mapped, 3);
+  const asm = warnings.filter((w) => /ASM/.test(w.message));
+  assert.ok(asm.length >= 3, `expected ASM warns for video/audio/anc, got ${asm.length}`);
+  const incomplete = warnings.filter((w) => /only one leg/.test(w.message));
+  assert.equal(incomplete.length, 1, 'ANC single-leg should warn once');
+
+  const strict = encapToSpecs(ENCAP_CSV, { requireSsm: true });
+  assert.equal(strict.mapped, 0);
+  assert.equal(strict.skipped['missing source IP (Require SSM)'], 3);
+  assert.equal(strict.warnings.filter((w) => /ASM/.test(w.message)).length, 0);
+});
+
+test('encap blank/invalid destination port is hard-skipped', () => {
+  const csv = [
+    'Device,Media Port,Ethernet,Stream Type,Stream Index,Destination IP,Destination Port,Source IP,Bitrate (Mbps),Backup',
+    'DEV,VID-1,ENET-1,Video,,238.1.1.116,,10.1.1.1,3000.0,False',
+    'DEV,VID-1,ENET-1,Audio,1,238.1.1.117,0,10.1.1.1,10.0,False',
+    'DEV,VID-1,ENET-1,ANC,,238.1.1.118,abc,10.1.1.1,10.0,False',
+    'DEV,VID-1,ENET-1,Video,,238.1.1.119,1234,10.1.1.1,3000.0,False',
+  ].join('\n') + '\n';
+  const { specs, skipped, mapped } = encapToSpecs(csv);
+  assert.equal(mapped, 1);
+  assert.equal(specs[0].port, 1234);
+  assert.equal(skipped['blank/invalid destination port'], 3);
+});
