@@ -96,20 +96,6 @@
   .tool-hero h2 { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 4px; }
   .tool-hero p { color: var(--text-dim); font-size: 13.5px; max-width: 62ch; line-height: 1.5; }
 
-  .faq {
-    margin: 0 0 18px; border: 1px solid var(--border);
-    border-radius: 12px; background: rgba(57, 255, 20, 0.04);
-    padding: 14px 18px 16px;
-  }
-  .faq h3 {
-    font-size: 12px; font-weight: 800; letter-spacing: 0.08em;
-    text-transform: uppercase; color: var(--accent); margin: 0 0 10px;
-  }
-  .faq dl { margin: 0; display: grid; gap: 10px; }
-  .faq dt { color: var(--text); font-weight: 700; font-size: 13px; }
-  .faq dd { color: var(--text-dim); font-size: 13.5px; margin: 2px 0 0; line-height: 1.5; max-width: 78ch; }
-  .faq code { color: var(--accent); }
-
   .tabs {
     display: inline-flex; gap: 4px; margin-bottom: 18px; padding: 5px;
     background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 999px;
@@ -256,20 +242,6 @@
       <p>Single SDP or Bulk ZIP from a Magnum encap CSV.</p>
     </div>
   </div>
-
-  <section class="faq" aria-label="SDP one-pager FAQ">
-    <h3>FAQ</h3>
-    <dl>
-      <dt>Video preset</dt>
-      <dd>Fills fmtp (size/rate/HDR). Editable after.</dd>
-      <dt>ST 2022-7</dt>
-      <dd>On = both legs in one SDP. Off = single-path.</dd>
-      <dt>Source IP</dt>
-      <dd>Optional SSM. Blank / <code>0.0.0.0</code> = ASM.</dd>
-      <dt>Magnum import</dt>
-      <dd><code>.txt</code> or ZIP of <code>{mcast}_{port}.txt</code>. 2022-7 → two identical files (primary + backup names).</dd>
-    </dl>
-  </section>
 
   <div class="tabs">
     <button id="tab-single-btn" class="on" data-tab="single">Single</button>

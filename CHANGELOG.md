@@ -44,6 +44,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rate edit (C2/F4/F9/CE…). (2) Bulk `{device}` session template survives packageSpecs via
   `nameCtx`. (3) Backup-only 2022-7 binds secondary SSM source. (4) Reserved sampling warns on
   6G/12G (`C0 CA CF 01` / `CE CA CF 01`).
+- **Bulk pairLegs / same-mcast / chips / FAQ (2026-08-07).** `pairLegs` off → two single-path
+  SDPs (backup kept). Same mcast on both 2022-7 legs → `_b.txt` second ZIP name. VPID chips
+  aligned to Bulk presets (`89 DA A0 01`, `CE DA A0 01`). SDP FAQ removed.
 - **Blank Destination IP Skipped text (2026-08-07).** Cleared multicast cannot be recovered
   from the CSV; Skipped names the surviving SDP/ZIP pair-partner multicast instead.
 - **Text hierarchy colors (2026-08-07).** Descriptions/FAQ use cool slate; settings labels

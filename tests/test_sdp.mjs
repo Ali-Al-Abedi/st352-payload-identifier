@@ -691,3 +691,50 @@ test('backup-only 2022-7 binds secondary SSM source to kept mcast', () => {
     'a=source-filter: incl IN IP4 238.0.139.117 10.198.64.165',
   ));
 });
+
+test('pairLegs false exports primary and backup as two single-path specs', () => {
+  const csv = [
+    'Device,Media Port,Ethernet,Stream Type,Stream Index,Destination IP,Destination Port,Source IP,Bitrate (Mbps),Backup',
+    'DEV,VID-1,ENET-1,Video,,238.1.1.116,1234,10.1.1.1,3000.0,False',
+    'DEV,VID-1,ENET-2,Video,,238.0.104.8,1234,10.1.1.2,3000.0,True',
+  ].join('\n') + '\n';
+  const { specs, warnings } = encapToSpecs(csv, {
+    pairLegs: false,
+    videoPreset: '1080p5994',
+    originUser: 'Evertz',
+    originIp: '10.1.1.1',
+    gmid: '00-02-C5-FF-FE-2E-43-75',
+    ptpDomain: 100,
+  });
+  assert.equal(specs.length, 2);
+  assert.equal(specs[0].redundant, false);
+  assert.equal(specs[1].redundant, false);
+  assert.equal(specs[0].legs[0].mcast, '238.1.1.116');
+  assert.equal(specs[1].legs[0].mcast, '238.0.104.8');
+  assert.deepEqual(exportFilenames(specs[0]), ['238.1.1.116_1234.txt']);
+  assert.deepEqual(exportFilenames(specs[1]), ['238.0.104.8_1234.txt']);
+  assert.equal(warnings.length, 0);
+});
+
+test('same multicast on both 2022-7 legs still yields two ZIP names', () => {
+  const spec = {
+    type: 'anc',
+    redundant: true,
+    sessionName: 'x',
+    origin: { user: 'Evertz', sessId: '1', sessVer: '1', ip: '10.1.1.1' },
+    port: 1234,
+    gmid: '00-02-C5-FF-FE-2E-43-75',
+    ptpDomain: 100,
+    groupLabels: ['1P', '1S'],
+    legs: [
+      { mcast: '238.1.1.1', source: '10.1.1.1' },
+      { mcast: '238.1.1.1', source: '10.1.1.2' },
+    ],
+    anc: { vpidCode: '', didSdids: [] },
+  };
+  assert.deepEqual(exportFilenames(spec), ['238.1.1.1_1234.txt', '238.1.1.1_1234_b.txt']);
+  const files = bulkExportFiles(spec);
+  assert.equal(files.length, 2);
+  assert.equal(files[0].data, files[1].data);
+  assert.ok(files[0].data.includes('a=group:DUP'));
+});

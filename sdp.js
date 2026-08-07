@@ -464,7 +464,12 @@ export function exportFilenames(rawSpec) {
   const primary = filenameForMcastPort(spec.legs[0] && spec.legs[0].mcast, port);
   if (!(spec.redundant && spec.legs[1] && spec.legs[1].mcast)) return [primary];
   const backup = filenameForMcastPort(spec.legs[1].mcast, port);
-  return backup === primary ? [primary] : [primary, backup];
+  // Same multicast on both legs still needs two Magnum ZIP members (identical SDP body).
+  if (backup === primary) {
+    const base = primary.replace(/\.txt$/i, '');
+    return [primary, `${base}_b.txt`];
+  }
+  return [primary, backup];
 }
 
 /**
@@ -963,23 +968,35 @@ export function encapToSpecs(text, options = {}) {
       continue;
     }
 
-    const redundant = !!(o.pairLegs && g.primary && g.secondary);
-    const keptIsBackup = !g.primary && !!g.secondary;
     const dmEarly = (o.sourceMap && o.sourceMap[g.device]) || null;
-    // When only the backup leg survives, bind the *secondary* SSM source — not primary.
-    const keptSrcEarly = keptIsBackup
-      ? ((dmEarly && dmEarly.secondary) || o.sourceSecondary || keptLeg.source || '')
-      : ((dmEarly && dmEarly.primary) || o.sourcePrimary || keptLeg.source || '');
-    const secSrcEarly = (dmEarly && dmEarly.secondary) || o.sourceSecondary || (g.secondary && g.secondary.source) || '';
-    const primSrcEarly = keptSrcEarly;
-    const legsEarly = [{ mcast: keptLeg.mcast, source: keptSrcEarly }];
-    if (redundant) legsEarly.push({ mcast: g.secondary.mcast, source: secSrcEarly });
-    const draftSpec = { type: g.type, redundant, port: g.port || 1234, legs: legsEarly };
-    const exportedFiles = exportFilenames(draftSpec);
-    const keptMcast = keptLeg.mcast;
-    const skippedFiles = g.drops.map((d) => dropFileLabel(d, g.port || 1234, keptMcast));
+    const primSrcBase = (dmEarly && dmEarly.primary) || o.sourcePrimary || (g.primary && g.primary.source) || '';
+    const secSrcBase = (dmEarly && dmEarly.secondary) || o.sourceSecondary || (g.secondary && g.secondary.source) || '';
+
+    // Units to emit: 2022-7 pair → one redundant SDP; pairLegs off → two single-path SDPs
+    // (do not silently drop the backup multicast).
+    const units = [];
+    if (g.primary && g.secondary && o.pairLegs) {
+      units.push({
+        redundant: true,
+        legs: [
+          { mcast: g.primary.mcast, source: primSrcBase },
+          { mcast: g.secondary.mcast, source: secSrcBase },
+        ],
+      });
+    } else if (g.primary && g.secondary && !o.pairLegs) {
+      units.push({ redundant: false, legs: [{ mcast: g.primary.mcast, source: primSrcBase }] });
+      units.push({ redundant: false, legs: [{ mcast: g.secondary.mcast, source: secSrcBase }] });
+    } else {
+      const keptIsBackup = !g.primary && !!g.secondary;
+      const keptSrc = keptIsBackup ? (secSrcBase || keptLeg.source || '') : (primSrcBase || keptLeg.source || '');
+      units.push({ redundant: false, legs: [{ mcast: keptLeg.mcast, source: keptSrc }] });
+    }
 
     if (o.pairLegs && !(g.primary && g.secondary)) {
+      const draftSpec = { type: g.type, redundant: false, port: g.port || 1234, legs: units[0].legs };
+      const exportedFiles = exportFilenames(draftSpec);
+      const keptMcast = units[0].legs[0].mcast;
+      const skippedFiles = g.drops.map((d) => dropFileLabel(d, g.port || 1234, keptMcast));
       if (g.drops.length) {
         const kept = g.primary ? 'primary' : 'backup';
         warn(
@@ -1002,92 +1019,91 @@ export function encapToSpecs(text, options = {}) {
       }
     }
 
-    const dm = dmEarly;
-    const primSrc = primSrcEarly;
-    const secSrc = secSrcEarly;
+    for (const unit of units) {
+      const { redundant, legs } = unit;
+      const draftSpec = { type: g.type, redundant, port: g.port || 1234, legs };
+      const exportedFiles = exportFilenames(draftSpec);
+      const missingSsm = (src) => !hasSource({ source: src });
+      if (missingSsm(legs[0].source)) {
+        warn(flow, 'Source blank → ASM. Fill Source IP for SSM.', {
+          exported: exportedFiles,
+          skipped: [],
+        });
+      } else if (redundant && legs[1] && missingSsm(legs[1].source)) {
+        warn(flow, 'Backup source blank → ASM on backup.', {
+          exported: exportedFiles,
+          skipped: [],
+        });
+      }
 
-    const missingSsm = (src) => !hasSource({ source: src });
-    if (missingSsm(primSrc)) {
-      warn(flow, 'Source blank → ASM. Fill Source IP for SSM.', {
-        exported: exportedFiles,
-        skipped: [],
-      });
-    } else if (redundant && missingSsm(secSrc)) {
-      warn(flow, 'Backup source blank → ASM on backup.', {
-        exported: exportedFiles,
-        skipped: [],
-      });
-    }
-
-    const legs = legsEarly;
-
-    const seq = String(counter++);
-    const sess = o.sessId !== '' && o.sessId !== undefined ? String(o.sessId) : seq;
-    const sessV = o.sessVer !== '' && o.sessVer !== undefined ? String(o.sessVer) : sess;
-    const nameCtx = {
-      device: g.device || '',
-      mediaPort: g.mport || '',
-      type: g.type,
-      index: g.sidx || '',
-    };
-    const sessionName = o.sessionNameTemplate
-      ? renderNameTemplate(o.sessionNameTemplate, nameCtx)
-      : (g.type === 'audio' && g.sidx ? `${g.mport}-A${g.sidx}` : g.mport);
-    const spec = {
-      type: g.type,
-      redundant,
-      sessionName,
-      nameCtx,
-      origin: { user: o.originUser, ip: o.originIp, sessId: sess, sessVer: sessV },
-      port: g.port,
-      gmid: o.gmid,
-      ptpDomain: o.ptpDomain,
-      legs,
-    };
-    if (o.groupLabelA && o.groupLabelB) {
-      spec.groupLabels = [o.groupLabelA, o.groupLabelB];
-    } else if (g.type === 'video' && o.videoGroupLabels) {
-      spec.groupLabels = o.videoGroupLabels.slice();
-    }
-    if (g.type === 'video') {
-      const pr = applyVideoPreset(o.videoPreset || '1080p5994', {});
-      spec.payloadType = o.payloadTypeVideo !== undefined && o.payloadTypeVideo !== ''
-        ? Number(o.payloadTypeVideo) : TYPE_DEFAULTS.video.payloadType;
-      if (o.ttlLayers) spec.ttlLayers = o.ttlLayers;
-      if (o.port !== undefined && o.port !== '') spec.port = Number(o.port);
-      spec.video = {
-        ...VIDEO_DEFAULTS,
-        ...VIDEO_EVERTZ_DEFAULTS,
-        ...pr,
-        dialect: o.videoDialect || VIDEO_EVERTZ_DEFAULTS.dialect,
-        sampling: o.videoSampling || pr.sampling,
-        depth: o.videoDepth !== undefined && o.videoDepth !== '' ? Number(o.videoDepth) : pr.depth,
-        tcs: o.videoTcs || pr.tcs,
-        colorimetry: o.videoColorimetry || pr.colorimetry,
-        pm: o.videoPm || VIDEO_EVERTZ_DEFAULTS.pm,
-        ssn: o.videoSsn || pr.ssn,
-        tp: o.videoTp || VIDEO_EVERTZ_DEFAULTS.tp,
-        width: o.videoWidth ? Number(o.videoWidth) : pr.width,
-        height: o.videoHeight ? Number(o.videoHeight) : pr.height,
-        exactframerate: o.videoExactframerate || pr.exactframerate,
+      const seq = String(counter++);
+      const sess = o.sessId !== '' && o.sessId !== undefined ? String(o.sessId) : seq;
+      const sessV = o.sessVer !== '' && o.sessVer !== undefined ? String(o.sessVer) : sess;
+      const nameCtx = {
+        device: g.device || '',
+        mediaPort: g.mport || '',
+        type: g.type,
+        index: g.sidx || '',
       };
-    } else if (g.type === 'audio') {
-      spec.payloadType = o.payloadTypeAudio !== undefined && o.payloadTypeAudio !== ''
-        ? Number(o.payloadTypeAudio) : TYPE_DEFAULTS.audio.payloadType;
-      if (o.ttlLayers) spec.ttlLayers = o.ttlLayers;
-      if (o.port !== undefined && o.port !== '') spec.port = Number(o.port);
-      spec.audio = {
-        encoding: o.audioEncoding, rate: o.audioRate, channels: o.audioChannels,
-        channelOrder: o.audioChannelOrder, ptime: o.audioPtime,
+      const sessionName = o.sessionNameTemplate
+        ? renderNameTemplate(o.sessionNameTemplate, nameCtx)
+        : (g.type === 'audio' && g.sidx ? `${g.mport}-A${g.sidx}` : g.mport);
+      const spec = {
+        type: g.type,
+        redundant,
+        sessionName,
+        nameCtx,
+        origin: { user: o.originUser, ip: o.originIp, sessId: sess, sessVer: sessV },
+        port: g.port,
+        gmid: o.gmid,
+        ptpDomain: o.ptpDomain,
+        legs,
       };
-    } else if (g.type === 'anc') {
-      spec.payloadType = o.payloadTypeAnc !== undefined && o.payloadTypeAnc !== ''
-        ? Number(o.payloadTypeAnc) : TYPE_DEFAULTS.anc.payloadType;
-      if (o.ttlLayers) spec.ttlLayers = o.ttlLayers;
-      if (o.port !== undefined && o.port !== '') spec.port = Number(o.port);
-      spec.anc = { vpidCode: o.ancVpidCode, didSdids: [] };
+      if (o.groupLabelA && o.groupLabelB) {
+        spec.groupLabels = [o.groupLabelA, o.groupLabelB];
+      } else if (g.type === 'video' && o.videoGroupLabels) {
+        spec.groupLabels = o.videoGroupLabels.slice();
+      }
+      if (g.type === 'video') {
+        const pr = applyVideoPreset(o.videoPreset || '1080p5994', {});
+        spec.payloadType = o.payloadTypeVideo !== undefined && o.payloadTypeVideo !== ''
+          ? Number(o.payloadTypeVideo) : TYPE_DEFAULTS.video.payloadType;
+        if (o.ttlLayers) spec.ttlLayers = o.ttlLayers;
+        if (o.port !== undefined && o.port !== '') spec.port = Number(o.port);
+        spec.video = {
+          ...VIDEO_DEFAULTS,
+          ...VIDEO_EVERTZ_DEFAULTS,
+          ...pr,
+          dialect: o.videoDialect || VIDEO_EVERTZ_DEFAULTS.dialect,
+          sampling: o.videoSampling || pr.sampling,
+          depth: o.videoDepth !== undefined && o.videoDepth !== '' ? Number(o.videoDepth) : pr.depth,
+          tcs: o.videoTcs || pr.tcs,
+          colorimetry: o.videoColorimetry || pr.colorimetry,
+          pm: o.videoPm || VIDEO_EVERTZ_DEFAULTS.pm,
+          ssn: o.videoSsn || pr.ssn,
+          tp: o.videoTp || VIDEO_EVERTZ_DEFAULTS.tp,
+          width: o.videoWidth ? Number(o.videoWidth) : pr.width,
+          height: o.videoHeight ? Number(o.videoHeight) : pr.height,
+          exactframerate: o.videoExactframerate || pr.exactframerate,
+        };
+      } else if (g.type === 'audio') {
+        spec.payloadType = o.payloadTypeAudio !== undefined && o.payloadTypeAudio !== ''
+          ? Number(o.payloadTypeAudio) : TYPE_DEFAULTS.audio.payloadType;
+        if (o.ttlLayers) spec.ttlLayers = o.ttlLayers;
+        if (o.port !== undefined && o.port !== '') spec.port = Number(o.port);
+        spec.audio = {
+          encoding: o.audioEncoding, rate: o.audioRate, channels: o.audioChannels,
+          channelOrder: o.audioChannelOrder, ptime: o.audioPtime,
+        };
+      } else if (g.type === 'anc') {
+        spec.payloadType = o.payloadTypeAnc !== undefined && o.payloadTypeAnc !== ''
+          ? Number(o.payloadTypeAnc) : TYPE_DEFAULTS.anc.payloadType;
+        if (o.ttlLayers) spec.ttlLayers = o.ttlLayers;
+        if (o.port !== undefined && o.port !== '') spec.port = Number(o.port);
+        spec.anc = { vpidCode: o.ancVpidCode, didSdids: [] };
+      }
+      specs.push(spec);
     }
-    specs.push(spec);
   }
   return { specs, skipped, skippedRows, warnings, mapped: specs.length };
 }
