@@ -643,3 +643,51 @@ test('blanked primary port names skipped multicast file', () => {
   assert.deepEqual(w.exported, ['238.0.139.115_1234.txt']);
   assert.deepEqual(w.skipped, ['238.0.139.121_1234.txt']);
 });
+
+test('sessionNameTemplate {device} survives applyBulkOverrides (packageSpecs path)', () => {
+  const csv = [
+    'Device,Media Port,Ethernet,Stream Type,Stream Index,Destination IP,Destination Port,Source IP,Bitrate (Mbps),Backup',
+    '1007C_SLOT1_OUT,1007C_SLOT1_OUT-VID-INPUT-3,ENET-1,Video,,238.1.1.116,1234,10.1.1.1,3000.0,False',
+    '1007C_SLOT1_OUT,1007C_SLOT1_OUT-VID-INPUT-3,ENET-2,Video,,238.0.104.8,1234,10.1.1.2,3000.0,True',
+  ].join('\n') + '\n';
+  const opts = {
+    sessionNameTemplate: '{device}',
+    videoPreset: '1080p5994',
+    originUser: 'Evertz',
+    originIp: '10.198.24.151',
+    gmid: '00-02-C5-FF-FE-2E-43-75',
+    ptpDomain: 100,
+    pairLegs: true,
+  };
+  const { specs } = encapToSpecs(csv, opts);
+  assert.equal(specs[0].sessionName, '1007C_SLOT1_OUT');
+  const again = applyBulkOverrides(specs[0], opts);
+  assert.equal(again.sessionName, '1007C_SLOT1_OUT');
+  assert.equal(validateSpec(again).ok, true);
+  const typed = applyBulkOverrides(specs[0], { ...opts, sessionNameTemplate: '{device}_{type}' });
+  assert.equal(typed.sessionName, '1007C_SLOT1_OUT_video');
+});
+
+test('backup-only 2022-7 binds secondary SSM source to kept mcast', () => {
+  const csv = [
+    'Device,Media Port,Ethernet,Stream Type,Stream Index,Destination IP,Destination Port,Source IP,Bitrate (Mbps),Backup',
+    'DEV,VID-1,ENET-1,Video,,,1234,,3000.0,False',
+    'DEV,VID-1,ENET-2,Video,,238.0.139.117,1234,10.198.64.165,3000.0,True',
+  ].join('\n') + '\n';
+  const { specs } = encapToSpecs(csv, {
+    sourcePrimary: '10.198.32.165',
+    sourceSecondary: '10.198.64.165',
+    videoPreset: '1080p5994',
+    originUser: 'Evertz',
+    originIp: '10.1.1.1',
+    gmid: '00-02-C5-FF-FE-2E-43-75',
+    ptpDomain: 100,
+    pairLegs: true,
+  });
+  assert.equal(specs.length, 1);
+  assert.equal(specs[0].legs[0].mcast, '238.0.139.117');
+  assert.equal(specs[0].legs[0].source, '10.198.64.165');
+  assert.ok(buildSdpLines(specs[0]).includes(
+    'a=source-filter: incl IN IP4 238.0.139.117 10.198.64.165',
+  ));
+});

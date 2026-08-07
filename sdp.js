@@ -489,11 +489,14 @@ export function applyBulkOverrides(rawSpec, options = {}) {
   if (o.sessId !== undefined && o.sessId !== '') spec.origin.sessId = String(o.sessId);
   if (o.sessVer !== undefined && o.sessVer !== '') spec.origin.sessVer = String(o.sessVer);
   if (o.sessionNameTemplate) {
-    spec.sessionName = String(o.sessionNameTemplate)
-      .replace(/\{type\}/g, spec.type)
-      .replace(/\{device\}/g, '')
-      .replace(/\{mediaPort\}/g, spec.sessionName)
-      .replace(/\{index\}/g, '');
+    // Prefer nameCtx stashed by encapToSpecs so {device}/{index} survive packageSpecs.
+    const ctx = o.nameCtx || spec.nameCtx || {
+      device: '',
+      mediaPort: spec.sessionName || '',
+      type: spec.type || '',
+      index: '',
+    };
+    spec.sessionName = renderNameTemplate(o.sessionNameTemplate, ctx);
   } else if (o.sessionName) {
     spec.sessionName = o.sessionName;
   }
@@ -943,8 +946,8 @@ export function encapToSpecs(text, options = {}) {
     if (!g.device) warn(flow, 'Device blank — weak session name.');
     if (!g.mport) warn(flow, 'Media Port blank — weak session name.');
 
-    const primary = g.primary || g.secondary;
-    if (!primary) {
+    const keptLeg = g.primary || g.secondary;
+    if (!keptLeg) {
       const detail = g.drops.length ? formatDrops(g.drops) : 'no usable multicast';
       skipEssence(
         flow,
@@ -961,14 +964,19 @@ export function encapToSpecs(text, options = {}) {
     }
 
     const redundant = !!(o.pairLegs && g.primary && g.secondary);
+    const keptIsBackup = !g.primary && !!g.secondary;
     const dmEarly = (o.sourceMap && o.sourceMap[g.device]) || null;
-    const primSrcEarly = (dmEarly && dmEarly.primary) || o.sourcePrimary || primary.source;
+    // When only the backup leg survives, bind the *secondary* SSM source — not primary.
+    const keptSrcEarly = keptIsBackup
+      ? ((dmEarly && dmEarly.secondary) || o.sourceSecondary || keptLeg.source || '')
+      : ((dmEarly && dmEarly.primary) || o.sourcePrimary || keptLeg.source || '');
     const secSrcEarly = (dmEarly && dmEarly.secondary) || o.sourceSecondary || (g.secondary && g.secondary.source) || '';
-    const legsEarly = [{ mcast: primary.mcast, source: primSrcEarly }];
+    const primSrcEarly = keptSrcEarly;
+    const legsEarly = [{ mcast: keptLeg.mcast, source: keptSrcEarly }];
     if (redundant) legsEarly.push({ mcast: g.secondary.mcast, source: secSrcEarly });
     const draftSpec = { type: g.type, redundant, port: g.port || 1234, legs: legsEarly };
     const exportedFiles = exportFilenames(draftSpec);
-    const keptMcast = primary.mcast;
+    const keptMcast = keptLeg.mcast;
     const skippedFiles = g.drops.map((d) => dropFileLabel(d, g.port || 1234, keptMcast));
 
     if (o.pairLegs && !(g.primary && g.secondary)) {
@@ -1016,13 +1024,20 @@ export function encapToSpecs(text, options = {}) {
     const seq = String(counter++);
     const sess = o.sessId !== '' && o.sessId !== undefined ? String(o.sessId) : seq;
     const sessV = o.sessVer !== '' && o.sessVer !== undefined ? String(o.sessVer) : sess;
+    const nameCtx = {
+      device: g.device || '',
+      mediaPort: g.mport || '',
+      type: g.type,
+      index: g.sidx || '',
+    };
     const sessionName = o.sessionNameTemplate
-      ? renderNameTemplate(o.sessionNameTemplate, { device: g.device, mediaPort: g.mport, type: g.type, index: g.sidx })
+      ? renderNameTemplate(o.sessionNameTemplate, nameCtx)
       : (g.type === 'audio' && g.sidx ? `${g.mport}-A${g.sidx}` : g.mport);
     const spec = {
       type: g.type,
       redundant,
       sessionName,
+      nameCtx,
       origin: { user: o.originUser, ip: o.originIp, sessId: sess, sessVer: sessV },
       port: g.port,
       gmid: o.gmid,

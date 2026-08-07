@@ -40,6 +40,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   on Generate.
 - **Show VPID spec warnings in UI (2026-08-07).** Decoder already flagged reserved/invalid bits;
   Decoded Source now shows a WARN banner + amber field values (e.g. `CE DA E0 99`).
+- **Glass-to-glass fixes (2026-08-07).** (1) Builder no longer zeros multi-link/channel bits on
+  rate edit (C2/F4/F9/CE…). (2) Bulk `{device}` session template survives packageSpecs via
+  `nameCtx`. (3) Backup-only 2022-7 binds secondary SSM source. (4) Reserved sampling warns on
+  6G/12G (`C0 CA CF 01` / `CE CA CF 01`).
 - **Blank Destination IP Skipped text (2026-08-07).** Cleared multicast cannot be recovered
   from the CSV; Skipped names the surviving SDP/ZIP pair-partner multicast instead.
 - **Text hierarchy colors (2026-08-07).** Descriptions/FAQ use cool slate; settings labels
