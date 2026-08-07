@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (same SDP body). Single-path essences still write one file.
 - **Warnings In ZIP / Skipped columns (2026-08-07).** Incomplete pairs show which
   `{mcast}_{port}.txt` is written vs which multicast name is omitted (e.g. blanked port).
+- **Bulk Generate completion feedback (2026-08-07).** Banner “Generate complete — N files…”,
+  Generate button flashes Done, Download ZIP shows file count.
 
 ### Fixed
 - **CI VPID self-test (2026-08-06).** Guard `window.copyToClipboard` for Node extract —

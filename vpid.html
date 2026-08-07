@@ -847,9 +847,21 @@
 #tool-sdp .badge-warn { color: var(--warn); font-weight: 600; }
 #tool-sdp .hint { color: var(--text-faint); font-size: 11px; margin-top: 4px; }
 #tool-sdp #csvSummary {
-    color: var(--text); font-size: 13px; font-weight: 600; margin-top: 10px;
-    padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);
-    background: rgba(57, 255, 20, 0.06);
+    color: var(--text); font-size: 14px; font-weight: 700; margin-top: 10px;
+    padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border);
+    background: rgba(57, 255, 20, 0.06); line-height: 1.45;
+  }
+#tool-sdp #csvSummary.is-ok {
+    color: var(--ok); border-color: rgba(34, 197, 94, 0.55);
+    background: rgba(34, 197, 94, 0.12);
+  }
+#tool-sdp #csvSummary.is-err {
+    color: var(--err); border-color: rgba(239, 68, 68, 0.5);
+    background: rgba(239, 68, 68, 0.1);
+  }
+#tool-sdp #csvSummary.is-warn {
+    color: var(--warn); border-color: rgba(245, 158, 11, 0.5);
+    background: rgba(245, 158, 11, 0.1);
   }
 #tool-sdp .faq {
     margin: 0 0 18px; border: 1px solid var(--border);
@@ -1332,7 +1344,7 @@ Example:
         <button class="btn" id="parseBtn">Generate</button>
         <button class="btn" id="zipBtn" disabled>Download ZIP</button>
       </div>
-      <div id="csvSummary" class="hint" style="margin-top:10px"></div>
+      <div id="csvSummary" style="margin-top:10px" role="status" aria-live="polite"></div>
       <div id="csvResults"></div>
 
       <!-- Hidden buffer filled by CSV file upload (Generate reads this). -->
@@ -11388,7 +11400,26 @@ function packageSpecs(specs, results, skipped, warnings, skippedRows) {
   }
   results.innerHTML = html;
   $('zipBtn').disabled = validBulk.length === 0;
+  $('zipBtn').textContent = validBulk.length
+    ? `Download ZIP (${validBulk.length} file${validBulk.length === 1 ? '' : 's'})`
+    : 'Download ZIP';
   return { valid: validBulk.length, invalid };
+}
+
+function setBulkSummary(message, kind) {
+  const el = $('csvSummary');
+  el.classList.remove('is-ok', 'is-err', 'is-warn');
+  if (kind === 'ok' || kind === 'err' || kind === 'warn') el.classList.add(`is-${kind}`);
+  el.textContent = message;
+  try { el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) { /* ignore */ }
+}
+
+function flashGenerateDone() {
+  const btn = $('parseBtn');
+  const prev = btn.textContent;
+  btn.textContent = 'Done';
+  clearTimeout(flashGenerateDone._t);
+  flashGenerateDone._t = setTimeout(() => { btn.textContent = prev || 'Generate'; }, 1600);
 }
 
 function runBulk() {
@@ -11396,22 +11427,25 @@ function runBulk() {
   const results = $('csvResults');
   results.innerHTML = '';
   validBulk = [];
+  $('zipBtn').textContent = 'Download ZIP';
   if (!text.trim()) {
-    $('csvSummary').textContent = 'Upload a full device encap CSV first (not a single IP).';
+    setBulkSummary('Upload a full device encap CSV first (not a single IP).', 'err');
     $('zipBtn').disabled = true;
     return;
   }
 
   let rows;
-  try { rows = parseCsv(text); } catch (err) { $('csvSummary').textContent = 'CSV parse error: ' + err.message; return; }
-  if (rows.length === 0) { $('csvSummary').textContent = 'No rows found.'; return; }
+  try { rows = parseCsv(text); } catch (err) { setBulkSummary('CSV parse error: ' + err.message, 'err'); return; }
+  if (rows.length === 0) { setBulkSummary('No rows found.', 'err'); return; }
 
   const header = rows[0].map((h) => String(h).trim());
   const firstCell = String(header[0] || '').trim();
   const looksLikeIpOnly = rows.length === 1 && header.length === 1 && /^\d{1,3}(\.\d{1,3}){3}$/.test(firstCell);
   if (looksLikeIpOnly) {
-    $('csvSummary').textContent =
-      'That is a single IP (' + firstCell + '), not a CSV. Bulk needs a device encap export (header + rows). For one multicast, switch to Single and enter it under Primary multicast.';
+    setBulkSummary(
+      'That is a single IP (' + firstCell + '), not a CSV. Bulk needs a device encap export (header + rows). For one multicast, switch to Single and enter it under Primary multicast.',
+      'err',
+    );
     $('zipBtn').disabled = true;
     return;
   }
@@ -11420,31 +11454,44 @@ function runBulk() {
   if (isEncapHeader(header)) {
     let out;
     try { out = encapToSpecs(text, readImportOptions()); }
-    catch (err) { $('csvSummary').textContent = 'Encap import error: ' + err.message; return; }
+    catch (err) { setBulkSummary('Encap import error: ' + err.message, 'err'); return; }
     const { valid } = packageSpecs(out.specs, results, out.skipped, out.warnings, out.skippedRows);
     const notExported = (out.skippedRows || []).length;
     const warnN = (out.warnings || []).length;
-    $('csvSummary').textContent =
-      `Device encap: ${valid} in ZIP` +
+    const kind = valid === 0 ? 'err' : (warnN || notExported ? 'warn' : 'ok');
+    setBulkSummary(
+      `Generate complete — ${valid} file${valid === 1 ? '' : 's'} ready in ZIP` +
       (notExported ? `, ${notExported} not exported` : '') +
       (warnN ? `, ${warnN} warning(s) (still in ZIP)` : '') +
       (valid !== out.mapped ? ` (${out.mapped} mapped, ${out.mapped - valid} failed validate)` : '') +
-      '.';
+      '. Click Download ZIP.',
+      kind,
+    );
+    if (valid > 0) flashGenerateDone();
     return;
   }
 
   // --- native template ---
   let parsed;
-  try { parsed = csvToSpecs(text); } catch (err) { $('csvSummary').textContent = 'CSV parse error: ' + err.message; return; }
+  try { parsed = csvToSpecs(text); } catch (err) { setBulkSummary('CSV parse error: ' + err.message, 'err'); return; }
   if (!parsed.records.length) {
-    $('csvSummary').textContent =
-      'No data rows found after the header. Upload a full CSV (encap export with Device / Media Port / Destination IP columns), not a single value.';
+    setBulkSummary(
+      'No data rows found after the header. Upload a full CSV (encap export with Device / Media Port / Destination IP columns), not a single value.',
+      'err',
+    );
     $('zipBtn').disabled = true;
     return;
   }
   const specs = parsed.records.map((r) => r.spec);
   const { valid, invalid } = packageSpecs(specs, results, null);
-  $('csvSummary').textContent = `Native template detected. ${valid}/${parsed.records.length} rows valid — ${valid} file(s) will be packaged${invalid ? `, ${invalid} invalid` : ''}.`;
+  const kind = valid === 0 ? 'err' : (invalid ? 'warn' : 'ok');
+  setBulkSummary(
+    `Generate complete — ${valid}/${parsed.records.length} rows valid (${valid} file${valid === 1 ? '' : 's'} in ZIP)` +
+    (invalid ? `, ${invalid} invalid` : '') +
+    '. Click Download ZIP.',
+    kind,
+  );
+  if (valid > 0) flashGenerateDone();
 }
 
 $('parseBtn').addEventListener('click', runBulk);
