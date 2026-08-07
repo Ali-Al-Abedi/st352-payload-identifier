@@ -10686,7 +10686,7 @@ function isEncapHeader(header) {
 function encapToSpecs(text, options = {}) {
   const o = { ...ENCAP_IMPORT_DEFAULTS, ...options };
   const rows = parseCsv(text);
-  if (rows.length === 0) return { specs: [], skipped: {}, warnings: [], mapped: 0 };
+  if (rows.length === 0) return { specs: [], skipped: {}, skippedRows: [], warnings: [], mapped: 0 };
 
   const header = rows[0].map((x) => String(x).trim());
   const idx = {};
@@ -10695,39 +10695,80 @@ function encapToSpecs(text, options = {}) {
 
   const skipped = {};
   const bump = (reason) => { skipped[reason] = (skipped[reason] || 0) + 1; };
+  const skippedRows = [];
   const warnings = [];
   const warn = (flow, message) => { warnings.push({ flow, message }); };
+  const skipRow = (flow, message, aggregateReason) => {
+    bump(aggregateReason || message);
+    skippedRows.push({ flow, message });
+  };
+  const flowKey = (device, mport, type, sidx) =>
+    `${device || '(no device)'}|${mport || '(no media port)'}|${type}|${sidx || ''}`;
 
   // Group legs by essence identity, preserving first-seen order.
+  // Invalid destination IP/port rows are recorded against the group so a later
+  // single-path export can explain *why* the other ST 2022-7 leg is missing.
   const groups = new Map();
+  const ensureGroup = (key, mapped, device, mport, sidx) => {
+    let g = groups.get(key);
+    if (!g) {
+      g = { type: mapped, device, mport, sidx, port: null, primary: null, secondary: null, drops: [] };
+      groups.set(key, g);
+    }
+    return g;
+  };
+
   for (let li = 1; li < rows.length; li++) {
     const r = rows[li];
     const stype = col(r, 'stream type');
+    const device = col(r, 'device');
+    const mport = col(r, 'media port');
+    const sidx = col(r, 'stream index');
+    const isBackup = /^true$/i.test(col(r, 'backup'));
+    const legName = isBackup ? 'backup' : 'primary';
     const mapped = ENCAP_TYPE_MAP[stype.toLowerCase()];
-    if (!mapped) { bump(stype || '(blank)'); continue; }
+
+    if (!mapped) {
+      const label = stype ? `"${stype}"` : '(blank)';
+      skipRow(
+        flowKey(device, mport, stype || 'unknown', sidx),
+        `Stream type ${label} is not ST 2110 video/audio/ANC — row skipped`,
+        stype || '(blank stream type)',
+      );
+      continue;
+    }
+
+    const key = [device, mport, mapped, sidx].join('|');
+    const flow = flowKey(device, mport, mapped, sidx);
+    const g = ensureGroup(key, mapped, device, mport, sidx);
+
     const mcast = col(r, 'destination ip');
-    if (!isMulticastV4(mcast)) { bump('invalid/blank destination ip'); continue; }
+    if (!isMulticastV4(mcast)) {
+      const why = !mcast
+        ? 'Destination IP blank'
+        : `Destination IP "${mcast}" is not a multicast (need 224.0.0.0–239.255.255.255)`;
+      g.drops.push(`${legName}: ${why}`);
+      skipRow(flow, `${legName} leg: ${why} — row skipped (cannot use for ST 2022-7 pair)`, 'invalid/blank destination ip');
+      continue;
+    }
 
     const portRaw = col(r, 'destination port');
     const port = Number(portRaw);
     if (!portRaw || !Number.isInteger(port) || port < 1 || port > 65535) {
-      bump('blank/invalid destination port');
+      const why = !portRaw
+        ? 'Destination Port blank'
+        : `Destination Port "${portRaw}" invalid (need integer 1–65535)`;
+      g.drops.push(`${legName}: ${why}`);
+      skipRow(flow, `${legName} leg: ${why} — row skipped`, 'blank/invalid destination port');
       continue;
     }
 
-    const device = col(r, 'device');
-    const mport = col(r, 'media port');
-    const sidx = col(r, 'stream index');
-    const source = col(r, 'source ip');
-    const isBackup = /^true$/i.test(col(r, 'backup'));
-
-    const key = [device, mport, mapped, sidx].join('|');
-    let g = groups.get(key);
-    if (!g) { g = { type: mapped, device, mport, sidx, port, primary: null, secondary: null }; groups.set(key, g); }
+    if (g.port === null) g.port = port;
     else if (g.port !== port) {
-      // Keep first-seen port; note mismatch.
-      warn(`${device}|${mport}|${mapped}|${sidx || ''}`, `Destination Port mismatch across legs (${g.port} vs ${port}) — using ${g.port}`);
+      warn(flow, `Destination Port mismatch across legs (${g.port} vs ${port}) — using ${g.port}. Make both legs match.`);
     }
+
+    const source = col(r, 'source ip');
     const leg = { mcast, source };
     if (isBackup) g.secondary = leg; else g.primary = leg;
   }
@@ -10735,16 +10776,44 @@ function encapToSpecs(text, options = {}) {
   let counter = 1;
   const specs = [];
   for (const g of groups.values()) {
-    const flow = `${g.device || '(no device)'}|${g.mport || '(no media port)'}|${g.type}|${g.sidx || ''}`;
-    if (!g.device) warn(flow, 'Device blank — session naming may be weak');
-    if (!g.mport) warn(flow, 'Media Port blank — session naming may be weak');
+    const flow = flowKey(g.device, g.mport, g.type, g.sidx);
+    if (!g.device) {
+      warn(flow, 'Device blank — session name / filenames may be weak. Fill the Device column.');
+    }
+    if (!g.mport) {
+      warn(flow, 'Media Port blank — session name / filenames may be weak. Fill the Media Port column.');
+    }
 
     const primary = g.primary || g.secondary;
-    if (!primary) { bump('no primary/backup leg'); continue; }
+    if (!primary) {
+      // Row-level skips already explain blank/invalid IP/port; only add a row
+      // when the group somehow has no legs and no recorded drops.
+      if (!g.drops.length) {
+        skipRow(flow, 'No usable primary or backup leg — essence not exported', 'no usable primary/backup leg');
+      } else {
+        bump('no usable primary/backup leg');
+      }
+      continue;
+    }
 
     const redundant = !!(o.pairLegs && g.primary && g.secondary);
     if (o.pairLegs && !(g.primary && g.secondary)) {
-      warn(flow, 'ST 2022-7 pairing on but only one leg present — exported as single-path');
+      if (g.drops.length) {
+        warn(
+          flow,
+          `ST 2022-7 pair incomplete — ${g.drops.join('; ')}. Exported as single-path. Restore the missing Destination IP/Port, or uncheck Pair primary/backup legs.`,
+        );
+      } else if (!g.primary && g.secondary) {
+        warn(
+          flow,
+          'ST 2022-7 pairing on but primary leg missing from CSV (only backup present) — exported as single-path. Add Backup=False row or uncheck Pair legs.',
+        );
+      } else {
+        warn(
+          flow,
+          'ST 2022-7 pairing on but backup leg not in CSV — exported as single-path. Add Backup=True row with multicast, or uncheck Pair primary/backup legs.',
+        );
+      }
     }
 
     // Source-filter precedence: per-device map > global override > (blank) export source.
@@ -10823,7 +10892,7 @@ function encapToSpecs(text, options = {}) {
     }
     specs.push(spec);
   }
-  return { specs, skipped, warnings, mapped: specs.length };
+  return { specs, skipped, skippedRows, warnings, mapped: specs.length };
 }
 
 // ---------------------------------------------------------------------------
@@ -11182,7 +11251,7 @@ function readImportOptions() {
 
 // Turn a flat list of specs into downloadable files + a summarised report,
 // capping the rendered error list so very large imports stay responsive.
-function packageSpecs(specs, results, skipped, warnings) {
+function packageSpecs(specs, results, skipped, warnings, skippedRows) {
   const used = new Set();
   const byType = { video: 0, audio: 0, anc: 0 };
   const errorSamples = [];
@@ -11208,17 +11277,22 @@ function packageSpecs(specs, results, skipped, warnings) {
     `<tr><td>ANC (2110-40)</td><td>${byType.anc}</td></tr>` +
     '</tbody></table>';
 
-  if (skipped && Object.keys(skipped).length) {
+  if (skippedRows && skippedRows.length) {
+    const show = skippedRows.slice(0, 200);
+    const rows = show.map((s) => `<tr><td class="badge-err">${esc(s.flow || '')}</td><td>${esc(s.message)}</td></tr>`).join('');
+    html += `<h2 style="margin-top:16px">Skipped (${skippedRows.length}${skippedRows.length > show.length ? `, showing first ${show.length}` : ''})</h2>` +
+      `<table><thead><tr><th>Flow</th><th>Why</th></tr></thead><tbody>${rows}</tbody></table>`;
+  } else if (skipped && Object.keys(skipped).length) {
     const rows = Object.entries(skipped).sort((a, b) => b[1] - a[1])
       .map(([k, v]) => `<tr><td>${esc(k)}</td><td>${v}</td></tr>`).join('');
     html += '<h2 style="margin-top:16px">Skipped</h2>' +
-      `<table><thead><tr><th>Stream type / reason</th><th>Rows</th></tr></thead><tbody>${rows}</tbody></table>`;
+      `<table><thead><tr><th>Reason</th><th>Rows</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
   if (warnings && warnings.length) {
     const show = warnings.slice(0, 200);
     const rows = show.map((w) => `<tr><td class="badge-warn">${esc(w.flow || '')}</td><td>${esc(w.message)}</td></tr>`).join('');
     html += `<h2 style="margin-top:16px">Warnings (${warnings.length}${warnings.length > show.length ? `, showing first ${show.length}` : ''})</h2>` +
-      `<table><thead><tr><th>Flow</th><th>Message</th></tr></thead><tbody>${rows}</tbody></table>`;
+      `<table><thead><tr><th>Flow</th><th>What to do</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
   if (errorSamples.length) {
     const rows = errorSamples.map((e) => `<tr><td>${e.i}</td><td class="badge-err">${esc(e.type)}</td><td>${esc(e.err)}</td></tr>`).join('');
@@ -11265,7 +11339,7 @@ function runBulk() {
     let out;
     try { out = encapToSpecs(text, readImportOptions()); }
     catch (err) { $('csvSummary').textContent = 'Encap import error: ' + err.message; return; }
-    const { valid } = packageSpecs(out.specs, results, out.skipped, out.warnings);
+    const { valid } = packageSpecs(out.specs, results, out.skipped, out.warnings, out.skippedRows);
     const skippedTotal = Object.values(out.skipped || {}).reduce((a, b) => a + b, 0);
     const warnN = (out.warnings || []).length;
     $('csvSummary').textContent =

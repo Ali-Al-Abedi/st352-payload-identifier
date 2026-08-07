@@ -791,20 +791,20 @@ export function isEncapHeader(header) {
 }
 
 /**
- * Convert a device encap CSV into { specs, skipped, warnings, mapped }.
- *  - specs:    SDP specs ready for validateSpec/buildSdp
- *  - skipped:  { <reason>: count } for rows/essences not exported
- *  - warnings: [{ flow, message }] soft issues (ASM, incomplete 2022-7 pair, blank names)
- *  - mapped:   number of specs produced
+ * Convert a device encap CSV into { specs, skipped, skippedRows, warnings, mapped }.
+ *  - specs:       SDP specs ready for validateSpec/buildSdp
+ *  - skipped:     { <reason>: count } aggregate for the summary line
+ *  - skippedRows: [{ flow, message }] per-row hard skips (clear why)
+ *  - warnings:    [{ flow, message }] soft issues (still exported)
+ *  - mapped:      number of specs produced
  *
- * Hard skips: non-2110 stream type, bad multicast, blank/invalid destination port.
- * Soft warns: blank/0.0.0.0 source (ASM — fill Source IP / source map to add SSM),
- *             2022-7 on with only one leg, blank Device/Media Port.
+ * Hard skips: non-2110 stream type, bad/blank multicast, blank/invalid destination port.
+ * Soft warns: blank/0.0.0.0 source (ASM), incomplete 2022-7 pair, blank Device/Media Port.
  */
 export function encapToSpecs(text, options = {}) {
   const o = { ...ENCAP_IMPORT_DEFAULTS, ...options };
   const rows = parseCsv(text);
-  if (rows.length === 0) return { specs: [], skipped: {}, warnings: [], mapped: 0 };
+  if (rows.length === 0) return { specs: [], skipped: {}, skippedRows: [], warnings: [], mapped: 0 };
 
   const header = rows[0].map((x) => String(x).trim());
   const idx = {};
@@ -813,39 +813,80 @@ export function encapToSpecs(text, options = {}) {
 
   const skipped = {};
   const bump = (reason) => { skipped[reason] = (skipped[reason] || 0) + 1; };
+  const skippedRows = [];
   const warnings = [];
   const warn = (flow, message) => { warnings.push({ flow, message }); };
+  const skipRow = (flow, message, aggregateReason) => {
+    bump(aggregateReason || message);
+    skippedRows.push({ flow, message });
+  };
+  const flowKey = (device, mport, type, sidx) =>
+    `${device || '(no device)'}|${mport || '(no media port)'}|${type}|${sidx || ''}`;
 
   // Group legs by essence identity, preserving first-seen order.
+  // Invalid destination IP/port rows are recorded against the group so a later
+  // single-path export can explain *why* the other ST 2022-7 leg is missing.
   const groups = new Map();
+  const ensureGroup = (key, mapped, device, mport, sidx) => {
+    let g = groups.get(key);
+    if (!g) {
+      g = { type: mapped, device, mport, sidx, port: null, primary: null, secondary: null, drops: [] };
+      groups.set(key, g);
+    }
+    return g;
+  };
+
   for (let li = 1; li < rows.length; li++) {
     const r = rows[li];
     const stype = col(r, 'stream type');
+    const device = col(r, 'device');
+    const mport = col(r, 'media port');
+    const sidx = col(r, 'stream index');
+    const isBackup = /^true$/i.test(col(r, 'backup'));
+    const legName = isBackup ? 'backup' : 'primary';
     const mapped = ENCAP_TYPE_MAP[stype.toLowerCase()];
-    if (!mapped) { bump(stype || '(blank)'); continue; }
+
+    if (!mapped) {
+      const label = stype ? `"${stype}"` : '(blank)';
+      skipRow(
+        flowKey(device, mport, stype || 'unknown', sidx),
+        `Stream type ${label} is not ST 2110 video/audio/ANC — row skipped`,
+        stype || '(blank stream type)',
+      );
+      continue;
+    }
+
+    const key = [device, mport, mapped, sidx].join('|');
+    const flow = flowKey(device, mport, mapped, sidx);
+    const g = ensureGroup(key, mapped, device, mport, sidx);
+
     const mcast = col(r, 'destination ip');
-    if (!isMulticastV4(mcast)) { bump('invalid/blank destination ip'); continue; }
+    if (!isMulticastV4(mcast)) {
+      const why = !mcast
+        ? 'Destination IP blank'
+        : `Destination IP "${mcast}" is not a multicast (need 224.0.0.0–239.255.255.255)`;
+      g.drops.push(`${legName}: ${why}`);
+      skipRow(flow, `${legName} leg: ${why} — row skipped (cannot use for ST 2022-7 pair)`, 'invalid/blank destination ip');
+      continue;
+    }
 
     const portRaw = col(r, 'destination port');
     const port = Number(portRaw);
     if (!portRaw || !Number.isInteger(port) || port < 1 || port > 65535) {
-      bump('blank/invalid destination port');
+      const why = !portRaw
+        ? 'Destination Port blank'
+        : `Destination Port "${portRaw}" invalid (need integer 1–65535)`;
+      g.drops.push(`${legName}: ${why}`);
+      skipRow(flow, `${legName} leg: ${why} — row skipped`, 'blank/invalid destination port');
       continue;
     }
 
-    const device = col(r, 'device');
-    const mport = col(r, 'media port');
-    const sidx = col(r, 'stream index');
-    const source = col(r, 'source ip');
-    const isBackup = /^true$/i.test(col(r, 'backup'));
-
-    const key = [device, mport, mapped, sidx].join('|');
-    let g = groups.get(key);
-    if (!g) { g = { type: mapped, device, mport, sidx, port, primary: null, secondary: null }; groups.set(key, g); }
+    if (g.port === null) g.port = port;
     else if (g.port !== port) {
-      // Keep first-seen port; note mismatch.
-      warn(`${device}|${mport}|${mapped}|${sidx || ''}`, `Destination Port mismatch across legs (${g.port} vs ${port}) — using ${g.port}`);
+      warn(flow, `Destination Port mismatch across legs (${g.port} vs ${port}) — using ${g.port}. Make both legs match.`);
     }
+
+    const source = col(r, 'source ip');
     const leg = { mcast, source };
     if (isBackup) g.secondary = leg; else g.primary = leg;
   }
@@ -853,16 +894,44 @@ export function encapToSpecs(text, options = {}) {
   let counter = 1;
   const specs = [];
   for (const g of groups.values()) {
-    const flow = `${g.device || '(no device)'}|${g.mport || '(no media port)'}|${g.type}|${g.sidx || ''}`;
-    if (!g.device) warn(flow, 'Device blank — session naming may be weak');
-    if (!g.mport) warn(flow, 'Media Port blank — session naming may be weak');
+    const flow = flowKey(g.device, g.mport, g.type, g.sidx);
+    if (!g.device) {
+      warn(flow, 'Device blank — session name / filenames may be weak. Fill the Device column.');
+    }
+    if (!g.mport) {
+      warn(flow, 'Media Port blank — session name / filenames may be weak. Fill the Media Port column.');
+    }
 
     const primary = g.primary || g.secondary;
-    if (!primary) { bump('no primary/backup leg'); continue; }
+    if (!primary) {
+      // Row-level skips already explain blank/invalid IP/port; only add a row
+      // when the group somehow has no legs and no recorded drops.
+      if (!g.drops.length) {
+        skipRow(flow, 'No usable primary or backup leg — essence not exported', 'no usable primary/backup leg');
+      } else {
+        bump('no usable primary/backup leg');
+      }
+      continue;
+    }
 
     const redundant = !!(o.pairLegs && g.primary && g.secondary);
     if (o.pairLegs && !(g.primary && g.secondary)) {
-      warn(flow, 'ST 2022-7 pairing on but only one leg present — exported as single-path');
+      if (g.drops.length) {
+        warn(
+          flow,
+          `ST 2022-7 pair incomplete — ${g.drops.join('; ')}. Exported as single-path. Restore the missing Destination IP/Port, or uncheck Pair primary/backup legs.`,
+        );
+      } else if (!g.primary && g.secondary) {
+        warn(
+          flow,
+          'ST 2022-7 pairing on but primary leg missing from CSV (only backup present) — exported as single-path. Add Backup=False row or uncheck Pair legs.',
+        );
+      } else {
+        warn(
+          flow,
+          'ST 2022-7 pairing on but backup leg not in CSV — exported as single-path. Add Backup=True row with multicast, or uncheck Pair primary/backup legs.',
+        );
+      }
     }
 
     // Source-filter precedence: per-device map > global override > (blank) export source.
@@ -941,7 +1010,7 @@ export function encapToSpecs(text, options = {}) {
     }
     specs.push(spec);
   }
-  return { specs, skipped, warnings, mapped: specs.length };
+  return { specs, skipped, skippedRows, warnings, mapped: specs.length };
 }
 
 // ---------------------------------------------------------------------------

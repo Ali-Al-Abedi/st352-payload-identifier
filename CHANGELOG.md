@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Drop Require SSM checkbox (2026-08-07).** Missing source is never skipped —
   export ASM + warn, with guidance to fill Source IP / source map for SSM.
+- **Clearer Bulk skip/warn messages (2026-08-07).** Per-row Skipped (flow + why);
+  cleared multicast/port names the leg and explains ST 2022-7 single-path; warnings
+  say what to fix.
 
 ### Fixed
 - **CI VPID self-test (2026-08-06).** Guard `window.copyToClipboard` for Node extract —

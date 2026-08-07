@@ -543,8 +543,9 @@ test('encap blank source warns ASM and still exports', () => {
   const asm = warnings.filter((w) => /ASM/.test(w.message));
   assert.ok(asm.length >= 3, `expected ASM warns for video/audio/anc, got ${asm.length}`);
   assert.ok(asm.every((w) => /Fill Source IP|source map/.test(w.message)));
-  const incomplete = warnings.filter((w) => /only one leg/.test(w.message));
+  const incomplete = warnings.filter((w) => /ST 2022-7/.test(w.message));
   assert.equal(incomplete.length, 1, 'ANC single-leg should warn once');
+  assert.match(incomplete[0].message, /backup leg not in CSV/);
   for (const s of specs) {
     assert.equal(validateSpec(s).ok, true);
     assert.ok(!buildSdpLines(s).some((l) => l.startsWith('a=source-filter')));
@@ -559,8 +560,27 @@ test('encap blank/invalid destination port is hard-skipped', () => {
     'DEV,VID-1,ENET-1,ANC,,238.1.1.118,abc,10.1.1.1,10.0,False',
     'DEV,VID-1,ENET-1,Video,,238.1.1.119,1234,10.1.1.1,3000.0,False',
   ].join('\n') + '\n';
-  const { specs, skipped, mapped } = encapToSpecs(csv);
+  const { specs, skipped, skippedRows, mapped } = encapToSpecs(csv);
   assert.equal(mapped, 1);
   assert.equal(specs[0].port, 1234);
   assert.equal(skipped['blank/invalid destination port'], 3);
+  assert.equal(skippedRows.length, 3);
+  assert.ok(skippedRows.every((r) => /Destination Port/.test(r.message)));
+});
+
+test('cleared backup multicast explains ST 2022-7 single-path', () => {
+  const csv = [
+    'Device,Media Port,Ethernet,Stream Type,Stream Index,Destination IP,Destination Port,Source IP,Bitrate (Mbps),Backup',
+    'DEV,VID-1,ENET-1,Video,,238.1.1.116,1234,10.1.1.1,3000.0,False',
+    'DEV,VID-1,ENET-2,Video,,,1234,10.1.1.2,3000.0,True',
+  ].join('\n') + '\n';
+  const { specs, skippedRows, warnings, mapped } = encapToSpecs(csv);
+  assert.equal(mapped, 1);
+  assert.equal(specs[0].redundant, false);
+  assert.equal(skippedRows.length, 1);
+  assert.match(skippedRows[0].message, /backup leg: Destination IP blank/);
+  const w = warnings.find((x) => /ST 2022-7 pair incomplete/.test(x.message));
+  assert.ok(w, 'expected incomplete-pair warning tied to cleared multicast');
+  assert.match(w.message, /backup: Destination IP blank/);
+  assert.match(w.message, /Exported as single-path/);
 });
