@@ -764,10 +764,14 @@ function packageSpecs(specs, results, skipped, warnings, skippedRows) {
 
   if (skippedRows && skippedRows.length) {
     const show = skippedRows.slice(0, 200);
-    const rows = show.map((s) => `<tr><td class="badge-err">${esc(s.flow || '')}</td><td>${esc(s.message)}</td></tr>`).join('');
+    const rows = show.map((s) => {
+      const exp = (s.exported && s.exported.length) ? s.exported.map(esc).join('<br>') : '—';
+      const sk = (s.skipped && s.skipped.length) ? s.skipped.map(esc).join('<br>') : '—';
+      return `<tr><td class="badge-err">${esc(s.flow || '')}</td><td>${exp}</td><td class="badge-err">${sk}</td><td>${esc(s.message)}</td></tr>`;
+    }).join('');
     html += `<h2 style="margin-top:16px">Not in ZIP (${skippedRows.length}${skippedRows.length > show.length ? `, showing first ${show.length}` : ''})</h2>` +
-      `<div class="hint">These essences produced no file. Warnings below are different — those files are still in the ZIP.</div>` +
-      `<table><thead><tr><th>Flow</th><th>Why</th></tr></thead><tbody>${rows}</tbody></table>`;
+      `<div class="hint">No file written for these essences.</div>` +
+      `<table><thead><tr><th>Flow</th><th>In ZIP</th><th>Skipped</th><th>Why</th></tr></thead><tbody>${rows}</tbody></table>`;
   } else if (skipped && Object.keys(skipped).length) {
     const rows = Object.entries(skipped).sort((a, b) => b[1] - a[1])
       .map(([k, v]) => `<tr><td>${esc(k)}</td><td>${v}</td></tr>`).join('');
@@ -776,9 +780,14 @@ function packageSpecs(specs, results, skipped, warnings, skippedRows) {
   }
   if (warnings && warnings.length) {
     const show = warnings.slice(0, 200);
-    const rows = show.map((w) => `<tr><td class="badge-warn">${esc(w.flow || '')}</td><td>${esc(w.message)}</td></tr>`).join('');
+    const rows = show.map((w) => {
+      const exp = (w.exported && w.exported.length) ? w.exported.map(esc).join('<br>') : '—';
+      const sk = (w.skipped && w.skipped.length) ? w.skipped.map(esc).join('<br>') : '—';
+      return `<tr><td class="badge-warn">${esc(w.flow || '')}</td><td>${exp}</td><td class="badge-err">${sk}</td><td>${esc(w.message)}</td></tr>`;
+    }).join('');
     html += `<h2 style="margin-top:16px">Warnings — still in ZIP (${warnings.length}${warnings.length > show.length ? `, showing first ${show.length}` : ''})</h2>` +
-      `<table><thead><tr><th>Flow</th><th>What to do</th></tr></thead><tbody>${rows}</tbody></table>`;
+      `<div class="hint"><strong>In ZIP</strong> = filename(s) written. <strong>Skipped</strong> = multicast name that will NOT appear (usually the broken leg).</div>` +
+      `<table><thead><tr><th>Flow</th><th>In ZIP</th><th>Skipped</th><th>What to do</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
   if (errorSamples.length) {
     const rows = errorSamples.map((e) => `<tr><td>${e.i}</td><td class="badge-err">${esc(e.type)}</td><td>${esc(e.err)}</td></tr>`).join('');

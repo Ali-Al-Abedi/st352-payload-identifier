@@ -840,13 +840,32 @@ export function encapToSpecs(text, options = {}) {
   const bump = (reason) => { skipped[reason] = (skipped[reason] || 0) + 1; };
   const skippedRows = [];
   const warnings = [];
-  const warn = (flow, message) => { warnings.push({ flow, message }); };
-  const skipEssence = (flow, message, aggregateReason) => {
+  const warn = (flow, message, extra = {}) => {
+    warnings.push({
+      flow,
+      message,
+      exported: extra.exported || [],
+      skipped: extra.skipped || [],
+    });
+  };
+  const skipEssence = (flow, message, aggregateReason, extra = {}) => {
     bump(aggregateReason || message);
-    skippedRows.push({ flow, message });
+    skippedRows.push({
+      flow,
+      message,
+      exported: extra.exported || [],
+      skipped: extra.skipped || [],
+    });
   };
   const flowKey = (device, mport, type, sidx) =>
     `${device || '(no device)'}|${mport || '(no media port)'}|${type}|${sidx || ''}`;
+  const formatDrops = (drops) => drops.map((d) => `${d.leg}: ${d.why}`).join('; ');
+  const dropFileLabel = (drop, fallbackPort) => {
+    if (drop.mcast && isMulticastV4(drop.mcast)) {
+      return filenameForMcastPort(drop.mcast, fallbackPort || 1234);
+    }
+    return `(${drop.leg} — ${drop.why})`;
+  };
 
   // Group legs by essence identity. Bad Destination IP/Port on one leg is recorded
   // as a drop; Skipped is only emitted if no usable leg remains (nothing in the ZIP).
@@ -889,7 +908,7 @@ export function encapToSpecs(text, options = {}) {
       const why = !mcast
         ? 'Destination IP blank'
         : `Destination IP "${mcast}" is not a multicast (need 224.0.0.0–239.255.255.255)`;
-      g.drops.push(`${legName}: ${why}`);
+      g.drops.push({ leg: legName, why, mcast: '', portHint: col(r, 'destination port') });
       continue;
     }
 
@@ -899,7 +918,8 @@ export function encapToSpecs(text, options = {}) {
       const why = !portRaw
         ? 'Destination Port blank'
         : `Destination Port "${portRaw}" invalid (need integer 1–65535)`;
-      g.drops.push(`${legName}: ${why}`);
+      // Keep multicast so the Skipped column can name e.g. 238.0.139.121_1234.txt
+      g.drops.push({ leg: legName, why, mcast, portHint: portRaw });
       continue;
     }
 
@@ -909,7 +929,7 @@ export function encapToSpecs(text, options = {}) {
     }
 
     // A later valid row for the same leg supersedes an earlier drop on that leg.
-    g.drops = g.drops.filter((d) => !d.startsWith(`${legName}:`));
+    g.drops = g.drops.filter((d) => d.leg !== legName);
     const source = col(r, 'source ip');
     const leg = { mcast, source };
     if (isBackup) g.secondary = leg; else g.primary = leg;
@@ -928,50 +948,74 @@ export function encapToSpecs(text, options = {}) {
 
     const primary = g.primary || g.secondary;
     if (!primary) {
-      const detail = g.drops.length ? g.drops.join('; ') : 'no primary/backup rows with a usable multicast';
+      const detail = g.drops.length ? formatDrops(g.drops) : 'no primary/backup rows with a usable multicast';
       skipEssence(
         flow,
         `Not exported — ${detail}. Fix Destination IP/Port on at least one leg.`,
         'essence not exported (no usable multicast)',
+        {
+          exported: [],
+          skipped: g.drops.length
+            ? g.drops.map((d) => dropFileLabel(d, g.port || 1234))
+            : ['(no usable multicast)'],
+        },
       );
       continue;
     }
 
     const redundant = !!(o.pairLegs && g.primary && g.secondary);
+    // Build legs early so we can name In-ZIP / Skipped files on incomplete pairs.
+    const dmEarly = (o.sourceMap && o.sourceMap[g.device]) || null;
+    const primSrcEarly = (dmEarly && dmEarly.primary) || o.sourcePrimary || primary.source;
+    const secSrcEarly = (dmEarly && dmEarly.secondary) || o.sourceSecondary || (g.secondary && g.secondary.source) || '';
+    const legsEarly = [{ mcast: primary.mcast, source: primSrcEarly }];
+    if (redundant) legsEarly.push({ mcast: g.secondary.mcast, source: secSrcEarly });
+    const draftSpec = { type: g.type, redundant, port: g.port || 1234, legs: legsEarly };
+    const exportedFiles = exportFilenames(draftSpec);
+    const skippedFiles = g.drops.map((d) => dropFileLabel(d, g.port || 1234));
+
     if (o.pairLegs && !(g.primary && g.secondary)) {
       if (g.drops.length) {
         const kept = g.primary ? 'primary' : 'backup';
         warn(
           flow,
-          `ST 2022-7 pair incomplete — ${g.drops.join('; ')}. Still exported as single-path from the ${kept} leg (file is in the ZIP). Restore the missing Destination IP/Port, or uncheck Pair primary/backup legs.`,
+          `ST 2022-7 pair incomplete — ${formatDrops(g.drops)}. Still exported as single-path from the ${kept} leg. Restore the missing Destination IP/Port, or uncheck Pair primary/backup legs.`,
+          { exported: exportedFiles, skipped: skippedFiles },
         );
       } else if (!g.primary && g.secondary) {
         warn(
           flow,
-          'ST 2022-7 pairing on but primary leg missing from CSV (only backup present) — still exported as single-path (file is in the ZIP). Add Backup=False row or uncheck Pair legs.',
+          'ST 2022-7 pairing on but primary leg missing from CSV (only backup present) — still exported as single-path. Add Backup=False row or uncheck Pair legs.',
+          { exported: exportedFiles, skipped: ['(primary leg missing from CSV)'] },
         );
       } else {
         warn(
           flow,
-          'ST 2022-7 pairing on but backup leg not in CSV — still exported as single-path (file is in the ZIP). Add Backup=True row with multicast, or uncheck Pair primary/backup legs.',
+          'ST 2022-7 pairing on but backup leg not in CSV — still exported as single-path. Add Backup=True row with multicast, or uncheck Pair primary/backup legs.',
+          { exported: exportedFiles, skipped: ['(backup leg missing from CSV)'] },
         );
       }
     }
 
     // Source-filter precedence: per-device map > global override > (blank) export source.
-    const dm = (o.sourceMap && o.sourceMap[g.device]) || null;
-    const primSrc = (dm && dm.primary) || o.sourcePrimary || primary.source;
-    const secSrc = (dm && dm.secondary) || o.sourceSecondary || (g.secondary && g.secondary.source) || '';
+    const dm = dmEarly;
+    const primSrc = primSrcEarly;
+    const secSrc = secSrcEarly;
 
     const missingSsm = (src) => !hasSource({ source: src });
     if (missingSsm(primSrc)) {
-      warn(flow, 'Source IP blank/0.0.0.0 → ASM (no a=source-filter). Fill Source IP primary or source map for SSM.');
+      warn(flow, 'Source IP blank/0.0.0.0 → ASM (no a=source-filter). Fill Source IP primary or source map for SSM.', {
+        exported: exportedFiles,
+        skipped: [],
+      });
     } else if (redundant && missingSsm(secSrc)) {
-      warn(flow, 'Backup Source IP blank/0.0.0.0 → ASM on backup leg. Fill Source IP secondary or source map.');
+      warn(flow, 'Backup Source IP blank/0.0.0.0 → ASM on backup leg. Fill Source IP secondary or source map.', {
+        exported: exportedFiles,
+        skipped: [],
+      });
     }
 
-    const legs = [{ mcast: primary.mcast, source: primSrc }];
-    if (redundant) legs.push({ mcast: g.secondary.mcast, source: secSrc });
+    const legs = legsEarly;
 
     const seq = String(counter++);
     const sess = o.sessId !== '' && o.sessId !== undefined ? String(o.sessId) : seq;
