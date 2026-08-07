@@ -52,6 +52,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Text hierarchy colors (2026-08-07).** Descriptions/FAQ use cool slate; settings labels
   use muted sage; menus/tabs use light chrome — no longer one near-white for everything.
 
+### Changed
+- **Bulk Generate under More options (2026-08-07).** Button lives with the options it
+  applies; Download ZIP stays outside. Section open by default.
+
 ### Fixed
 - **pairLegs off + dual Source IP (2026-08-07).** Unpaired primary/backup single-path
   SDPs no longer both get `sourcePrimary` SSM. Backup file uses `sourceSecondary`

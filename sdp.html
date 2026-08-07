@@ -391,9 +391,10 @@
         <input type="file" id="csvFile" accept=".csv,text/csv" style="width:auto">
       </div>
 
-      <details style="margin:8px 0 14px">
+      <details open style="margin:8px 0 14px">
         <summary style="cursor:pointer;color:var(--text-ui);font-size:12px;font-weight:600">More options</summary>
         <div style="margin-top:12px">
+          <div class="hint" style="margin-bottom:10px">Generate applies these options to the CSV.</div>
           <div class="row">
             <div class="field">
               <label>Video preset</label>
@@ -426,11 +427,13 @@
             <div class="field"><label>Source IP — secondary</label><input id="impSrcSecondary" placeholder="optional"></div>
           </div>
           <div class="hint">Blank = keep CSV Source IP (or ASM if CSV blank). Filled → overrides CSV.</div>
+          <div class="btn-row" style="margin-top:14px">
+            <button class="btn" id="parseBtn">Generate</button>
+          </div>
         </div>
       </details>
 
       <div class="btn-row">
-        <button class="btn" id="parseBtn">Generate</button>
         <button class="btn" id="zipBtn" disabled>Download ZIP</button>
       </div>
       <div id="csvSummary" style="margin-top:10px" role="status" aria-live="polite"></div>
