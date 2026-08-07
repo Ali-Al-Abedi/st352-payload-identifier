@@ -1313,25 +1313,24 @@ Example:
         <input type="file" id="csvFile" accept=".csv,text/csv" style="width:auto">
       </div>
 
-      <div class="row" style="margin-top:4px">
-        <div class="field">
-          <label>Video preset</label>
-          <select id="impVideoPreset">
-            <option value="1080p5994">1080p59.94 SDR — 89 CA 80 01</option>
-            <option value="1080p5994hlg">1080p59.94 HLG Rec.2020 — 89 DA A0 01</option>
-            <option value="720p5994">720p59.94 SDR — 84 CA 80 01</option>
-            <option value="2160p5994hlg">2160p59.94 HLG Rec.2020 — CE DA A0 01</option>
-            <option value="2160p5994pq">2160p59.94 PQ Rec.2020 — CE EA A0 01</option>
-          </select>
-        </div>
-        <div class="field">
-          <label class="toggle" style="margin-top:22px"><input type="checkbox" id="impPairLegs" checked> Pair primary/backup legs (ST 2022-7)</label>
-        </div>
-      </div>
-
       <details style="margin:8px 0 14px">
         <summary style="cursor:pointer;color:var(--text-ui);font-size:12px;font-weight:600">More options</summary>
         <div style="margin-top:12px">
+          <div class="row">
+            <div class="field">
+              <label>Video preset</label>
+              <select id="impVideoPreset">
+                <option value="1080p5994">1080p59.94 SDR — 89 CA 80 01</option>
+                <option value="1080p5994hlg">1080p59.94 HLG Rec.2020 — 89 DA A0 01</option>
+                <option value="720p5994">720p59.94 SDR — 84 CA 80 01</option>
+                <option value="2160p5994hlg">2160p59.94 HLG Rec.2020 — CE DA A0 01</option>
+                <option value="2160p5994pq">2160p59.94 PQ Rec.2020 — CE EA A0 01</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="toggle" style="margin-top:22px"><input type="checkbox" id="impPairLegs" checked> Pair primary/backup legs (ST 2022-7)</label>
+            </div>
+          </div>
           <div class="row">
             <div class="field"><label>Origin user</label><input id="impOriginUser" value="Evertz"></div>
             <div class="field"><label>Origin IP</label><input id="impOriginIp" value="10.198.24.151"></div>
