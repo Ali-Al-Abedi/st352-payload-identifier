@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **UI polish + black / neon theme (2026-08-06).** Pure black background, neon green
+  accent (`#39ff14`), brighter text, sky SDR banner (no muddy greys). Stable VPID↔SDP
+  header (no layout jump). Larger tool tabs; removed Try one / Import-ready pills /
+  Paste CSV. Heroes + FAQ copy tightened.
+
+### Fixed
+- **Copy buttons on HTTP (2026-08-06).** `navigator.clipboard` fails on plain HTTP
+  (`.201`); added `copyToClipboard` fallback. Renamed SDP `copyBtn` → `sdpCopyBtn` so
+  Bulk no longer disabled VPID Copy hex.
+- **Hex input caret (2026-08-06).** Mid-field Backspace kept deleting the wrong digit
+  after auto-spacing; caret now tracks hex digits; space Backspace deletes the prior digit.
+- **Bulk Generate feedback (2026-08-06).** Pasting a bare multicast IP showed almost
+  nothing; now explains Single-tab vs encap CSV.
+
 - **UI polish + neon green theme (2026-08-06).** Atmospheric backdrop, hero banners,
   pill tool tabs, stronger cards/preview, SDP Quick FAQ (preset / ST 2022-7 / source IP).
   Accent shifted from cyan to neon lime (`#39ff14`). Applies to VPID + SDP (`vpid.html`,

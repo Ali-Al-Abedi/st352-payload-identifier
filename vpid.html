@@ -7,26 +7,27 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0b0f17;
-    --bg-elev: #111827;
-    --bg-elev-2: #1a2233;
-    --border: #243042;
-    --border-strong: #334155;
-    --text: #e6edf6;
-    --text-dim: #94a3b8;
-    --text-faint: #64748b;
+    --bg: #000000;
+    --bg-elev: #0a0a0a;
+    --bg-elev-2: #141414;
+    --border: #262626;
+    --border-strong: #3a3a3a;
+    --text: #ffffff;
+    --text-dim: #f5f5f5;
+    --text-faint: #ebebeb;
     --accent: #39ff14;
     --accent-dim: #0f9d3a;
+    --on-accent: #04150c;
     --ok: #22c55e;
     --warn: #f59e0b;
     --err: #ef4444;
-    --hdr-sdr: #64748b;
+    --hdr-sdr: #7dd3fc;
     --hdr-hlg: #f59e0b;
     --hdr-pq: #a855f7;
-    --hdr-unspec: #475569;
+    --hdr-unspec: #e5e5e5;
     /* SDI transport tier tokens used by the level chip in the batch table. */
-    --level-sd:          #78716c;
-    --level-hd:          #94a3b8;
+    --level-sd:          #d6d3d1;
+    --level-hd:          #e2e8f0;
     --level-3g-a:        #39ff14;
     --level-3g-b:        #14b8a6;
     --level-3g-quad:     #38bdf8;
@@ -37,7 +38,7 @@
     --level-12g-mux:     #f472b6;
     --level-compressed:  #f59e0b;
     --bit-1: #39ff14;
-    --bit-0: #475569;
+    --bit-0: #a3a3a3;
     --bit-x: #f59e0b;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -45,9 +46,9 @@
   body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background:
-      radial-gradient(1200px 600px at 12% -10%, rgba(57, 255, 20, 0.42), transparent 55%),
-      radial-gradient(900px 500px at 88% 0%, rgba(125, 255, 90, 0.08), transparent 50%),
-      radial-gradient(800px 400px at 50% 100%, rgba(15, 157, 58, 0.06), transparent 45%),
+      radial-gradient(1100px 560px at 10% -8%, rgba(57, 255, 20, 0.12), transparent 55%),
+      radial-gradient(900px 480px at 92% 0%, rgba(57, 255, 20, 0.06), transparent 50%),
+      radial-gradient(800px 420px at 50% 105%, rgba(57, 255, 20, 0.07), transparent 50%),
       var(--bg);
     background-attachment: fixed;
     color: var(--text);
@@ -59,8 +60,8 @@
     content: "";
     position: fixed; inset: 0; pointer-events: none; z-index: 0;
     background-image:
-      linear-gradient(rgba(36, 48, 66, 0.35) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(36, 48, 66, 0.35) 1px, transparent 1px);
+      linear-gradient(rgba(38, 38, 38, 0.55) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(38, 38, 38, 0.55) 1px, transparent 1px);
     background-size: 48px 48px;
     mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 20%, transparent 75%);
     opacity: 0.35;
@@ -72,22 +73,46 @@
     padding: 26px 32px 22px;
     border-bottom: 1px solid var(--border);
     background:
-      linear-gradient(180deg, rgba(13, 19, 32, 0.95) 0%, rgba(11, 15, 23, 0.88) 100%);
+      linear-gradient(180deg, rgba(10, 10, 10, 0.96) 0%, rgba(0, 0, 0, 0.92) 100%);
     backdrop-filter: blur(10px);
     display: flex; align-items: center; justify-content: space-between;
     flex-wrap: wrap; gap: 16px;
   }
-  header .title { display: flex; flex-direction: column; gap: 4px; }
-  header h1 {
-    font-size: 26px; font-weight: 800; letter-spacing: -0.03em;
-    color: var(--text);
-    line-height: 1.1;
+
+  /* Stable header: brand + subtitle stack in-place so VPID↔SDP never shifts layout */
+  header .title {
+    display: flex; flex-direction: column; gap: 4px;
+    min-width: min(460px, 100%);
   }
+  header h1 {
+    display: grid; align-items: center;
+    font-size: 26px; font-weight: 800; letter-spacing: -0.03em;
+    color: var(--text); line-height: 1.15;
+    min-height: 1.2em;
+  }
+  header h1 .brand-vpid,
+  header h1 .brand-sdp {
+    grid-area: 1 / 1;
+    white-space: nowrap;
+  }
+  header h1 .brand-sdp { visibility: hidden; }
+  body.show-sdp header h1 .brand-vpid { visibility: hidden; }
+  body.show-sdp header h1 .brand-sdp { visibility: visible; }
+  header .subtitle-stack {
+    display: grid; min-height: 1.4em;
+  }
+  header .subtitle {
+    grid-area: 1 / 1;
+    color: var(--text-dim); font-size: 13px; max-width: 56ch;
+  }
+  header .subtitle-sdp { visibility: hidden; }
+  body.show-sdp header .subtitle-vpid { visibility: hidden; }
+  body.show-sdp header .subtitle-sdp { visibility: visible; }
   header h1 .accent {
     color: var(--accent);
-    text-shadow: 0 0 24px rgba(57, 255, 20, 0.6);
+    text-shadow: 0 0 20px rgba(57, 255, 20, 0.35);
   }
-  header .subtitle { color: var(--text-dim); font-size: 13px; max-width: 52ch; }
+
   header .meta { font-size: 12px; color: var(--text-faint); display: flex; gap: 16px; }
   header .meta a { color: var(--text-dim); text-decoration: none; }
   header .meta a:hover { color: var(--accent); }
@@ -98,7 +123,7 @@
      Single visual unit — the hex input lives at the top with full padding, the toolbar
      sits at the bottom on a slightly recessed background so it reads as a footer. */
   .hex-input-wrap {
-    background: linear-gradient(180deg, #141c2b 0%, var(--bg-elev) 100%);
+    background: linear-gradient(180deg, var(--bg-elev-2) 0%, var(--bg-elev) 100%);
     border: 1px solid var(--border);
     border-radius: 14px;
     margin-bottom: 20px;
@@ -109,9 +134,9 @@
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
   .hex-input-wrap:focus-within {
-    border-color: rgba(57, 255, 20, 0.65);
+    border-color: rgba(57, 255, 20, 0.32);
     box-shadow:
-      0 0 0 1px rgba(57, 255, 20, 0.65),
+      0 0 0 1px rgba(57, 255, 20, 0.32),
       0 0 40px rgba(57, 255, 20, 0.22),
       0 18px 50px rgba(0, 0, 0, 0.35);
   }
@@ -132,7 +157,7 @@
     font-size: 34px;
     font-weight: 700;
     letter-spacing: 0.12em;
-    text-shadow: 0 0 28px rgba(57, 255, 20, 0.5);
+    text-shadow: 0 0 28px rgba(57, 255, 20, 0.28);
   }
   .hex-input::placeholder { color: var(--text-faint); font-weight: 400; }
 
@@ -167,10 +192,10 @@
   .btn:hover { background: var(--bg-elev-2); color: var(--text); border-color: var(--border-strong); }
   .btn.primary {
     background: linear-gradient(180deg, #7dff5a 0%, var(--accent) 100%);
-    color: #04150c; border-color: var(--accent); font-weight: 700;
-    box-shadow: 0 0 20px rgba(57, 255, 20, 0.5);
+    color: var(--on-accent); border-color: var(--accent); font-weight: 700;
+    box-shadow: 0 0 16px rgba(57, 255, 20, 0.28);
   }
-  .btn.primary:hover { background: #b8ff9a; box-shadow: 0 0 28px rgba(57, 255, 20, 0.65); }
+  .btn.primary:hover { background: #b8ff9a; box-shadow: 0 0 28px rgba(57, 255, 20, 0.32); }
   .btn:active { transform: translateY(1px); }
 
   /* Quick-start chip row — one-click load of common broadcast scenarios. */
@@ -182,20 +207,15 @@
     border: 1px solid var(--border);
     border-radius: 12px;
   }
-  .quick-row-label {
-    font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
-    color: var(--text-faint); font-weight: 600;
-    margin-right: 4px; white-space: nowrap;
-  }
   .chip {
     background: var(--bg);
     border: 1px solid var(--border);
     color: var(--text-dim);
-    padding: 6px 10px;
+    padding: 7px 12px;
     border-radius: 999px;
     cursor: pointer;
     font-family: inherit;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 500;
     transition: all 0.15s ease;
     white-space: nowrap;
@@ -205,7 +225,7 @@
     transform: translateY(-1px);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
   }
-  .chip .chip-hex { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; color: var(--text-faint); margin-left: 6px; }
+  .chip .chip-hex { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: var(--text-faint); margin-left: 6px; }
   .chip:hover .chip-hex { color: var(--text-dim); }
 
   /* Main grid */
@@ -223,14 +243,14 @@
   }
 
   .card {
-    background: linear-gradient(180deg, #141c2b 0%, var(--bg-elev) 48%);
+    background: linear-gradient(180deg, var(--bg-elev-2) 0%, var(--bg-elev) 48%);
     border: 1px solid var(--border);
     border-radius: 14px;
     overflow: hidden;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   }
   .card:hover {
-    border-color: rgba(57, 255, 20, 0.42);
+    border-color: rgba(57, 255, 20, 0.28);
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
   }
   .tool-hero {
@@ -239,28 +259,17 @@
     margin: 0 0 18px;
     padding: 18px 20px;
     border-radius: 14px;
-    border: 1px solid rgba(57, 255, 20, 0.42);
+    border: 1px solid rgba(57, 255, 20, 0.28);
     background:
-      linear-gradient(135deg, rgba(57, 255, 20, 0.22) 0%, rgba(15, 157, 58, 0.05) 45%, transparent 70%),
+      linear-gradient(135deg, rgba(57, 255, 20, 0.12) 0%, rgba(57, 255, 20, 0.03) 45%, transparent 70%),
       var(--bg-elev);
     box-shadow: 0 10px 36px rgba(0, 0, 0, 0.28);
+    min-height: 88px;
   }
   .tool-hero h2 {
     font-size: 18px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 4px;
   }
   .tool-hero p { color: var(--text-dim); font-size: 13px; max-width: 62ch; }
-  .tool-hero .pill {
-    font-size: 10px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
-    color: #04150c; background: var(--accent); padding: 6px 10px; border-radius: 999px;
-    white-space: nowrap; box-shadow: 0 0 18px rgba(57, 255, 20, 0.6);
-    animation: pill-glow 2.8s ease-in-out infinite;
-  }
-  @keyframes pill-glow {
-    0%, 100% { box-shadow: 0 0 16px rgba(57, 255, 20, 0.55), 0 0 40px rgba(57, 255, 20, 0.2); }
-    50% { box-shadow: 0 0 28px rgba(57, 255, 20, 0.9), 0 0 56px rgba(57, 255, 20, 0.35); }
-  }
-    50% { box-shadow: 0 0 26px rgba(57, 255, 20, 0.75); }
-  }
   .friendly-label:not(.invalid) {
     text-shadow: 0 0 28px rgba(57, 255, 20, 0.22);
   }
@@ -268,7 +277,7 @@
     padding: 14px 18px;
     border-bottom: 1px solid var(--border);
     display: flex; align-items: center; justify-content: space-between;
-    background: linear-gradient(180deg, #161f30 0%, var(--bg-elev) 100%);
+    background: linear-gradient(180deg, var(--bg-elev-2) 0%, var(--bg-elev) 100%);
   }
   .card-header h2 {
     font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em;
@@ -325,10 +334,10 @@
     margin-left: auto;
     font-family: 'JetBrains Mono', ui-monospace, monospace;
   }
-  .hdr-banner.sdr    { color: var(--hdr-sdr);    background: rgba(100,116,139,0.10); }
+  .hdr-banner.sdr    { color: var(--hdr-sdr);    background: rgba(125,211,252,0.12); }
   .hdr-banner.hlg    { color: var(--hdr-hlg);    background: rgba(245,158,11,0.10); }
   .hdr-banner.pq     { color: var(--hdr-pq);     background: rgba(168,85,247,0.10); }
-  .hdr-banner.unspec { color: var(--hdr-unspec); background: rgba(71,85,105,0.10); }
+  .hdr-banner.unspec { color: var(--hdr-unspec); background: rgba(229,229,229,0.10); }
 
   /* Compact chip variants used inside the batch decode table. The two
      dimensions are HDR transfer (SDR / HLG / PQ / unspec) and the SDI
@@ -351,10 +360,10 @@
     width: 6px; height: 6px; border-radius: 50%;
     background: currentColor; flex-shrink: 0;
   }
-  .row-chip.hdr-sdr    { color: var(--hdr-sdr);    background: rgba(100,116,139,0.10); }
+  .row-chip.hdr-sdr    { color: var(--hdr-sdr);    background: rgba(125,211,252,0.12); }
   .row-chip.hdr-hlg    { color: var(--hdr-hlg);    background: rgba(245,158,11,0.10); }
   .row-chip.hdr-pq     { color: var(--hdr-pq);     background: rgba(168,85,247,0.10); }
-  .row-chip.hdr-unspec { color: var(--hdr-unspec); background: rgba(71,85,105,0.10); }
+  .row-chip.hdr-unspec { color: var(--hdr-unspec); background: rgba(229,229,229,0.10); }
 
   .row-chip.lvl-sd          { color: var(--level-sd);          background: rgba(120,113,108,0.10); }
   .row-chip.lvl-hd          { color: var(--level-hd);          background: rgba(148,163,184,0.10); }
@@ -370,7 +379,7 @@
   .row-chip.lvl-12g-quad    { color: var(--level-12g-quad);    background: rgba(217,70,239,0.10); border-style: dashed; }
   .row-chip.lvl-12g-mux     { color: var(--level-12g-mux);     background: rgba(244,114,182,0.10); }
   .row-chip.lvl-compressed  { color: var(--level-compressed);  background: rgba(245,158,11,0.10); }
-  .row-chip.lvl-unknown     { color: var(--text-faint);        background: rgba(71,85,105,0.10); }
+  .row-chip.lvl-unknown     { color: var(--text-faint);        background: rgba(229,229,229,0.10); }
 
   .spec-grid {
     display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px;
@@ -715,19 +724,19 @@
 
   /* Site tool switcher — VPID Calculator ↔ ST 2110 SDP Generator */
   .app-tabs {
-    display: inline-flex; gap: 4px; padding: 5px;
+    display: inline-flex; gap: 6px; padding: 6px;
     background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border); border-radius: 999px;
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
   }
   .app-tabs a {
-    color: var(--text-dim); text-decoration: none; font-size: 12px; font-weight: 800;
-    letter-spacing: 0.08em; text-transform: uppercase; padding: 8px 18px;
+    color: var(--text-dim); text-decoration: none; font-size: 16px; font-weight: 800;
+    letter-spacing: 0.08em; text-transform: uppercase; padding: 12px 28px;
     border-radius: 999px; transition: color 0.18s, background 0.18s, box-shadow 0.18s;
   }
   .app-tabs a:hover { color: var(--accent); }
   .app-tabs a.on {
-    color: #04150c; background: linear-gradient(180deg, #7dff5a, var(--accent));
-    box-shadow: 0 0 22px rgba(57, 255, 20, 0.6);
+    color: var(--on-accent); background: linear-gradient(180deg, #7dff5a, var(--accent));
+    box-shadow: 0 0 22px rgba(57, 255, 20, 0.28);
   }
 
   /* ---- SDP generator (inlined for GitHub Pages; scoped to #tool-sdp) ---- */
@@ -742,21 +751,21 @@
     font-family: inherit; border-radius: 999px; transition: all 0.18s ease;
   }
 #tool-sdp .tabs button.on {
-    color: #04150c; background: linear-gradient(180deg, #7dff5a, var(--accent));
-    box-shadow: 0 0 20px rgba(57, 255, 20, 0.75);
+    color: var(--on-accent); background: linear-gradient(180deg, #7dff5a, var(--accent));
+    box-shadow: 0 0 20px rgba(57, 255, 20, 0.35);
   }
 
 #tool-sdp .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 20px; }
   @media (max-width: 1024px) { #tool-sdp .layout { grid-template-columns: 1fr; } }
 
 #tool-sdp .card {
-    background: linear-gradient(180deg, #141c2b 0%, var(--bg-elev) 48%);
+    background: linear-gradient(180deg, var(--bg-elev-2) 0%, var(--bg-elev) 48%);
     border: 1px solid var(--border);
     border-radius: 14px; padding: 18px 20px; margin-bottom: 16px;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
 #tool-sdp .card:hover {
-    border-color: rgba(57, 255, 20, 0.42);
+    border-color: rgba(57, 255, 20, 0.28);
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
   }
 #tool-sdp .card h2 {
@@ -775,7 +784,7 @@
     transition: border-color 0.15s, box-shadow 0.15s;
   }
 #tool-sdp input:focus, #tool-sdp select:focus, #tool-sdp textarea:focus {
-    border-color: rgba(57, 255, 20, 0.75);
+    border-color: rgba(57, 255, 20, 0.35);
     box-shadow: 0 0 0 3px rgba(57, 255, 20, 0.22);
   }
 #tool-sdp textarea { min-height: 140px; resize: vertical; }
@@ -790,7 +799,7 @@
     transition: background 0.15s, color 0.15s;
   }
 #tool-sdp .seg button.on {
-    background: linear-gradient(180deg, #7dff5a, var(--accent)); color: #04150c;
+    background: linear-gradient(180deg, #7dff5a, var(--accent)); color: var(--on-accent);
   }
 
 #tool-sdp .toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
@@ -798,13 +807,13 @@
 
 #tool-sdp .btn {
     background: linear-gradient(180deg, #7dff5a, var(--accent));
-    border: 1px solid var(--accent); color: #04150c;
+    border: 1px solid var(--accent); color: var(--on-accent);
     border-radius: 8px; padding: 10px 16px; cursor: pointer; font-size: 12px;
     font-weight: 800; letter-spacing: 0.04em; font-family: inherit;
-    box-shadow: 0 0 18px rgba(57, 255, 20, 0.42);
+    box-shadow: 0 0 18px rgba(57, 255, 20, 0.28);
     transition: transform 0.12s, box-shadow 0.15s;
   }
-#tool-sdp .btn:hover { box-shadow: 0 0 28px rgba(57, 255, 20, 0.65); }
+#tool-sdp .btn:hover { box-shadow: 0 0 28px rgba(57, 255, 20, 0.32); }
 #tool-sdp .btn.ghost {
     background: none; color: var(--text-dim); border-color: var(--border); box-shadow: none;
   }
@@ -812,10 +821,10 @@
 #tool-sdp .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
 
 #tool-sdp pre.preview {
-    background: linear-gradient(180deg, #071018 0%, #060a11 100%);
+    background: linear-gradient(180deg, #080808 0%, #050505 100%);
     border: 1px solid rgba(57, 255, 20, 0.35);
     border-radius: 10px;
-    padding: 16px 18px; font-size: 12.5px; line-height: 1.55; color: #eaffd6;
+    padding: 16px 18px; font-size: 12.5px; line-height: 1.55; color: #e8ebe4;
     white-space: pre; overflow-x: auto; min-height: 360px;
     box-shadow: inset 0 0 40px rgba(57, 255, 20, 0.12);
   }
@@ -827,7 +836,7 @@
   }
 #tool-sdp .status-ok::before {
     content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ok);
-    box-shadow: 0 0 10px rgba(34, 197, 94, 0.7);
+    box-shadow: 0 0 10px rgba(57, 255, 20, 0.7);
   }
 
 #tool-sdp table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
@@ -836,6 +845,11 @@
 #tool-sdp .badge-ok { color: var(--ok); font-weight: 700; }
 #tool-sdp .badge-err { color: var(--err); font-weight: 700; }
 #tool-sdp .hint { color: var(--text-faint); font-size: 11px; margin-top: 4px; }
+#tool-sdp #csvSummary {
+    color: var(--text); font-size: 13px; font-weight: 600; margin-top: 10px;
+    padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);
+    background: rgba(57, 255, 20, 0.06);
+  }
 #tool-sdp .faq {
     margin-top: 8px; margin-bottom: 16px; border: 1px solid var(--border);
     border-radius: 12px; background: rgba(0,0,0,0.2); padding: 4px 14px;
@@ -853,12 +867,6 @@
   #tool-sdp { display: none; }
   body.show-sdp #tool-vpid { display: none; }
   body.show-sdp #tool-sdp { display: block; }
-  body.show-sdp header .title .subtitle-vpid { display: none; }
-  body.show-sdp header .title .subtitle-sdp { display: inline; }
-  body.show-sdp header h1 .brand-vpid { display: none; }
-  body.show-sdp header h1 .brand-sdp { display: inline; }
-  header h1 .brand-sdp { display: none; }
-  header .title .subtitle-sdp { display: none; }
 </style>
 </head>
 <body>
@@ -869,8 +877,10 @@
       <span class="brand-vpid">VPID <span class="accent">Calculator</span></span>
       <span class="brand-sdp">ST 2110 <span class="accent">SDP Generator</span></span>
     </h1>
-    <span class="subtitle subtitle-vpid">Decode &amp; encode SMPTE ST 352 payload identifiers — broadcast-ready</span>
-    <span class="subtitle subtitle-sdp">Build Magnum-import ST 2110-20 / -30 / -40 SDP files in seconds</span>
+    <div class="subtitle-stack">
+      <span class="subtitle subtitle-vpid">Decode &amp; encode SMPTE ST 352 payload identifiers</span>
+      <span class="subtitle subtitle-sdp">Generate Magnum-import ST 2110-20 / -30 / -40 SDP files</span>
+    </div>
   </div>
   <nav class="app-tabs" aria-label="Tools">
     <a class="on" href="#vpid" data-tool="vpid" aria-current="page">VPID</a>
@@ -890,9 +900,8 @@
   <div class="tool-hero">
     <div>
       <h2>ST 352 Payload Identifier</h2>
-      <p>Paste a VPID, click a quick-start chip, or build one bit-by-bit. Instant decode for SDI / HDR / colorimetry — shareable links included.</p>
+      <p>Paste a 4-byte VPID, pick a quick-start chip, or build one bit-by-bit. Decodes SDI rate, HDR, and colorimetry instantly — copy, export, or share a link.</p>
     </div>
-    <span class="pill">Live decode</span>
   </div>
 
   <div class="hex-input-wrap">
@@ -923,7 +932,6 @@
   </div>
 
   <div class="quick-row" id="quickRow" aria-label="Quick-start example VPIDs">
-    <span class="quick-row-label">Try one</span>
     <button class="chip" data-vpid="89CA8001" type="button">1080p59.94 SDR<span class="chip-hex">89 CA 80 01</span></button>
     <button class="chip" data-vpid="89DA8001" type="button">1080p59.94 HLG<span class="chip-hex">89 DA 80 01</span></button>
     <button class="chip" data-vpid="89EAA001" type="button">1080p59.94 PQ Rec.2020<span class="chip-hex">89 EA A0 01</span></button>
@@ -1114,21 +1122,20 @@ Example:
 
   <div class="tool-hero">
     <div>
-      <h2>Magnum-ready ST 2110 SDPs</h2>
-      <p>Single essence or bulk from a device encap CSV. Resolution presets match VPID chips and auto-fill <code>a=fmtp</code> — tweak anything before you export.</p>
+      <h2>Magnum-import ST 2110 SDPs</h2>
+      <p>Build one essence file or a bulk ZIP from an encap CSV. Video presets match the VPID chips and fill <code>a=fmtp</code> — edit anything, then download and import into Magnum.</p>
     </div>
-    <span class="pill">Import-ready</span>
   </div>
 
   <details class="faq">
     <summary>Quick FAQ — preset / ST 2022-7 / source IP</summary>
     <dl>
       <dt>Video preset</dt>
-      <dd>Picks a known picture format (e.g. 1080p59.94 HLG Rec.2020) and fills width, height, rate, sampling, depth, TCS, colorimetry. You can still edit every field.</dd>
+      <dd>Chooses a known picture format (e.g. 1080p59.94 HLG Rec.2020) and fills width, height, rate, sampling, depth, TCS, and colorimetry. Every field stays editable.</dd>
       <dt>ST 2022-7 primary + backup legs</dt>
       <dd>On = one SDP with both redundant multicast paths (<code>a=group:DUP</code>). Off = single-path SDP.</dd>
       <dt>Source IP</dt>
-      <dd>Optional SSM join (<code>a=source-filter</code>). Leave blank for ASM / when Magnum or the CSV already supplies it.</dd>
+      <dd>Optional SSM join filter (<code>a=source-filter</code>). Leave blank for ASM, or when Magnum / your CSV already supplies the source.</dd>
     </dl>
   </details>
 
@@ -1169,7 +1176,7 @@ Example:
               <option value="2160p5994pq">2160p59.94 PQ Rec.2020 — CE EA A0 01</option>
               <option value="custom">Custom</option>
             </select>
-            <div class="hint">Preset fills fmtp fields below; you can still edit them.</div>
+            <div class="hint">Fills the fmtp fields below from a known format — edit anything afterward.</div>
           </div>
           <div class="row-3">
             <div class="field"><label>Width</label><input id="videoWidth" type="number" class="video-field"></div>
@@ -1260,7 +1267,7 @@ Example:
           <ul class="errors" id="errors"></ul>
           <pre class="preview" id="preview"></pre>
           <div class="btn-row">
-            <button class="btn" id="copyBtn">Copy</button>
+            <button class="btn" id="sdpCopyBtn">Copy</button>
             <button class="btn ghost" id="downloadBtn">Download .sdp</button>
             <span class="hint" id="fnameHint"></span>
           </div>
@@ -1272,7 +1279,7 @@ Example:
   <section id="tab-bulk" class="hidden">
     <div class="card">
       <h2>Bulk generate from CSV</h2>
-      <p class="hint" style="margin-bottom:12px">Upload a device encap export (or paste CSV). One file → ZIP of Magnum-import SDPs. Filenames: <code>{multicast}_{port}.txt</code>.</p>
+      <p class="hint" style="margin-bottom:12px">Upload a <strong>device encap CSV</strong> — not a single IP. Output is a ZIP of Magnum-import <code>.txt</code> SDPs named <code>{multicast}_{port}.txt</code>. For one multicast only, use the <strong>Single</strong> tab.</p>
 
       <div class="field">
         <label>CSV file</label>
@@ -1314,7 +1321,7 @@ Example:
             <div class="field"><label>Source IP — primary</label><input id="impSrcPrimary" placeholder="optional, for a=source-filter"></div>
             <div class="field"><label>Source IP — secondary</label><input id="impSrcSecondary" placeholder="optional"></div>
           </div>
-          <div class="hint">Leave sources blank to omit source-filter (ASM). CSV Source IP columns are used when present.</div>
+          <div class="hint">Leave blank for ASM (no source-filter). If the CSV has Source IP columns, those win.</div>
         </div>
       </details>
 
@@ -1325,11 +1332,8 @@ Example:
       <div id="csvSummary" class="hint" style="margin-top:10px"></div>
       <div id="csvResults"></div>
 
-      <!-- Optional paste for power users; hidden from the main flow -->
-      <details style="margin-top:16px">
-        <summary style="cursor:pointer;color:var(--text-faint);font-size:11px">Paste CSV instead</summary>
-        <textarea id="csvText" style="margin-top:8px;min-height:100px" placeholder="Paste CSV here, then click Generate"></textarea>
-      </details>
+      <!-- Hidden buffer filled by CSV file upload (Generate reads this). -->
+      <textarea id="csvText" class="hidden" aria-hidden="true" tabindex="-1"></textarea>
     </div>
   </section>
 
@@ -9460,31 +9464,85 @@ function makeSelectFor(label, options, currentValue, onChange) {
 /* ---------- Hex input handling ---------- */
 
 function autoFormatHex(input) {
-  // Inserts spaces every 2 hex chars
-  const cleaned = input.replace(/[^0-9a-fA-F]/g, "");
+  // Inserts spaces every 2 hex chars (max 4 bytes / 8 digits)
+  const cleaned = input.replace(/[^0-9a-fA-F]/g, "").slice(0, 8);
   const groups = [];
-  for (let i = 0; i < cleaned.length && groups.length < 4; i += 2) {
+  for (let i = 0; i < cleaned.length; i += 2) {
     groups.push(cleaned.slice(i, i + 2));
   }
   return groups.join(" ").toUpperCase();
 }
 
-function handleHexChange() {
-  const raw = $('#hexInput').value;
-  const formatted = autoFormatHex(raw);
-  if (formatted !== raw) $('#hexInput').value = formatted;
+/** Count hex digits in str[0..pos). Used to restore caret after reformatting spaces. */
+function hexDigitsBefore(str, pos) {
+  let n = 0;
+  const end = Math.max(0, Math.min(pos, str.length));
+  for (let i = 0; i < end; i++) {
+    if (/[0-9a-fA-F]/i.test(str[i])) n++;
+  }
+  return n;
+}
+
+/** Map a hex-digit count back to a caret index in a spaced formatted string. */
+function caretPosForHexDigits(formatted, digits) {
+  if (digits <= 0) return 0;
+  let seen = 0;
+  for (let i = 0; i < formatted.length; i++) {
+    if (/[0-9a-fA-F]/i.test(formatted[i])) {
+      seen++;
+      if (seen === digits) return i + 1;
+    }
+  }
+  return formatted.length;
+}
+
+function decodeHexField(formatted) {
   const bytes = parseHex(formatted);
   if (!bytes) {
-    // Partial input — render an empty/placeholder state if not 4 bytes yet
-    if (formatted.replace(/\s/g, '').length === 0) {
-      render({ valid: false, bytes: [0,0,0,0], error: "Enter a 4-byte VPID (e.g. 89 CA 80 01).", fields: [], warnings: [], characteristics: null });
+    if (formatted.replace(/\s/g, "").length === 0) {
+      render({ valid: false, bytes: [0, 0, 0, 0], error: "Enter a 4-byte VPID (e.g. 89 CA 80 01).", fields: [], warnings: [], characteristics: null });
     } else {
-      render({ valid: false, bytes: [0,0,0,0], error: "Need 4 bytes (8 hex digits).", fields: [], warnings: [], characteristics: null });
+      render({ valid: false, bytes: [0, 0, 0, 0], error: "Need 4 bytes (8 hex digits).", fields: [], warnings: [], characteristics: null });
     }
     return;
   }
-  const decoded = decodeVpidBytes(...bytes);
-  render(decoded);
+  render(decodeVpidBytes(...bytes));
+}
+
+function setHexInputFormatted(el, raw, digitsBefore) {
+  const formatted = autoFormatHex(raw);
+  const maxDigits = formatted.replace(/\s/g, "").length;
+  const caretDigits = Math.max(0, Math.min(digitsBefore, maxDigits));
+  const caret = caretPosForHexDigits(formatted, caretDigits);
+  // Always write + restore caret: auto-spacing changes string length, and
+  // browsers reset the caret to the end (or start) when .value is assigned.
+  el.value = formatted;
+  el.setSelectionRange(caret, caret);
+  decodeHexField(formatted);
+}
+
+function handleHexChange() {
+  const el = $("#hexInput");
+  const digitsBefore = hexDigitsBefore(el.value, el.selectionStart || 0);
+  setHexInputFormatted(el, el.value, digitsBefore);
+}
+
+/** Backspace/Delete on a spacer must remove the adjacent hex digit — otherwise
+ *  auto-format re-inserts the space and the caret feels stuck / jumps wrong. */
+function handleHexKeydown(e) {
+  const el = e.target;
+  if (el.selectionStart !== el.selectionEnd) return;
+  const s = el.selectionStart;
+  const v = el.value;
+  if (e.key === "Backspace" && s > 0 && v[s - 1] === " ") {
+    e.preventDefault();
+    // Delete the hex digit before the space (and the space collapses on reformat).
+    setHexInputFormatted(el, v.slice(0, s - 2) + v.slice(s), hexDigitsBefore(v, s - 2));
+  } else if (e.key === "Delete" && s < v.length && v[s] === " ") {
+    e.preventDefault();
+    // Delete the hex digit after the space.
+    setHexInputFormatted(el, v.slice(0, s) + v.slice(s + 2), hexDigitsBefore(v, s));
+  }
 }
 
 /* ---------- Init ---------- */
@@ -9551,9 +9609,30 @@ function flashBtn(btn, text, original, ms) {
   setTimeout(() => { btn.textContent = original; }, ms || 1500);
 }
 
+/** Clipboard write that works on HTTP (navigator.clipboard needs a secure context). */
+async function copyToClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.cssText = 'position:fixed;left:-9999px;top:0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  let ok = false;
+  try { ok = document.execCommand('copy'); }
+  finally { document.body.removeChild(ta); }
+  if (!ok) throw new Error('copy failed');
+}
+window.copyToClipboard = copyToClipboard;
+
 document.addEventListener('DOMContentLoaded', () => {
   $('#hexInput').addEventListener('input', handleHexChange);
   $('#hexInput').addEventListener('blur', handleHexChange);
+  $('#hexInput').addEventListener('keydown', handleHexKeydown);
   $('#clearBtn').addEventListener('click', () => { $('#hexInput').value = ''; handleHexChange(); });
   // Quick-start chip row: one-click load of a known-good VPID into the hex
   // input. We deliberately do NOT scroll the page — the chip row sits
@@ -9572,8 +9651,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   $('#copyBtn').addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText($('#hexInput').value); flashBtn($('#copyBtn'), 'Copied!', 'Copy hex'); }
-    catch(e) { /* ignored */ }
+    try {
+      await copyToClipboard($('#hexInput').value);
+      flashBtn($('#copyBtn'), 'Copied!', 'Copy hex');
+    } catch (e) { flashBtn($('#copyBtn'), 'Copy failed', 'Copy hex'); }
   });
   $('#copyKVBtn').addEventListener('click', async () => {
     const bytes = parseHex($('#hexInput').value);
@@ -9597,8 +9678,10 @@ document.addEventListener('DOMContentLoaded', () => {
       `Channel/Link: ${c.channel || '—'}`,
       `Reference: ${r.citation}`
     ].join('\n');
-    try { await navigator.clipboard.writeText(text); flashBtn($('#copyKVBtn'), 'Copied!', 'Copy specs'); }
-    catch(e) { /* ignored */ }
+    try {
+      await copyToClipboard(text);
+      flashBtn($('#copyKVBtn'), 'Copied!', 'Copy specs');
+    } catch (e) { flashBtn($('#copyKVBtn'), 'Copy failed', 'Copy specs'); }
   });
   // Copy a shareable link with the current VPID encoded in the URL (?vpid=XXXXXXXX).
   $('#copyLinkBtn').addEventListener('click', async () => {
@@ -9608,8 +9691,10 @@ document.addEventListener('DOMContentLoaded', () => {
     url.searchParams.set('vpid', compactHex(bytes));
     const link = url.toString();
     history.replaceState(null, '', link);
-    try { await navigator.clipboard.writeText(link); flashBtn($('#copyLinkBtn'), 'Link copied!', 'Copy link'); }
-    catch(e) { /* ignored */ }
+    try {
+      await copyToClipboard(link);
+      flashBtn($('#copyLinkBtn'), 'Link copied!', 'Copy link');
+    } catch (e) { flashBtn($('#copyLinkBtn'), 'Copy failed', 'Copy link'); }
   });
   // Download the decoded VPID as a JSON file (decoder output + characteristics + warnings).
   $('#exportJsonBtn').addEventListener('click', () => {
@@ -9635,8 +9720,10 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#copySdpBtn').addEventListener('click', async () => {
     const text = $('#sdpFmtp').textContent;
     if (!text || text === "—") return;
-    try { await navigator.clipboard.writeText(text); flashBtn($('#copySdpBtn'), 'Copied!', 'Copy fmtp line'); }
-    catch (e) { /* ignored */ }
+    try {
+      await copyToClipboard(text);
+      flashBtn($('#copySdpBtn'), 'Copied!', 'Copy fmtp line');
+    } catch (e) { flashBtn($('#copySdpBtn'), 'Copy failed', 'Copy fmtp line'); }
   });
 
   // Batch decode wiring
@@ -10946,7 +11033,7 @@ function render() {
     $('preview').textContent = '';
     $('fnameHint').textContent = '';
   }
-  $('copyBtn').disabled = !ok;
+  $('sdpCopyBtn').disabled = !ok;
   $('downloadBtn').disabled = !ok;
 }
 
@@ -10976,11 +11063,16 @@ document.querySelectorAll('#tool-sdp input, #tool-sdp select, #tool-sdp textarea
   if (el.closest('#tab-bulk')) return;
   el.addEventListener('input', render);
 });
-$('copyBtn').addEventListener('click', async () => {
+$('sdpCopyBtn').addEventListener('click', async () => {
   if (!lastSpec) return;
-  await navigator.clipboard.writeText(buildSdp(lastSpec));
-  $('copyBtn').textContent = 'Copied';
-  setTimeout(() => { $('copyBtn').textContent = 'Copy'; }, 1200);
+  try {
+    await window.copyToClipboard(buildSdp(lastSpec));
+    $('sdpCopyBtn').textContent = 'Copied';
+    setTimeout(() => { $('sdpCopyBtn').textContent = 'Copy'; }, 1200);
+  } catch (e) {
+    $('sdpCopyBtn').textContent = 'Copy failed';
+    setTimeout(() => { $('sdpCopyBtn').textContent = 'Copy'; }, 1500);
+  }
 });
 $('downloadBtn').addEventListener('click', () => {
   if (!lastSpec) return;
@@ -11108,13 +11200,25 @@ function runBulk() {
   const results = $('csvResults');
   results.innerHTML = '';
   validBulk = [];
-  if (!text.trim()) { $('csvSummary').textContent = 'Paste or upload CSV first.'; $('zipBtn').disabled = true; return; }
+  if (!text.trim()) {
+    $('csvSummary').textContent = 'Upload a full device encap CSV first (not a single IP).';
+    $('zipBtn').disabled = true;
+    return;
+  }
 
   let rows;
   try { rows = parseCsv(text); } catch (err) { $('csvSummary').textContent = 'CSV parse error: ' + err.message; return; }
   if (rows.length === 0) { $('csvSummary').textContent = 'No rows found.'; return; }
 
   const header = rows[0].map((h) => String(h).trim());
+  const firstCell = String(header[0] || '').trim();
+  const looksLikeIpOnly = rows.length === 1 && header.length === 1 && /^\d{1,3}(\.\d{1,3}){3}$/.test(firstCell);
+  if (looksLikeIpOnly) {
+    $('csvSummary').textContent =
+      'That is a single IP (' + firstCell + '), not a CSV. Bulk needs a device encap export (header + rows). For one multicast, switch to Single and enter it under Primary multicast.';
+    $('zipBtn').disabled = true;
+    return;
+  }
 
   // --- device encap export ---
   if (isEncapHeader(header)) {
@@ -11131,6 +11235,12 @@ function runBulk() {
   // --- native template ---
   let parsed;
   try { parsed = csvToSpecs(text); } catch (err) { $('csvSummary').textContent = 'CSV parse error: ' + err.message; return; }
+  if (!parsed.records.length) {
+    $('csvSummary').textContent =
+      'No data rows found after the header. Upload a full CSV (encap export with Device / Media Port / Destination IP columns), not a single value.';
+    $('zipBtn').disabled = true;
+    return;
+  }
   const specs = parsed.records.map((r) => r.spec);
   const { valid, invalid } = packageSpecs(specs, results, null);
   $('csvSummary').textContent = `Native template detected. ${valid}/${parsed.records.length} rows valid — ${valid} file(s) will be packaged${invalid ? `, ${invalid} invalid` : ''}.`;

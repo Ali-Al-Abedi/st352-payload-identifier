@@ -7,16 +7,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0b0f17;
-    --bg-elev: #111827;
-    --bg-elev-2: #1a2233;
-    --border: #243042;
-    --border-strong: #334155;
-    --text: #e6edf6;
-    --text-dim: #94a3b8;
-    --text-faint: #64748b;
+    --bg: #000000;
+    --bg-elev: #0a0a0a;
+    --bg-elev-2: #141414;
+    --border: #262626;
+    --border-strong: #3a3a3a;
+    --text: #ffffff;
+    --text-dim: #f5f5f5;
+    --text-faint: #ebebeb;
     --accent: #39ff14;
     --accent-dim: #0f9d3a;
+    --on-accent: #04150c;
     --ok: #22c55e;
     --warn: #f59e0b;
     --err: #ef4444;
@@ -26,20 +27,22 @@
   body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background:
-      radial-gradient(1200px 600px at 12% -10%, rgba(57, 255, 20, 0.42), transparent 55%),
-      radial-gradient(900px 500px at 88% 0%, rgba(125, 255, 90, 0.08), transparent 50%),
-      radial-gradient(800px 400px at 50% 100%, rgba(15, 157, 58, 0.06), transparent 45%),
+      radial-gradient(1100px 560px at 10% -8%, rgba(57, 255, 20, 0.12), transparent 55%),
+      radial-gradient(900px 480px at 92% 0%, rgba(57, 255, 20, 0.06), transparent 50%),
+      radial-gradient(800px 420px at 50% 105%, rgba(57, 255, 20, 0.07), transparent 50%),
       var(--bg);
     background-attachment: fixed;
     color: var(--text);
-    font-size: 14px; line-height: 1.5; overflow-x: hidden;
+    font-size: 14px;
+    line-height: 1.5;
+    overflow-x: hidden;
   }
   body::before {
     content: "";
     position: fixed; inset: 0; pointer-events: none; z-index: 0;
     background-image:
-      linear-gradient(rgba(36, 48, 66, 0.35) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(36, 48, 66, 0.35) 1px, transparent 1px);
+      linear-gradient(rgba(38, 38, 38, 0.55) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(38, 38, 38, 0.55) 1px, transparent 1px);
     background-size: 48px 48px;
     mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 20%, transparent 75%);
     opacity: 0.35;
@@ -49,32 +52,32 @@
 
   header {
     padding: 26px 32px 22px; border-bottom: 1px solid var(--border);
-    background: linear-gradient(180deg, rgba(13, 19, 32, 0.95) 0%, rgba(11, 15, 23, 0.88) 100%);
+    background: linear-gradient(180deg, rgba(10, 10, 10, 0.96) 0%, rgba(0, 0, 0, 0.92) 100%);
     backdrop-filter: blur(10px);
     display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
   }
   header .title { display: flex; flex-direction: column; gap: 4px; }
   header h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
-  header h1 .accent { color: var(--accent); text-shadow: 0 0 24px rgba(57, 255, 20, 0.6); }
+  header h1 .accent { color: var(--accent); text-shadow: 0 0 20px rgba(57, 255, 20, 0.35); }
   header .subtitle { color: var(--text-dim); font-size: 13px; max-width: 56ch; }
   header .meta { font-size: 12px; color: var(--text-faint); display: flex; gap: 16px; }
   header .meta a { color: var(--text-dim); text-decoration: none; }
   header .meta a:hover { color: var(--accent); }
 
   .app-tabs {
-    display: inline-flex; gap: 4px; padding: 5px;
+    display: inline-flex; gap: 6px; padding: 6px;
     background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border); border-radius: 999px;
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
   }
   .app-tabs a {
-    color: var(--text-dim); text-decoration: none; font-size: 12px; font-weight: 800;
-    letter-spacing: 0.08em; text-transform: uppercase; padding: 8px 18px;
+    color: var(--text-dim); text-decoration: none; font-size: 16px; font-weight: 800;
+    letter-spacing: 0.08em; text-transform: uppercase; padding: 12px 28px;
     border-radius: 999px; transition: color 0.18s, background 0.18s, box-shadow 0.18s;
   }
   .app-tabs a:hover { color: var(--accent); }
   .app-tabs a.on {
-    color: #04150c; background: linear-gradient(180deg, #7dff5a, var(--accent));
-    box-shadow: 0 0 22px rgba(57, 255, 20, 0.6);
+    color: var(--on-accent); background: linear-gradient(180deg, #7dff5a, var(--accent));
+    box-shadow: 0 0 22px rgba(57, 255, 20, 0.28);
   }
 
   main { padding: 24px 32px 80px; max-width: 1500px; margin: 0 auto; }
@@ -82,26 +85,15 @@
   .tool-hero {
     display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
     flex-wrap: wrap; margin: 0 0 18px; padding: 18px 20px; border-radius: 14px;
-    border: 1px solid rgba(57, 255, 20, 0.42);
+    border: 1px solid rgba(57, 255, 20, 0.28);
     background:
-      linear-gradient(135deg, rgba(57, 255, 20, 0.22) 0%, rgba(15, 157, 58, 0.05) 45%, transparent 70%),
+      linear-gradient(135deg, rgba(57, 255, 20, 0.12) 0%, rgba(57, 255, 20, 0.03) 45%, transparent 70%),
       var(--bg-elev);
     box-shadow: 0 10px 36px rgba(0, 0, 0, 0.28);
+    min-height: 88px;
   }
   .tool-hero h2 { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 4px; }
   .tool-hero p { color: var(--text-dim); font-size: 13px; max-width: 62ch; }
-  .tool-hero .pill {
-    font-size: 10px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
-    color: #04150c; background: var(--accent); padding: 6px 10px; border-radius: 999px;
-    white-space: nowrap; box-shadow: 0 0 18px rgba(57, 255, 20, 0.6);
-    animation: pill-glow 2.8s ease-in-out infinite;
-  }
-  @keyframes pill-glow {
-    0%, 100% { box-shadow: 0 0 16px rgba(57, 255, 20, 0.55), 0 0 40px rgba(57, 255, 20, 0.2); }
-    50% { box-shadow: 0 0 28px rgba(57, 255, 20, 0.9), 0 0 56px rgba(57, 255, 20, 0.35); }
-  }
-    50% { box-shadow: 0 0 26px rgba(57, 255, 20, 0.75); }
-  }
 
   .faq {
     margin-top: 0; margin-bottom: 16px; border: 1px solid var(--border);
@@ -128,21 +120,21 @@
     transition: all 0.18s ease;
   }
   .tabs button.on {
-    color: #04150c; background: linear-gradient(180deg, #7dff5a, var(--accent));
-    box-shadow: 0 0 20px rgba(57, 255, 20, 0.75);
+    color: var(--on-accent); background: linear-gradient(180deg, #7dff5a, var(--accent));
+    box-shadow: 0 0 20px rgba(57, 255, 20, 0.35);
   }
 
   .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 20px; }
   @media (max-width: 1024px) { .layout { grid-template-columns: 1fr; } }
 
   .card {
-    background: linear-gradient(180deg, #141c2b 0%, var(--bg-elev) 48%);
+    background: linear-gradient(180deg, var(--bg-elev-2) 0%, var(--bg-elev) 48%);
     border: 1px solid var(--border);
     border-radius: 14px; padding: 18px 20px; margin-bottom: 16px;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
   .card:hover {
-    border-color: rgba(57, 255, 20, 0.42);
+    border-color: rgba(57, 255, 20, 0.28);
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
   }
   .card h2 {
@@ -161,7 +153,7 @@
     transition: border-color 0.15s, box-shadow 0.15s;
   }
   input:focus, select:focus, textarea:focus {
-    border-color: rgba(57, 255, 20, 0.75);
+    border-color: rgba(57, 255, 20, 0.35);
     box-shadow: 0 0 0 3px rgba(57, 255, 20, 0.22);
   }
   textarea { min-height: 140px; resize: vertical; }
@@ -175,29 +167,29 @@
     cursor: pointer; font-size: 12px; font-weight: 700; font-family: inherit;
     transition: background 0.15s, color 0.15s;
   }
-  .seg button.on { background: linear-gradient(180deg, #7dff5a, var(--accent)); color: #04150c; }
+  .seg button.on { background: linear-gradient(180deg, #7dff5a, var(--accent)); color: var(--on-accent); }
 
   .toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
   .toggle input { width: auto; }
 
   .btn {
     background: linear-gradient(180deg, #7dff5a, var(--accent));
-    border: 1px solid var(--accent); color: #04150c;
+    border: 1px solid var(--accent); color: var(--on-accent);
     border-radius: 8px; padding: 10px 16px; cursor: pointer; font-size: 12px;
     font-weight: 800; letter-spacing: 0.04em; font-family: inherit;
-    box-shadow: 0 0 18px rgba(57, 255, 20, 0.42);
+    box-shadow: 0 0 18px rgba(57, 255, 20, 0.28);
     transition: transform 0.12s, box-shadow 0.15s;
   }
-  .btn:hover { box-shadow: 0 0 28px rgba(57, 255, 20, 0.65); }
+  .btn:hover { box-shadow: 0 0 28px rgba(57, 255, 20, 0.32); }
   .btn.ghost { background: none; color: var(--text-dim); border-color: var(--border); box-shadow: none; }
   .btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
   .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
 
   pre.preview {
-    background: linear-gradient(180deg, #071018 0%, #060a11 100%);
+    background: linear-gradient(180deg, #080808 0%, #050505 100%);
     border: 1px solid rgba(57, 255, 20, 0.35);
     border-radius: 10px;
-    padding: 16px 18px; font-size: 12.5px; line-height: 1.55; color: #eaffd6;
+    padding: 16px 18px; font-size: 12.5px; line-height: 1.55; color: #e8ebe4;
     white-space: pre; overflow-x: auto; min-height: 360px;
     box-shadow: inset 0 0 40px rgba(57, 255, 20, 0.12);
   }
@@ -209,7 +201,7 @@
   }
   .status-ok::before {
     content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ok);
-    box-shadow: 0 0 10px rgba(34, 197, 94, 0.7);
+    box-shadow: 0 0 10px rgba(57, 255, 20, 0.7);
   }
 
   table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
@@ -218,6 +210,11 @@
   .badge-ok { color: var(--ok); font-weight: 700; }
   .badge-err { color: var(--err); font-weight: 700; }
   .hint { color: var(--text-faint); font-size: 11px; margin-top: 4px; }
+  #csvSummary {
+    color: var(--text); font-size: 13px; font-weight: 600; margin-top: 10px;
+    padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);
+    background: rgba(57, 255, 20, 0.06);
+  }
   .hidden { display: none !important; }
 </style>
 </head>
@@ -225,7 +222,7 @@
 <header>
   <div class="title">
     <h1>ST 2110 <span class="accent">SDP Generator</span></h1>
-    <span class="subtitle">Build Magnum-import ST 2110-20 / -30 / -40 SDP files in seconds</span>
+    <span class="subtitle">Generate Magnum-import ST 2110-20 / -30 / -40 SDP files</span>
   </div>
   <nav class="app-tabs" aria-label="Tools">
     <a href="vpid.html#vpid">VPID</a>
@@ -241,21 +238,20 @@
 <main>
   <div class="tool-hero">
     <div>
-      <h2>Magnum-ready ST 2110 SDPs</h2>
-      <p>Single essence or bulk from a device encap CSV. Resolution presets match VPID chips and auto-fill <code>a=fmtp</code> — tweak anything before you export.</p>
+      <h2>Magnum-import ST 2110 SDPs</h2>
+      <p>Build one essence file or a bulk ZIP from an encap CSV. Video presets match the VPID chips and fill <code>a=fmtp</code> — edit anything, then download and import into Magnum.</p>
     </div>
-    <span class="pill">Import-ready</span>
   </div>
 
   <details class="faq">
     <summary>Quick FAQ — preset / ST 2022-7 / source IP</summary>
     <dl>
       <dt>Video preset</dt>
-      <dd>Picks a known picture format (e.g. 1080p59.94 HLG Rec.2020) and fills width, height, rate, sampling, depth, TCS, colorimetry. You can still edit every field.</dd>
+      <dd>Chooses a known picture format (e.g. 1080p59.94 HLG Rec.2020) and fills width, height, rate, sampling, depth, TCS, and colorimetry. Every field stays editable.</dd>
       <dt>ST 2022-7 primary + backup legs</dt>
       <dd>On = one SDP with both redundant multicast paths (<code>a=group:DUP</code>). Off = single-path SDP.</dd>
       <dt>Source IP</dt>
-      <dd>Optional SSM join (<code>a=source-filter</code>). Leave blank for ASM / when Magnum or the CSV already supplies it.</dd>
+      <dd>Optional SSM join filter (<code>a=source-filter</code>). Leave blank for ASM, or when Magnum / your CSV already supplies the source.</dd>
     </dl>
   </details>
 
@@ -296,7 +292,7 @@
               <option value="2160p5994pq">2160p59.94 PQ Rec.2020 — CE EA A0 01</option>
               <option value="custom">Custom</option>
             </select>
-            <div class="hint">Preset fills fmtp fields below; you can still edit them.</div>
+            <div class="hint">Fills the fmtp fields below from a known format — edit anything afterward.</div>
           </div>
           <div class="row-3">
             <div class="field"><label>Width</label><input id="videoWidth" type="number" class="video-field"></div>
@@ -387,7 +383,7 @@
           <ul class="errors" id="errors"></ul>
           <pre class="preview" id="preview"></pre>
           <div class="btn-row">
-            <button class="btn" id="copyBtn">Copy</button>
+            <button class="btn" id="sdpCopyBtn">Copy</button>
             <button class="btn ghost" id="downloadBtn">Download .sdp</button>
             <span class="hint" id="fnameHint"></span>
           </div>
@@ -400,7 +396,7 @@
   <section id="tab-bulk" class="hidden">
     <div class="card">
       <h2>Bulk generate from CSV</h2>
-      <p class="hint" style="margin-bottom:12px">Upload a device encap export (or paste CSV). One file → ZIP of Magnum-import SDPs. Filenames: <code>{multicast}_{port}.txt</code>.</p>
+      <p class="hint" style="margin-bottom:12px">Upload a <strong>device encap CSV</strong> — not a single IP. Output is a ZIP of Magnum-import <code>.txt</code> SDPs named <code>{multicast}_{port}.txt</code>. For one multicast only, use the <strong>Single</strong> tab.</p>
 
       <div class="field">
         <label>CSV file</label>
@@ -442,7 +438,7 @@
             <div class="field"><label>Source IP — primary</label><input id="impSrcPrimary" placeholder="optional, for a=source-filter"></div>
             <div class="field"><label>Source IP — secondary</label><input id="impSrcSecondary" placeholder="optional"></div>
           </div>
-          <div class="hint">Leave sources blank to omit source-filter (ASM). CSV Source IP columns are used when present.</div>
+          <div class="hint">Leave blank for ASM (no source-filter). If the CSV has Source IP columns, those win.</div>
         </div>
       </details>
 
@@ -453,11 +449,8 @@
       <div id="csvSummary" class="hint" style="margin-top:10px"></div>
       <div id="csvResults"></div>
 
-      <!-- Optional paste for power users; hidden from the main flow -->
-      <details style="margin-top:16px">
-        <summary style="cursor:pointer;color:var(--text-faint);font-size:11px">Paste CSV instead</summary>
-        <textarea id="csvText" style="margin-top:8px;min-height:100px" placeholder="Paste CSV here, then click Generate"></textarea>
-      </details>
+      <!-- Hidden buffer filled by CSV file upload (Generate reads this). -->
+      <textarea id="csvText" class="hidden" aria-hidden="true" tabindex="-1"></textarea>
     </div>
   </section>
 </main>
@@ -470,6 +463,24 @@ import {
 } from './sdp.js';
 
 const $ = (id) => document.getElementById(id);
+
+async function copyToClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.cssText = 'position:fixed;left:-9999px;top:0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  let ok = false;
+  try { ok = document.execCommand('copy'); }
+  finally { document.body.removeChild(ta); }
+  if (!ok) throw new Error('copy failed');
+}
 
 // Per-type seed values reproduce the supplied known-good samples so the tool
 // opens on a valid, recognisable SDP for each essence.
@@ -603,7 +614,7 @@ function render() {
     $('preview').textContent = '';
     $('fnameHint').textContent = '';
   }
-  $('copyBtn').disabled = !ok;
+  $('sdpCopyBtn').disabled = !ok;
   $('downloadBtn').disabled = !ok;
 }
 
@@ -633,11 +644,16 @@ document.querySelectorAll('main input, main select, main textarea').forEach((el)
   if (el.closest('#tab-bulk')) return;
   el.addEventListener('input', render);
 });
-$('copyBtn').addEventListener('click', async () => {
+$('sdpCopyBtn').addEventListener('click', async () => {
   if (!lastSpec) return;
-  await navigator.clipboard.writeText(buildSdp(lastSpec));
-  $('copyBtn').textContent = 'Copied';
-  setTimeout(() => { $('copyBtn').textContent = 'Copy'; }, 1200);
+  try {
+    await copyToClipboard(buildSdp(lastSpec));
+    $('sdpCopyBtn').textContent = 'Copied';
+    setTimeout(() => { $('sdpCopyBtn').textContent = 'Copy'; }, 1200);
+  } catch (e) {
+    $('sdpCopyBtn').textContent = 'Copy failed';
+    setTimeout(() => { $('sdpCopyBtn').textContent = 'Copy'; }, 1500);
+  }
 });
 $('downloadBtn').addEventListener('click', () => {
   if (!lastSpec) return;
@@ -765,13 +781,25 @@ function runBulk() {
   const results = $('csvResults');
   results.innerHTML = '';
   validBulk = [];
-  if (!text.trim()) { $('csvSummary').textContent = 'Paste or upload CSV first.'; $('zipBtn').disabled = true; return; }
+  if (!text.trim()) {
+    $('csvSummary').textContent = 'Upload a full device encap CSV first (not a single IP).';
+    $('zipBtn').disabled = true;
+    return;
+  }
 
   let rows;
   try { rows = parseCsv(text); } catch (err) { $('csvSummary').textContent = 'CSV parse error: ' + err.message; return; }
   if (rows.length === 0) { $('csvSummary').textContent = 'No rows found.'; return; }
 
   const header = rows[0].map((h) => String(h).trim());
+  const firstCell = String(header[0] || '').trim();
+  const looksLikeIpOnly = rows.length === 1 && header.length === 1 && /^\d{1,3}(\.\d{1,3}){3}$/.test(firstCell);
+  if (looksLikeIpOnly) {
+    $('csvSummary').textContent =
+      'That is a single IP (' + firstCell + '), not a CSV. Bulk needs a device encap export (header + rows). For one multicast, switch to Single and enter it under Primary multicast.';
+    $('zipBtn').disabled = true;
+    return;
+  }
 
   // --- device encap export ---
   if (isEncapHeader(header)) {
@@ -788,6 +816,12 @@ function runBulk() {
   // --- native template ---
   let parsed;
   try { parsed = csvToSpecs(text); } catch (err) { $('csvSummary').textContent = 'CSV parse error: ' + err.message; return; }
+  if (!parsed.records.length) {
+    $('csvSummary').textContent =
+      'No data rows found after the header. Upload a full CSV (encap export with Device / Media Port / Destination IP columns), not a single value.';
+    $('zipBtn').disabled = true;
+    return;
+  }
   const specs = parsed.records.map((r) => r.spec);
   const { valid, invalid } = packageSpecs(specs, results, null);
   $('csvSummary').textContent = `Native template detected. ${valid}/${parsed.records.length} rows valid — ${valid} file(s) will be packaged${invalid ? `, ${invalid} invalid` : ''}.`;
