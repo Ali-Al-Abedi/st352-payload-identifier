@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Single download uses `.txt` (2026-08-06).** Magnum-import filename extension matched
+  Bulk (`*.txt`) instead of `.sdp`. Button label: **Download .txt**.
+
 ### Changed
 - **UI polish + black / neon theme (2026-08-06).** Pure black background, neon green
   accent (`#39ff14`), brighter text, sky SDR banner (no muddy greys). Stable VPID↔SDP

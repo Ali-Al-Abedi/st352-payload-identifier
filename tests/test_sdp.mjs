@@ -220,8 +220,8 @@ test('redundant spec requires a second leg', () => {
 });
 
 test('filenames are filesystem-safe and type-suffixed', () => {
-  assert.equal(sdpFilename(VIDEO_SPEC), 'DC-0501_ORT-T_0501A_sdp_video.sdp');
-  assert.equal(sdpFilename(AUDIO_SPEC), '670ipg_audio.sdp');
+  assert.equal(sdpFilename(VIDEO_SPEC), 'DC-0501_ORT-T_0501A_sdp_video.txt');
+  assert.equal(sdpFilename(AUDIO_SPEC), '670ipg_audio.txt');
 });
 
 test('bulk export filenames are multicast_port.txt', () => {

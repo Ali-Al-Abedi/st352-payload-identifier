@@ -429,7 +429,7 @@ export function buildSdp(rawSpec) {
   return buildSdpLines(rawSpec).join(EOL) + EOL;
 }
 
-/** Derive a safe .sdp filename from the spec (Single-form download). */
+/** Derive a Magnum-import .txt filename from the spec (Single-form download). */
 export function sdpFilename(rawSpec) {
   const spec = normalizeSpec(rawSpec);
   const base = (spec.sessionName || spec.type || 'stream')
@@ -437,7 +437,7 @@ export function sdpFilename(rawSpec) {
     .replace(/\s+/g, '_')
     .replace(/[^A-Za-z0-9._-]/g, '');
   const safe = base || 'stream';
-  return `${safe}_${spec.type}.sdp`;
+  return `${safe}_${spec.type}.txt`;
 }
 
 /**
