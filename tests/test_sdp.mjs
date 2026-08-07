@@ -215,6 +215,52 @@ test('validation rejects bad multicast, source, port, payload, gmid', () => {
   assert.match(blob, /source/);
 });
 
+test('validation rejects empty fmtp tokens, origin user, and 2022-7 group labels', () => {
+  const emptyFmtp = validateSpec({
+    ...VIDEO_SPEC,
+    video: { ...VIDEO_SPEC.video, tcs: '', sampling: '', pm: '', tp: '', ssn: '', colorimetry: '' },
+  });
+  assert.equal(emptyFmtp.ok, false);
+  const fmtpBlob = emptyFmtp.errors.join(' | ');
+  assert.match(fmtpBlob, /TCS/);
+  assert.match(fmtpBlob, /sampling/);
+  assert.match(fmtpBlob, /PM/);
+  assert.match(fmtpBlob, /TP/);
+  assert.match(fmtpBlob, /SSN/);
+  assert.match(fmtpBlob, /colorimetry/);
+
+  const noUser = validateSpec({
+    ...VIDEO_SPEC,
+    origin: { ...VIDEO_SPEC.origin, user: '   ' },
+  });
+  assert.equal(noUser.ok, false);
+  assert.match(noUser.errors.join(' '), /origin user/);
+
+  const noGroups = validateSpec({
+    ...VIDEO_SPEC,
+    groupLabels: ['', ''],
+  });
+  assert.equal(noGroups.ok, false);
+  assert.match(noGroups.errors.join(' '), /group labels/);
+
+  const noChan = validateSpec({
+    ...AUDIO_SPEC,
+    audio: { ...AUDIO_SPEC.audio, channelOrder: '' },
+  });
+  assert.equal(noChan.ok, false);
+  assert.match(noChan.errors.join(' '), /channel-order/);
+});
+
+test('validation rejects multicast SSM source (must be unicast)', () => {
+  const res = validateSpec({
+    ...VIDEO_SPEC,
+    redundant: false,
+    legs: [{ mcast: '238.0.203.15', source: '238.9.9.9' }],
+  });
+  assert.equal(res.ok, false);
+  assert.match(res.errors.join(' '), /unicast/);
+});
+
 test('redundant spec requires a second leg', () => {
   const res = validateSpec({ ...VIDEO_SPEC, legs: [VIDEO_SPEC.legs[0]] });
   assert.equal(res.ok, false);

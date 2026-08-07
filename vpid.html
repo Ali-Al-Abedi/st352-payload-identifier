@@ -10204,6 +10204,15 @@ function isMulticastV4(s) {
   return first >= 224 && first <= 239;
 }
 
+/** SSM source must be unicast IPv4 (not multicast / not blank). */
+function isUnicastV4(s) {
+  return isIPv4(s) && !isMulticastV4(s);
+}
+
+function nonEmptyStr(s) {
+  return String(s ?? '').trim() !== '';
+}
+
 // PTP grandmaster clock identity: 8 hex octets separated by '-'.
 function isGmid(s) {
   return typeof s === 'string' && /^([0-9A-Fa-f]{2}-){7}[0-9A-Fa-f]{2}$/.test(s.trim());
@@ -10272,6 +10281,7 @@ function validateSpec(rawSpec) {
 
   if (!TYPE_DEFAULTS[spec.type]) errors.push(`unknown media type "${spec.type}" (expected video|audio|anc)`);
   if (!spec.sessionName) errors.push('session name (s=) is required');
+  if (!nonEmptyStr(spec.origin.user)) errors.push('origin user is required');
   if (!isIPv4(spec.origin.ip)) errors.push(`origin IP "${spec.origin.ip}" is not a valid IPv4 address`);
   if (spec.origin.sessId === '' || spec.origin.sessId === undefined) errors.push('origin session id is required');
   if (spec.origin.sessVer === '' || spec.origin.sessVer === undefined) errors.push('origin session version is required');
@@ -10281,6 +10291,12 @@ function validateSpec(rawSpec) {
   if (!(Number.isInteger(spec.ptpDomain) && spec.ptpDomain >= 0 && spec.ptpDomain <= 127)) {
     errors.push(`PTP domain "${spec.ptpDomain}" out of range (0-127)`);
   }
+  if (spec.redundant) {
+    const [ga, gb] = spec.groupLabels || [];
+    if (!nonEmptyStr(ga) || !nonEmptyStr(gb)) {
+      errors.push('ST 2022-7 group labels (a=group / a=mid) are required');
+    }
+  }
 
   const legCount = spec.redundant ? 2 : 1;
   if (spec.legs.length < legCount) {
@@ -10289,8 +10305,14 @@ function validateSpec(rawSpec) {
   spec.legs.slice(0, legCount).forEach((leg, i) => {
     const tag = spec.redundant ? (i === 0 ? 'primary' : 'secondary') : 'single';
     if (!isMulticastV4(leg.mcast)) errors.push(`${tag} leg multicast "${leg.mcast}" is not a valid multicast IPv4 (224-239)`);
-    // Source is optional (ASM); only validate it when a real source is given.
-    if (hasSource(leg) && !isIPv4(leg.source)) errors.push(`${tag} leg source "${leg.source}" is not a valid IPv4 address`);
+    // Source is optional (ASM); when present it must be unicast SSM.
+    if (hasSource(leg)) {
+      if (!isIPv4(leg.source)) {
+        errors.push(`${tag} leg source "${leg.source}" is not a valid IPv4 address`);
+      } else if (!isUnicastV4(leg.source)) {
+        errors.push(`${tag} leg source "${leg.source}" must be unicast (not multicast)`);
+      }
+    }
   });
 
   if (spec.type === 'video') {
@@ -10299,6 +10321,16 @@ function validateSpec(rawSpec) {
     if (!(Number(v.height) > 0)) errors.push('video height must be a positive integer');
     if (![8, 10, 12, 16].includes(Number(v.depth))) errors.push(`video depth "${v.depth}" must be one of 8, 10, 12, 16`);
     if (!/^\d+(\/\d+)?$/.test(String(v.exactframerate))) errors.push(`video exactframerate "${v.exactframerate}" must be an integer or M/N ratio`);
+    for (const [label, val] of [
+      ['sampling', v.sampling],
+      ['TCS', v.tcs],
+      ['colorimetry', v.colorimetry],
+      ['PM', v.pm],
+      ['SSN', v.ssn],
+      ['TP', v.tp],
+    ]) {
+      if (!nonEmptyStr(val)) errors.push(`video ${label} is required`);
+    }
   } else if (spec.type === 'audio') {
     const a = spec.audio;
     if (!/^L(16|24)$/.test(String(a.encoding))) errors.push(`audio encoding "${a.encoding}" must be L16 or L24`);
@@ -10307,6 +10339,7 @@ function validateSpec(rawSpec) {
       errors.push(`audio channel count "${a.channels}" out of range (1-64)`);
     }
     if (!/^\d+(\.\d+)?$/.test(String(a.ptime))) errors.push(`audio ptime "${a.ptime}" must be numeric (ms)`);
+    if (!nonEmptyStr(a.channelOrder)) errors.push('audio channel-order is required');
   } else if (spec.type === 'anc') {
     const n = spec.anc;
     const hasVpid = n.vpidCode !== '' && n.vpidCode !== undefined && n.vpidCode !== null;

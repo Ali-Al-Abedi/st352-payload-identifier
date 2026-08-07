@@ -57,6 +57,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   applies; Download ZIP stays outside. More options collapsed by default.
 
 ### Fixed
+- **SDP Single tighter validation (2026-08-07).** Reject empty video fmtp tokens
+  (sampling/TCS/colorimetry/PM/SSN/TP), empty origin user, empty 2022-7 group labels,
+  empty audio channel-order; SSM source must be unicast (not multicast).
 - **pairLegs off + dual Source IP (2026-08-07).** Unpaired primary/backup single-path
   SDPs no longer both get `sourcePrimary` SSM. Backup file uses `sourceSecondary`
   (`legRole` on the spec; `applyBulkOverrides` respects it).
