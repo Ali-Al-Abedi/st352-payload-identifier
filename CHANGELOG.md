@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Skipped = not in ZIP (2026-08-07).** A bad primary/backup leg with a surviving
   sibling is a **warning** (file still exported). **Not in ZIP** only when no usable
   multicast remains (or non-2110 type).
+- **Bulk ZIP: primary + backup filenames (2026-08-07).** Each ST 2022-7 essence writes
+  two identical `.txt` files named `{primary}_{port}.txt` and `{backup}_{port}.txt`
+  (same SDP body). Single-path essences still write one file.
 
 ### Fixed
 - **CI VPID self-test (2026-08-06).** Guard `window.copyToClipboard` for Node extract —

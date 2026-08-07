@@ -441,14 +441,39 @@ export function sdpFilename(rawSpec) {
 }
 
 /**
- * Bulk export filename: primary multicast + destination port, e.g. 238.0.246.2_1234.txt
+ * Bulk export filename: multicast + destination port, e.g. 238.0.246.2_1234.txt
  */
 export function exportFilename(rawSpec) {
+  return exportFilenames(rawSpec)[0];
+}
+
+function filenameForMcastPort(mcast, port) {
+  const safeMcast = String(mcast || '0.0.0.0').trim().replace(/[^0-9.]/g, '') || '0.0.0.0';
+  const p = port || 1234;
+  return `${safeMcast}_${p}.txt`;
+}
+
+/**
+ * Bulk ZIP member name(s) for a spec.
+ * ST 2022-7 redundant → two names (primary + backup multicast), same SDP content.
+ * Single-path → one name.
+ */
+export function exportFilenames(rawSpec) {
   const spec = normalizeSpec(rawSpec);
-  const mcast = (spec.legs[0] && spec.legs[0].mcast) ? String(spec.legs[0].mcast).trim() : '0.0.0.0';
   const port = spec.port || 1234;
-  const safeMcast = mcast.replace(/[^0-9.]/g, '') || '0.0.0.0';
-  return `${safeMcast}_${port}.txt`;
+  const primary = filenameForMcastPort(spec.legs[0] && spec.legs[0].mcast, port);
+  if (!(spec.redundant && spec.legs[1] && spec.legs[1].mcast)) return [primary];
+  const backup = filenameForMcastPort(spec.legs[1].mcast, port);
+  return backup === primary ? [primary] : [primary, backup];
+}
+
+/**
+ * Bulk ZIP entries for a spec: one or two files. Redundant pairs share identical SDP body.
+ */
+export function bulkExportFiles(rawSpec) {
+  const spec = normalizeSpec(rawSpec);
+  const data = buildSdp(spec);
+  return exportFilenames(spec).map((name) => ({ name, data }));
 }
 
 /**

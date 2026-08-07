@@ -1138,7 +1138,7 @@ Example:
       <dt>Source IP</dt>
       <dd>Optional SSM join (<code>a=source-filter</code>). Blank / <code>0.0.0.0</code> exports as ASM (still ready) with a Bulk warning — fill Source IP primary/secondary or a source-map CSV to add SSM. Never skipped for missing source.</dd>
       <dt>Magnum import</dt>
-      <dd>Download as <code>.txt</code> (Single) or a ZIP of <code>.txt</code> files (Bulk), then import in Magnum. Prove one import before demos — dialect mismatch is the real risk, not this UI.</dd>
+      <dd>Download as <code>.txt</code> (Single) or a ZIP of <code>{multicast}_{port}.txt</code> (Bulk). ST 2022-7 pairs produce <strong>two identical</strong> files named for primary and backup multicast. Prove one Magnum import before demos.</dd>
     </dl>
   </section>
 
@@ -10328,14 +10328,39 @@ function sdpFilename(rawSpec) {
 }
 
 /**
- * Bulk export filename: primary multicast + destination port, e.g. 238.0.246.2_1234.txt
+ * Bulk export filename: multicast + destination port, e.g. 238.0.246.2_1234.txt
  */
 function exportFilename(rawSpec) {
+  return exportFilenames(rawSpec)[0];
+}
+
+function filenameForMcastPort(mcast, port) {
+  const safeMcast = String(mcast || '0.0.0.0').trim().replace(/[^0-9.]/g, '') || '0.0.0.0';
+  const p = port || 1234;
+  return `${safeMcast}_${p}.txt`;
+}
+
+/**
+ * Bulk ZIP member name(s) for a spec.
+ * ST 2022-7 redundant → two names (primary + backup multicast), same SDP content.
+ * Single-path → one name.
+ */
+function exportFilenames(rawSpec) {
   const spec = normalizeSpec(rawSpec);
-  const mcast = (spec.legs[0] && spec.legs[0].mcast) ? String(spec.legs[0].mcast).trim() : '0.0.0.0';
   const port = spec.port || 1234;
-  const safeMcast = mcast.replace(/[^0-9.]/g, '') || '0.0.0.0';
-  return `${safeMcast}_${port}.txt`;
+  const primary = filenameForMcastPort(spec.legs[0] && spec.legs[0].mcast, port);
+  if (!(spec.redundant && spec.legs[1] && spec.legs[1].mcast)) return [primary];
+  const backup = filenameForMcastPort(spec.legs[1].mcast, port);
+  return backup === primary ? [primary] : [primary, backup];
+}
+
+/**
+ * Bulk ZIP entries for a spec: one or two files. Redundant pairs share identical SDP body.
+ */
+function bulkExportFiles(rawSpec) {
+  const spec = normalizeSpec(rawSpec);
+  const data = buildSdp(spec);
+  return exportFilenames(spec).map((name) => ({ name, data }));
 }
 
 /**
@@ -11261,20 +11286,24 @@ function packageSpecs(specs, results, skipped, warnings, skippedRows) {
     const spec = applyBulkOverrides(raw, opts);
     const { ok, errors } = validateSpec(spec);
     if (ok) {
-      const name = uniqueName(exportFilename(spec), used);
-      validBulk.push({ name, data: buildSdp(spec) });
-      if (byType[spec.type] !== undefined) byType[spec.type]++;
+      const files = bulkExportFiles(spec);
+      files.forEach(({ name, data }) => {
+        validBulk.push({ name: uniqueName(name, used), data });
+      });
+      if (byType[spec.type] !== undefined) byType[spec.type] += files.length;
     } else {
       invalid++;
       if (errorSamples.length < 200) errorSamples.push({ i: i + 1, type: spec.type, err: errors.join('; ') });
     }
   });
 
-  let html = '<table><thead><tr><th>Essence</th><th>Files</th></tr></thead><tbody>' +
+  let html = '<table><thead><tr><th>Essence</th><th>ZIP files</th></tr></thead><tbody>' +
     `<tr><td>Video (2110-20)</td><td>${byType.video}</td></tr>` +
     `<tr><td>Audio (2110-30)</td><td>${byType.audio}</td></tr>` +
     `<tr><td>ANC (2110-40)</td><td>${byType.anc}</td></tr>` +
-    '</tbody></table>';
+    `<tr><td><strong>Total</strong></td><td><strong>${validBulk.length}</strong></td></tr>` +
+    '</tbody></table>' +
+    '<div class="hint" style="margin-top:8px">ST 2022-7 pairs → two files (primary + backup multicast names) with identical SDP content. Single-path → one file.</div>';
 
   if (skippedRows && skippedRows.length) {
     const show = skippedRows.slice(0, 200);

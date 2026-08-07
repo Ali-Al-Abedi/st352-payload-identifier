@@ -26,6 +26,8 @@ import {
   encapToSpecs,
   parseSourceMap,
   exportFilename,
+  exportFilenames,
+  bulkExportFiles,
   applyBulkOverrides,
   VIDEO_PRESETS,
   applyVideoPreset,
@@ -228,6 +230,24 @@ test('bulk export filenames are multicast_port.txt', () => {
   assert.equal(exportFilename(VIDEO_SPEC), '238.0.203.15_1234.txt');
   assert.equal(exportFilename(AUDIO_SPEC), '238.0.139.122_1234.txt');
   assert.equal(exportFilename(ANC_SPEC), '238.0.139.118_1234.txt');
+});
+
+test('redundant bulk export yields primary+backup filenames with identical SDP body', () => {
+  assert.deepEqual(exportFilenames(ANC_SPEC), ['238.0.139.118_1234.txt', '238.0.139.112_1234.txt']);
+  const files = bulkExportFiles(ANC_SPEC);
+  assert.equal(files.length, 2);
+  assert.equal(files[0].name, '238.0.139.118_1234.txt');
+  assert.equal(files[1].name, '238.0.139.112_1234.txt');
+  assert.equal(files[0].data, files[1].data);
+  assert.ok(files[0].data.includes('a=group:DUP'));
+  assert.ok(files[0].data.includes('238.0.139.118'));
+  assert.ok(files[0].data.includes('238.0.139.112'));
+});
+
+test('single-path bulk export yields one filename', () => {
+  const single = { ...ANC_SPEC, redundant: false, legs: [ANC_SPEC.legs[0]] };
+  assert.deepEqual(exportFilenames(single), ['238.0.139.118_1234.txt']);
+  assert.equal(bulkExportFiles(single).length, 1);
 });
 
 test('applyBulkOverrides writes plant parameters into the SDP', () => {
