@@ -32,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Shorter copy (2026-08-07).** Punchy Bulk warnings, FAQ, heroes, and hints — less wall of text.
 - **VPID input autofocus (2026-08-07).** Caret lands in the hex field (selected) so it reads as
   editable; clearer “Type VPID here” label and dashed underline.
+- **Tighter VPID UI copy (2026-08-07).** Greyed-entry hint, builder notes, fmtp note, limits —
+  shortened for engineers.
 - **Blank Destination IP Skipped text (2026-08-07).** Cleared multicast cannot be recovered
   from the CSV; Skipped names the surviving SDP/ZIP pair-partner multicast instead.
 - **Text hierarchy colors (2026-08-07).** Descriptions/FAQ use cool slate; settings labels

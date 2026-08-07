@@ -944,11 +944,11 @@
       <div class="input-toolbar-group" aria-label="Copy actions">
         <button id="copyBtn" class="btn">Copy hex</button>
         <button id="copyKVBtn" class="btn">Copy specs</button>
-        <button id="copyLinkBtn" class="btn" title="Copy a shareable link with this VPID encoded in the URL (e.g. ?vpid=89CA8001)">Copy link</button>
+        <button id="copyLinkBtn" class="btn" title="Copy share link (?vpid=…)">Copy link</button>
       </div>
       <div class="input-toolbar-group" aria-label="Export and reset actions">
-        <button id="exportJsonBtn" class="btn" title="Download the fully-decoded VPID as a JSON file">Export JSON</button>
-        <button id="exportCsvBtn" class="btn" title="Download the per-field byte-by-byte breakdown as a CSV file">Export CSV</button>
+        <button id="exportJsonBtn" class="btn" title="Download decoded JSON">Export JSON</button>
+        <button id="exportCsvBtn" class="btn" title="Download field CSV">Export CSV</button>
         <button id="clearBtn" class="btn">Clear</button>
       </div>
     </div>
@@ -1132,10 +1132,12 @@ Example:
       <li><code>SMPTE ST 2082-30:2017</code> — Multiplex of 2× 6G / 4× 3G / 8× HD onto a single 12G-SDI link (Byte 1 = 0xD9-0xDE). The standard explicitly delegates bytes 2-4 to the underlying single-stream standard (ST 2081-10 / ST 425-1 Level A / ST 292-1).</li>
       <li><code>SMPTE Payload ID Registry</code> — <a href="https://smpte-ra.org/registers/Payload-Identifier-Registry/" target="_blank" rel="noopener">smpte-ra.org Payload Identifier Registry</a> (used for full Byte&nbsp;1 coverage; codes without a bit-level decoder show their registered standard, description, and status)</li>
     </ul>
-    <p style="margin-top: 12px;">Bit-level definitions cite their originating standard on each decoded field, so any value can be traced to its source. Fields decoded from 6G-SDI VPIDs are marked with the citation <code>ST 2081-10 (Tek)</code> to distinguish them from fields confirmed against the official SMPTE PDFs. Codes signalled in the SMPTE-RA registry but without a published bit layout in this tool are flagged as "Recognised by registry — bit-level decoder not yet implemented". Round-trip integrity is verified by automated tests against known-good VPIDs.</p>
+    <p style="margin-top: 12px;">Field citations point at the defining standard. <code>ST 2081-10 (Tek)</code> = Tektronix poster provenance. Registry-only codes: standard/status only, no fake bit decode.</p>
     <p style="margin-top: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-elev);">
-      <strong>Known limitations.</strong>
-      Codes registered in the SMPTE-RA Payload Identifier Registry but <em>without</em> a published bit-level layout are surfaced through the registry-only fallback path with their full SMPTE-RA standard, description, and status — never with synthesised characteristics. <code>0xC0</code>/<code>0xC1</code> bit-level fields originate from the Tektronix "Creating 4K/UHD Content" poster (the original SMPTE ST 2081-10:2018 PDF was unavailable when those layouts were authored); each affected field is tagged <code>ST 2081-10 (Tek)</code> in the byte breakdown to make the provenance explicit. Bytes 2-4 of <code>0xD9</code>-<code>0xDE</code> (ST 2082-30 multiplex) are intentionally delegated to the underlying single-stream standard (ST 2081-10 / ST 425-1 Level A / ST 292-1) — the calculator surfaces the multiplex framing but not per-sub-stream bit decode. <strong>Glass-to-glass audit:</strong> 22 P0, 88 P1, 30 P2, 1 P3 findings — all fixed and verified (see <code>audit/SUMMARY.md</code>). <strong>Found a bug?</strong> Open an issue at <a href="https://github.com/Ali-Al-Abedi/st352-payload-identifier/issues" target="_blank" rel="noopener">github.com/Ali-Al-Abedi/st352-payload-identifier/issues</a>.
+      <strong>Limits.</strong> Registry-only Byte&nbsp;1 → no bytes 2–4 editor.
+      <code>0xC0</code>/<code>0xC1</code> tagged <code>ST 2081-10 (Tek)</code>.
+      <code>0xD9</code>–<code>0xDE</code> mux framing only (bytes 2–4 from underlying stream standard).
+      Bugs: <a href="https://github.com/Ali-Al-Abedi/st352-payload-identifier/issues" target="_blank" rel="noopener">issues</a>.
     </p>
   </footer>
 
@@ -6888,7 +6890,7 @@ function decodeVpidBytes(b1, b2, b3, b4) {
         bytes: [b1, b2, b3, b4],
         registered: true,
         registry: reg,
-        error: `${hexStr} is registered to ${reg.standard} (${reg.status}). This build does not implement bit-level decode for bytes 2–4 of this family.`,
+        error: `${hexStr} registered (${reg.standard}, ${reg.status}) — no bit decode for bytes 2–4.`,
         family: reg.standard,
         label: `${hexStr} — ${reg.description}`,
         citation: `SMPTE-RA Byte 1 registry`,
@@ -8720,24 +8722,21 @@ function renderSdpFmtp(decoded) {
   if (!decoded.valid) {
     pre.textContent = "—";
     note.textContent = decoded.registered
-      ? "Registry-only entry: bytes 2-4 are not bit-decoded in this build, so the ST 2110-20 fmtp parameters cannot be auto-generated. Decode the SDP manually against the cited SMPTE standard."
-      : "VPID is invalid or unassigned; no fmtp line generated.";
+      ? "Registry-only — no bit decode; fmtp not auto-generated."
+      : "Invalid/unassigned VPID — no fmtp.";
     return;
   }
   const parts = buildSdpFmtp(decoded);
   if (!parts || parts.length === 0) {
     pre.textContent = "—";
-    note.textContent = "Could not derive fmtp parameters for this VPID.";
+    note.textContent = "No fmtp for this VPID.";
     return;
   }
   // Pretty-print as a wrapped fmtp line. Payload type 96 is the ST 2110-20
   // dynamic PT convention; consumers can swap it for whatever PT they bind.
   const line = "a=fmtp:96 " + parts.join("; ");
   pre.textContent = line;
-  // Surface a friendly note about defaults that we filled in (PM/SSN/PAR/RANGE)
-  // so the engineer knows which params are signalled vs assumed.
-  const sigList = ["sampling", "width", "height", "exactframerate", "depth", "colorimetry", "TCS"];
-  note.innerHTML = `Parameters <code>${sigList.join("</code>, <code>")}</code> come straight from the decoded VPID. <code>PM</code>, <code>SSN</code>, <code>PAR</code> and <code>RANGE</code> are filled in with ST 2110-20:2017 production defaults — adjust them if your stream uses different SMPTE 2110-20 conformance modes (e.g. <code>RANGE=FULL</code> for full-range Y'CbCr, <code>PM=2110BPM</code> for the block-mode profile).`;
+  note.innerHTML = `From VPID: sampling/size/rate/depth/colorimetry/TCS. Defaults: <code>PM</code>/<code>SSN</code>/<code>PAR</code>/<code>RANGE</code> (ST 2110-20:2017).`;
 }
 
 /* ---------- Builder (reverse: characteristics -> hex) ---------- */
@@ -8794,7 +8793,7 @@ function renderBuilder(decoded) {
   // Helper hint under the selector
   const hint = document.createElement('p');
   hint.className = 'form-hint';
-  hint.innerHTML = `Greyed entries are valid SMPTE-RA Payload IDs but bytes 2–4 of those families are not yet decoded by this tool — typically older / niche standards (ST 259, ST 274, ST 296, ST 347, ST 349). You can still paste their hex into the input above to read the registry's standard, description and status; you just can't edit them field-by-field here.`;
+  hint.textContent = 'Grey = registry-known, no bit decode here. Paste hex above for standard/status.';
   wrap.appendChild(hint);
 
   const byte1Sel = { wrap, select: sel };
@@ -8866,14 +8865,8 @@ function renderBuilder(decoded) {
     note.className = 'builder-note';
     const reg = decoded.registry;
     note.innerHTML = `
-      <p><strong>Bit-level editor not available for 0x${decoded.bytes[0].toString(16).toUpperCase()}.</strong></p>
-      <p>This Byte 1 value is registered with the
-        <a href="https://smpte-ra.org/registers/Payload-Identifier-Registry/" target="_blank" rel="noopener">SMPTE-RA Payload Identifier Registry</a>
-        as <code>${reg.standard}</code> &mdash; <em>${reg.description}</em>.</p>
-      <p>This tool currently provides full bit-level decoding only for the
-        SMPTE standards listed in the <a href="#references">references</a> below.
-        To build a different format, pick a fully-decoded family from the dropdown above
-        (the disabled entries are recognised in the registry but not yet bit-decoded here).</p>
+      <p><strong>No bit editor for 0x${decoded.bytes[0].toString(16).toUpperCase()}.</strong>
+      Registry: <code>${reg.standard}</code> — ${reg.description}. Pick a decoded family above to edit.</p>
     `;
     f.appendChild(note);
     return;
@@ -8883,10 +8876,7 @@ function renderBuilder(decoded) {
     const note = document.createElement('div');
     note.className = 'builder-note builder-note-warn';
     note.innerHTML = `
-      <p><strong>Byte 1 = 0x${decoded.bytes[0].toString(16).toUpperCase()} is unassigned.</strong></p>
-      <p>This value does not appear in the SMPTE-RA Payload Identifier Registry,
-         so no characteristics can be derived from it. Pick a registered family
-         from the dropdown above to populate the editor.</p>
+      <p><strong>0x${decoded.bytes[0].toString(16).toUpperCase()} unassigned</strong> — not in SMPTE-RA. Pick a registered family above.</p>
     `;
     f.appendChild(note);
     return;
@@ -9137,7 +9127,7 @@ function renderBuilder(decoded) {
     // ST 2036-3 / ST 2036-4 / ST 2047-2 / ST 2047-4: aspect is fixed at 16:9 (no signalling).
     const info = document.createElement('p');
     info.className = 'form-hint';
-    info.textContent = `Aspect ratio is fixed at 16:9 for ${layout.label} (no aspect bit is signalled — picture is UHDTV/HD by spec).`;
+    info.textContent = `Aspect fixed 16:9 for ${layout.label} (not signalled).`;
     f.appendChild(info);
   }
 
@@ -9394,7 +9384,7 @@ function renderBuilder(decoded) {
     // VC-2 mezzanine: only the picture rate is variable. Add a friendly note.
     const note = document.createElement('p');
     note.className = 'form-hint';
-    note.innerHTML = `Bytes 3 and 4 are fixed by SMPTE ST 2047-2 Tables 2 &amp; 3 (Byte 3 = 0x80 = 16:9 + 4:2:2 Y'CbCr; Byte 4 = 0x01 = VC-2 mezzanine compressed payload). Only the picture rate (50 / 59.94 / 60 Hz) is selectable.`;
+    note.innerHTML = `ST 2047-2: bytes 3–4 fixed (0x80 / 0x01). Only picture rate is selectable.`;
     f.appendChild(note);
   } else if (b1 === 0xB2) {
     // ST 2047-4: byte 4 is a format ID (0x01..0x06). Each format implies a
