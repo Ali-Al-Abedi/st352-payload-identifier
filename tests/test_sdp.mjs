@@ -563,12 +563,14 @@ test('encap blank/invalid destination port is hard-skipped', () => {
   const { specs, skipped, skippedRows, mapped } = encapToSpecs(csv);
   assert.equal(mapped, 1);
   assert.equal(specs[0].port, 1234);
-  assert.equal(skipped['blank/invalid destination port'], 3);
-  assert.equal(skippedRows.length, 3);
+  // Video recovers via the valid second row; audio+anc have no usable leg → not in ZIP.
+  assert.equal(skipped['essence not exported (no usable multicast)'], 2);
+  assert.equal(skippedRows.length, 2);
+  assert.ok(skippedRows.every((r) => /^Not exported —/.test(r.message)));
   assert.ok(skippedRows.every((r) => /Destination Port/.test(r.message)));
 });
 
-test('cleared backup multicast explains ST 2022-7 single-path', () => {
+test('cleared backup multicast warns but file still exported', () => {
   const csv = [
     'Device,Media Port,Ethernet,Stream Type,Stream Index,Destination IP,Destination Port,Source IP,Bitrate (Mbps),Backup',
     'DEV,VID-1,ENET-1,Video,,238.1.1.116,1234,10.1.1.1,3000.0,False',
@@ -577,10 +579,26 @@ test('cleared backup multicast explains ST 2022-7 single-path', () => {
   const { specs, skippedRows, warnings, mapped } = encapToSpecs(csv);
   assert.equal(mapped, 1);
   assert.equal(specs[0].redundant, false);
-  assert.equal(skippedRows.length, 1);
-  assert.match(skippedRows[0].message, /backup leg: Destination IP blank/);
+  assert.equal(skippedRows.length, 0, 'still in ZIP — bad leg is a warning, not Not-exported');
   const w = warnings.find((x) => /ST 2022-7 pair incomplete/.test(x.message));
   assert.ok(w, 'expected incomplete-pair warning tied to cleared multicast');
   assert.match(w.message, /backup: Destination IP blank/);
-  assert.match(w.message, /Exported as single-path/);
+  assert.match(w.message, /Still exported as single-path/);
+  assert.match(w.message, /file is in the ZIP/);
+});
+
+test('cleared primary with valid backup still exports one file', () => {
+  const csv = [
+    'Device,Media Port,Ethernet,Stream Type,Stream Index,Destination IP,Destination Port,Source IP,Bitrate (Mbps),Backup',
+    'BE-106_IPG_E106A01,BE-106_IPG_E106A01-VID-INPUT-1,ENET-1,ANC,,,1234,,10.0,False',
+    'BE-106_IPG_E106A01,BE-106_IPG_E106A01-VID-INPUT-1,ENET-2,ANC,,238.0.139.112,1234,,10.0,True',
+  ].join('\n') + '\n';
+  const { specs, skippedRows, warnings, mapped } = encapToSpecs(csv);
+  assert.equal(mapped, 1);
+  assert.equal(skippedRows.length, 0);
+  assert.equal(specs[0].legs[0].mcast, '238.0.139.112');
+  const w = warnings.find((x) => /ST 2022-7 pair incomplete/.test(x.message));
+  assert.ok(w);
+  assert.match(w.message, /primary: Destination IP blank/);
+  assert.match(w.message, /from the backup leg/);
 });

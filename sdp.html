@@ -761,18 +761,19 @@ function packageSpecs(specs, results, skipped, warnings, skippedRows) {
   if (skippedRows && skippedRows.length) {
     const show = skippedRows.slice(0, 200);
     const rows = show.map((s) => `<tr><td class="badge-err">${esc(s.flow || '')}</td><td>${esc(s.message)}</td></tr>`).join('');
-    html += `<h2 style="margin-top:16px">Skipped (${skippedRows.length}${skippedRows.length > show.length ? `, showing first ${show.length}` : ''})</h2>` +
+    html += `<h2 style="margin-top:16px">Not in ZIP (${skippedRows.length}${skippedRows.length > show.length ? `, showing first ${show.length}` : ''})</h2>` +
+      `<div class="hint">These essences produced no file. Warnings below are different — those files are still in the ZIP.</div>` +
       `<table><thead><tr><th>Flow</th><th>Why</th></tr></thead><tbody>${rows}</tbody></table>`;
   } else if (skipped && Object.keys(skipped).length) {
     const rows = Object.entries(skipped).sort((a, b) => b[1] - a[1])
       .map(([k, v]) => `<tr><td>${esc(k)}</td><td>${v}</td></tr>`).join('');
-    html += '<h2 style="margin-top:16px">Skipped</h2>' +
-      `<table><thead><tr><th>Reason</th><th>Rows</th></tr></thead><tbody>${rows}</tbody></table>`;
+    html += '<h2 style="margin-top:16px">Not in ZIP</h2>' +
+      `<table><thead><tr><th>Reason</th><th>Count</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
   if (warnings && warnings.length) {
     const show = warnings.slice(0, 200);
     const rows = show.map((w) => `<tr><td class="badge-warn">${esc(w.flow || '')}</td><td>${esc(w.message)}</td></tr>`).join('');
-    html += `<h2 style="margin-top:16px">Warnings (${warnings.length}${warnings.length > show.length ? `, showing first ${show.length}` : ''})</h2>` +
+    html += `<h2 style="margin-top:16px">Warnings — still in ZIP (${warnings.length}${warnings.length > show.length ? `, showing first ${show.length}` : ''})</h2>` +
       `<table><thead><tr><th>Flow</th><th>What to do</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
   if (errorSamples.length) {
@@ -821,12 +822,12 @@ function runBulk() {
     try { out = encapToSpecs(text, readImportOptions()); }
     catch (err) { $('csvSummary').textContent = 'Encap import error: ' + err.message; return; }
     const { valid } = packageSpecs(out.specs, results, out.skipped, out.warnings, out.skippedRows);
-    const skippedTotal = Object.values(out.skipped || {}).reduce((a, b) => a + b, 0);
+    const notExported = (out.skippedRows || []).length;
     const warnN = (out.warnings || []).length;
     $('csvSummary').textContent =
-      `Device encap: ${valid} ready` +
-      (skippedTotal ? `, ${skippedTotal} skipped` : '') +
-      (warnN ? `, ${warnN} warning(s)` : '') +
+      `Device encap: ${valid} in ZIP` +
+      (notExported ? `, ${notExported} not exported` : '') +
+      (warnN ? `, ${warnN} warning(s) (still in ZIP)` : '') +
       (valid !== out.mapped ? ` (${out.mapped} mapped, ${out.mapped - valid} failed validate)` : '') +
       '.';
     return;

@@ -792,14 +792,14 @@ export function isEncapHeader(header) {
 
 /**
  * Convert a device encap CSV into { specs, skipped, skippedRows, warnings, mapped }.
- *  - specs:       SDP specs ready for validateSpec/buildSdp
- *  - skipped:     { <reason>: count } aggregate for the summary line
- *  - skippedRows: [{ flow, message }] per-row hard skips (clear why)
- *  - warnings:    [{ flow, message }] soft issues (still exported)
+ *  - specs:       SDP specs ready for validateSpec/buildSdp (these become ZIP files)
+ *  - skipped:     { <reason>: count } aggregate of essences / non-2110 rows NOT exported
+ *  - skippedRows: [{ flow, message }] only when nothing is written to the ZIP for that flow
+ *  - warnings:    [{ flow, message }] soft issues — file still exported (e.g. one leg bad)
  *  - mapped:      number of specs produced
  *
- * Hard skips: non-2110 stream type, bad/blank multicast, blank/invalid destination port.
- * Soft warns: blank/0.0.0.0 source (ASM), incomplete 2022-7 pair, blank Device/Media Port.
+ * Hard skips (not in ZIP): non-2110 stream type, or no usable multicast leg left.
+ * Soft warns (still in ZIP): one leg of a 2022-7 pair bad/missing, ASM source, blank names.
  */
 export function encapToSpecs(text, options = {}) {
   const o = { ...ENCAP_IMPORT_DEFAULTS, ...options };
@@ -816,16 +816,15 @@ export function encapToSpecs(text, options = {}) {
   const skippedRows = [];
   const warnings = [];
   const warn = (flow, message) => { warnings.push({ flow, message }); };
-  const skipRow = (flow, message, aggregateReason) => {
+  const skipEssence = (flow, message, aggregateReason) => {
     bump(aggregateReason || message);
     skippedRows.push({ flow, message });
   };
   const flowKey = (device, mport, type, sidx) =>
     `${device || '(no device)'}|${mport || '(no media port)'}|${type}|${sidx || ''}`;
 
-  // Group legs by essence identity, preserving first-seen order.
-  // Invalid destination IP/port rows are recorded against the group so a later
-  // single-path export can explain *why* the other ST 2022-7 leg is missing.
+  // Group legs by essence identity. Bad Destination IP/Port on one leg is recorded
+  // as a drop; Skipped is only emitted if no usable leg remains (nothing in the ZIP).
   const groups = new Map();
   const ensureGroup = (key, mapped, device, mport, sidx) => {
     let g = groups.get(key);
@@ -848,9 +847,9 @@ export function encapToSpecs(text, options = {}) {
 
     if (!mapped) {
       const label = stype ? `"${stype}"` : '(blank)';
-      skipRow(
+      skipEssence(
         flowKey(device, mport, stype || 'unknown', sidx),
-        `Stream type ${label} is not ST 2110 video/audio/ANC — row skipped`,
+        `Not exported — stream type ${label} is not ST 2110 video/audio/ANC`,
         stype || '(blank stream type)',
       );
       continue;
@@ -866,7 +865,6 @@ export function encapToSpecs(text, options = {}) {
         ? 'Destination IP blank'
         : `Destination IP "${mcast}" is not a multicast (need 224.0.0.0–239.255.255.255)`;
       g.drops.push(`${legName}: ${why}`);
-      skipRow(flow, `${legName} leg: ${why} — row skipped (cannot use for ST 2022-7 pair)`, 'invalid/blank destination ip');
       continue;
     }
 
@@ -877,7 +875,6 @@ export function encapToSpecs(text, options = {}) {
         ? 'Destination Port blank'
         : `Destination Port "${portRaw}" invalid (need integer 1–65535)`;
       g.drops.push(`${legName}: ${why}`);
-      skipRow(flow, `${legName} leg: ${why} — row skipped`, 'blank/invalid destination port');
       continue;
     }
 
@@ -886,6 +883,8 @@ export function encapToSpecs(text, options = {}) {
       warn(flow, `Destination Port mismatch across legs (${g.port} vs ${port}) — using ${g.port}. Make both legs match.`);
     }
 
+    // A later valid row for the same leg supersedes an earlier drop on that leg.
+    g.drops = g.drops.filter((d) => !d.startsWith(`${legName}:`));
     const source = col(r, 'source ip');
     const leg = { mcast, source };
     if (isBackup) g.secondary = leg; else g.primary = leg;
@@ -904,32 +903,32 @@ export function encapToSpecs(text, options = {}) {
 
     const primary = g.primary || g.secondary;
     if (!primary) {
-      // Row-level skips already explain blank/invalid IP/port; only add a row
-      // when the group somehow has no legs and no recorded drops.
-      if (!g.drops.length) {
-        skipRow(flow, 'No usable primary or backup leg — essence not exported', 'no usable primary/backup leg');
-      } else {
-        bump('no usable primary/backup leg');
-      }
+      const detail = g.drops.length ? g.drops.join('; ') : 'no primary/backup rows with a usable multicast';
+      skipEssence(
+        flow,
+        `Not exported — ${detail}. Fix Destination IP/Port on at least one leg.`,
+        'essence not exported (no usable multicast)',
+      );
       continue;
     }
 
     const redundant = !!(o.pairLegs && g.primary && g.secondary);
     if (o.pairLegs && !(g.primary && g.secondary)) {
       if (g.drops.length) {
+        const kept = g.primary ? 'primary' : 'backup';
         warn(
           flow,
-          `ST 2022-7 pair incomplete — ${g.drops.join('; ')}. Exported as single-path. Restore the missing Destination IP/Port, or uncheck Pair primary/backup legs.`,
+          `ST 2022-7 pair incomplete — ${g.drops.join('; ')}. Still exported as single-path from the ${kept} leg (file is in the ZIP). Restore the missing Destination IP/Port, or uncheck Pair primary/backup legs.`,
         );
       } else if (!g.primary && g.secondary) {
         warn(
           flow,
-          'ST 2022-7 pairing on but primary leg missing from CSV (only backup present) — exported as single-path. Add Backup=False row or uncheck Pair legs.',
+          'ST 2022-7 pairing on but primary leg missing from CSV (only backup present) — still exported as single-path (file is in the ZIP). Add Backup=False row or uncheck Pair legs.',
         );
       } else {
         warn(
           flow,
-          'ST 2022-7 pairing on but backup leg not in CSV — exported as single-path. Add Backup=True row with multicast, or uncheck Pair primary/backup legs.',
+          'ST 2022-7 pairing on but backup leg not in CSV — still exported as single-path (file is in the ZIP). Add Backup=True row with multicast, or uncheck Pair primary/backup legs.',
         );
       }
     }

@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Clearer Bulk skip/warn messages (2026-08-07).** Per-row Skipped (flow + why);
   cleared multicast/port names the leg and explains ST 2022-7 single-path; warnings
   say what to fix.
+- **Skipped = not in ZIP (2026-08-07).** A bad primary/backup leg with a surviving
+  sibling is a **warning** (file still exported). **Not in ZIP** only when no usable
+  multicast remains (or non-2110 type).
 
 ### Fixed
 - **CI VPID self-test (2026-08-06).** Guard `window.copyToClipboard` for Node extract —
