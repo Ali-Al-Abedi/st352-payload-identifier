@@ -536,18 +536,19 @@ test('source map wins over global source override', () => {
   assert.ok(buildSdpLines(fallback).includes('a=source-filter: incl IN IP4 238.0.140.10 10.5.5.5'));
 });
 
-test('encap blank source warns ASM; Require SSM hard-skips', () => {
-  const { specs, warnings, mapped } = encapToSpecs(ENCAP_CSV);
+test('encap blank source warns ASM and still exports', () => {
+  const { specs, warnings, mapped, skipped } = encapToSpecs(ENCAP_CSV);
   assert.equal(mapped, 3);
+  assert.equal(skipped['missing source IP (Require SSM)'], undefined);
   const asm = warnings.filter((w) => /ASM/.test(w.message));
   assert.ok(asm.length >= 3, `expected ASM warns for video/audio/anc, got ${asm.length}`);
+  assert.ok(asm.every((w) => /Fill Source IP|source map/.test(w.message)));
   const incomplete = warnings.filter((w) => /only one leg/.test(w.message));
   assert.equal(incomplete.length, 1, 'ANC single-leg should warn once');
-
-  const strict = encapToSpecs(ENCAP_CSV, { requireSsm: true });
-  assert.equal(strict.mapped, 0);
-  assert.equal(strict.skipped['missing source IP (Require SSM)'], 3);
-  assert.equal(strict.warnings.filter((w) => /ASM/.test(w.message)).length, 0);
+  for (const s of specs) {
+    assert.equal(validateSpec(s).ok, true);
+    assert.ok(!buildSdpLines(s).some((l) => l.startsWith('a=source-filter')));
+  }
 });
 
 test('encap blank/invalid destination port is hard-skipped', () => {

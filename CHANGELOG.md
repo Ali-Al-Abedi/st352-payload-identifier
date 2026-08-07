@@ -8,10 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Bulk Magnum encap: tiered validation + Require SSM (2026-08-07).** Hard-skip bad
-  multicast / blank destination port / Require-SSM missing source; soft-warn ASM
-  (blank/`0.0.0.0` source), incomplete 2022-7 pairs, blank Device/Media Port, port
-  mismatch. Bulk summary shows ready / skipped / warnings; checkbox **Require SSM**.
+- **Bulk Magnum encap: tiered validation (2026-08-07).** Hard-skip bad multicast /
+  blank destination port; soft-warn ASM (blank/`0.0.0.0` source — still exported),
+  incomplete 2022-7 pairs, blank Device/Media Port, port mismatch. Bulk summary
+  shows ready / skipped / warnings. Fill Source IP or source map to add SSM.
+
+### Changed
+- **Drop Require SSM checkbox (2026-08-07).** Missing source is never skipped —
+  export ASM + warn, with guidance to fill Source IP / source map for SSM.
 
 ### Fixed
 - **CI VPID self-test (2026-08-06).** Guard `window.copyToClipboard` for Node extract —

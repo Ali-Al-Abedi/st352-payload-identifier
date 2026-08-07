@@ -751,7 +751,6 @@ export const ENCAP_IMPORT_DEFAULTS = {
   audioPtime: '0.125',
   ancVpidCode: 137,
   pairLegs: true,
-  requireSsm: false, // true => skip essences with blank/0.0.0.0 source instead of ASM warn
 };
 
 function renderNameTemplate(tpl, ctx) {
@@ -798,9 +797,9 @@ export function isEncapHeader(header) {
  *  - warnings: [{ flow, message }] soft issues (ASM, incomplete 2022-7 pair, blank names)
  *  - mapped:   number of specs produced
  *
- * Hard skips: non-2110 stream type, bad multicast, blank/invalid destination port,
- *             Require-SSM with no real source.
- * Soft warns: blank/0.0.0.0 source (ASM), 2022-7 on with only one leg, blank Device/Media Port.
+ * Hard skips: non-2110 stream type, bad multicast, blank/invalid destination port.
+ * Soft warns: blank/0.0.0.0 source (ASM — fill Source IP / source map to add SSM),
+ *             2022-7 on with only one leg, blank Device/Media Port.
  */
 export function encapToSpecs(text, options = {}) {
   const o = { ...ENCAP_IMPORT_DEFAULTS, ...options };
@@ -872,16 +871,10 @@ export function encapToSpecs(text, options = {}) {
     const secSrc = (dm && dm.secondary) || o.sourceSecondary || (g.secondary && g.secondary.source) || '';
 
     const missingSsm = (src) => !hasSource({ source: src });
-    if (missingSsm(primSrc) || (redundant && missingSsm(secSrc))) {
-      if (o.requireSsm) {
-        bump('missing source IP (Require SSM)');
-        continue;
-      }
-      if (missingSsm(primSrc)) {
-        warn(flow, 'Source IP blank/0.0.0.0 → ASM (no a=source-filter)');
-      } else if (redundant && missingSsm(secSrc)) {
-        warn(flow, 'Backup Source IP blank/0.0.0.0 → ASM on backup leg');
-      }
+    if (missingSsm(primSrc)) {
+      warn(flow, 'Source IP blank/0.0.0.0 → ASM (no a=source-filter). Fill Source IP primary or source map for SSM.');
+    } else if (redundant && missingSsm(secSrc)) {
+      warn(flow, 'Backup Source IP blank/0.0.0.0 → ASM on backup leg. Fill Source IP secondary or source map.');
     }
 
     const legs = [{ mcast: primary.mcast, source: primSrc }];
