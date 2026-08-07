@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Bulk (`*.txt`) instead of `.sdp`. Button label: **Download .txt**.
 
 ### Changed
+- **SDP one-pager FAQ always visible (2026-08-06).** Call-ready: preset / ST 2022-7 / source IP / Magnum `.txt` import — no disclosure click.
+
 - **UI polish + black / neon theme (2026-08-06).** Pure black background, neon green
   accent (`#39ff14`), brighter text, sky SDR banner (no muddy greys). Stable VPID↔SDP
   header (no layout jump). Larger tool tabs; removed Try one / Import-ready pills /
