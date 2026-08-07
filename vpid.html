@@ -129,15 +129,16 @@
     border-radius: 14px;
     margin-bottom: 20px;
     overflow: hidden;
+    cursor: text;
     box-shadow:
       0 0 0 1px rgba(57, 255, 20, 0.22),
       0 18px 50px rgba(0, 0, 0, 0.35);
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
   .hex-input-wrap:focus-within {
-    border-color: rgba(57, 255, 20, 0.32);
+    border-color: rgba(57, 255, 20, 0.45);
     box-shadow:
-      0 0 0 1px rgba(57, 255, 20, 0.32),
+      0 0 0 2px rgba(57, 255, 20, 0.35),
       0 0 40px rgba(57, 255, 20, 0.22),
       0 18px 50px rgba(0, 0, 0, 0.35);
   }
@@ -146,21 +147,27 @@
   }
   .hex-input-label {
     font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
-    color: var(--text-faint); font-weight: 600; margin-bottom: 8px;
+    color: var(--accent); font-weight: 700; margin-bottom: 8px;
   }
+  .hex-input-label .muted { color: var(--text-dim); font-weight: 600; text-transform: none; letter-spacing: 0; }
   .hex-input {
     width: 100%;
     background: transparent;
     border: none;
+    border-bottom: 1px dashed rgba(57, 255, 20, 0.35);
+    border-radius: 0;
     outline: none;
     color: var(--accent);
+    caret-color: var(--accent);
+    cursor: text;
     font-family: 'JetBrains Mono', ui-monospace, monospace;
     font-size: 34px;
     font-weight: 700;
     letter-spacing: 0.12em;
     text-shadow: 0 0 28px rgba(57, 255, 20, 0.28);
+    padding: 4px 0 10px;
   }
-  .hex-input::placeholder { color: var(--text-faint); font-weight: 400; }
+  .hex-input::placeholder { color: var(--text-dim); font-weight: 500; letter-spacing: 0.06em; opacity: 0.85; }
 
   .input-toolbar {
     display: flex;
@@ -918,16 +925,18 @@
     </div>
   </div>
 
-  <div class="hex-input-wrap">
+  <div class="hex-input-wrap" id="hexInputWrap" title="Click and type a VPID">
     <div class="hex-input-body">
-      <div class="hex-input-label">Enter VPID (4 bytes, hex)</div>
+      <div class="hex-input-label">Type VPID here <span class="muted">· 4 bytes hex</span></div>
       <input
         id="hexInput"
         class="hex-input mono"
         type="text"
         spellcheck="false"
         autocomplete="off"
-        placeholder="89 CA 80 01"
+        autofocus
+        aria-label="Type VPID hex here"
+        placeholder="Type here — e.g. 89 CA 80 01"
         maxlength="11"
       >
     </div>
@@ -9858,6 +9867,29 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   handleHexChange();
 
+  function focusVpidInput() {
+    const el = $('#hexInput');
+    if (!el || document.body.classList.contains('show-sdp')) return;
+    try {
+      el.focus({ preventScroll: true });
+      el.select();
+    } catch (_) {
+      el.focus();
+      el.select();
+    }
+  }
+  // Land the caret in the field so it reads as editable, not a static badge.
+  focusVpidInput();
+  setTimeout(focusVpidInput, 0);
+  window.__focusVpidInput = focusVpidInput;
+  const wrap = document.getElementById('hexInputWrap');
+  if (wrap) {
+    wrap.addEventListener('click', (e) => {
+      if (e.target.closest('button')) return;
+      focusVpidInput();
+    });
+  }
+
   // Run self-test, log to console
   const failures = runSelfTest();
   if (failures.length === 0) {
@@ -9885,6 +9917,9 @@ window.VPID = { decodeVpidBytes, VPID_LAYOUTS, parseHex, formatHexBytes, COMMON_
     document.title = sdp
       ? 'ST 2110 SDP Generator — VPID Calculator'
       : 'VPID Calculator — SMPTE ST 352 Decoder & Encoder';
+    if (!sdp && typeof window.__focusVpidInput === 'function') {
+      setTimeout(window.__focusVpidInput, 0);
+    }
   }
   function fromHash() {
     var h = (location.hash || '#vpid').replace(/^#/, '').toLowerCase();
