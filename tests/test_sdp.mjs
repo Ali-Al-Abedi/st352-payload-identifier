@@ -549,11 +549,82 @@ test('source map wins over global source override', () => {
     'BE-106_IPG,BE-106_IPG_E106A01-VID-INPUT-1,ENET-1,ANC,,238.0.139.118,1234,,10.0,False',
     'OTHER_DEV,OTHER_DEV-VID-INPUT-1,ENET-1,ANC,,238.0.140.10,1234,,10.0,False',
   ].join('\n') + '\n';
-  const { specs } = encapToSpecs(csv, { sourceMap: map, sourcePrimary: '10.5.5.5' });
+  const opts = { sourceMap: map, sourcePrimary: '10.5.5.5' };
+  const { specs } = encapToSpecs(csv, opts);
   const mapped = specs.find((s) => s.sessionName.startsWith('BE-106'));
   const fallback = specs.find((s) => s.sessionName.startsWith('OTHER_DEV'));
   assert.ok(buildSdpLines(mapped).includes('a=source-filter: incl IN IP4 238.0.139.118 10.9.9.1'));
   assert.ok(buildSdpLines(fallback).includes('a=source-filter: incl IN IP4 238.0.140.10 10.5.5.5'));
+  // packageSpecs re-runs applyBulkOverrides — map must still win.
+  const mappedAgain = applyBulkOverrides(mapped, opts);
+  const fallbackAgain = applyBulkOverrides(fallback, opts);
+  assert.ok(buildSdpLines(mappedAgain).includes('a=source-filter: incl IN IP4 238.0.139.118 10.9.9.1'));
+  assert.ok(buildSdpLines(fallbackAgain).includes('a=source-filter: incl IN IP4 238.0.140.10 10.5.5.5'));
+});
+
+test('More options Source IP overrides CSV Source IP', () => {
+  const csv = [
+    'Device,Media Port,Ethernet,Stream Type,Stream Index,Destination IP,Destination Port,Source IP,Bitrate (Mbps),Backup',
+    'DEV,VID-1,ENET-1,Video,,238.0.140.11,1234,10.198.32.16,3000.0,False',
+    'DEV,VID-1,ENET-2,Video,,238.0.140.12,1234,10.198.64.16,3000.0,True',
+  ].join('\n') + '\n';
+  const opts = {
+    pairLegs: true,
+    sourcePrimary: '1.2.3.4',
+    sourceSecondary: '5.6.7.8',
+    videoPreset: '1080p5994',
+    originUser: 'Evertz',
+    originIp: '10.1.1.1',
+    gmid: '00-02-C5-FF-FE-2E-43-75',
+    ptpDomain: 100,
+  };
+  const { specs } = encapToSpecs(csv, opts);
+  const packed = applyBulkOverrides(specs[0], opts);
+  assert.ok(buildSdpLines(packed).includes('a=source-filter: incl IN IP4 238.0.140.11 1.2.3.4'));
+  assert.ok(buildSdpLines(packed).includes('a=source-filter: incl IN IP4 238.0.140.12 5.6.7.8'));
+});
+
+test('backup-only keep uses primary Source IP when secondary blank', () => {
+  const csv = [
+    'Device,Media Port,Ethernet,Stream Type,Stream Index,Destination IP,Destination Port,Source IP,Bitrate (Mbps),Backup',
+    'DEV,VID-1,ENET-1,Video,,,1234,,3000.0,False',
+    'DEV,VID-1,ENET-2,Video,,238.0.139.117,1234,,3000.0,True',
+  ].join('\n') + '\n';
+  const opts = {
+    sourcePrimary: '1.2.3.4',
+    sourceSecondary: '',
+    videoPreset: '1080p5994',
+    originUser: 'Evertz',
+    originIp: '10.1.1.1',
+    gmid: '00-02-C5-FF-FE-2E-43-75',
+    ptpDomain: 100,
+    pairLegs: true,
+  };
+  const { specs } = encapToSpecs(csv, opts);
+  assert.equal(specs.length, 1);
+  assert.equal(specs[0].legRole, 'backup');
+  const packed = applyBulkOverrides(specs[0], opts);
+  assert.equal(packed.legs[0].source, '1.2.3.4');
+  assert.ok(buildSdpLines(packed).includes(
+    'a=source-filter: incl IN IP4 238.0.139.117 1.2.3.4',
+  ));
+});
+
+test('videoPreset HLG TCS survives encap defaults (no explicit videoTcs)', () => {
+  const csv = [
+    'Device,Media Port,Ethernet,Stream Type,Stream Index,Destination IP,Destination Port,Source IP,Bitrate (Mbps),Backup',
+    'DEV,VID-1,ENET-1,Video,,238.0.140.11,1234,10.1.1.1,3000.0,False',
+  ].join('\n') + '\n';
+  const { specs } = encapToSpecs(csv, {
+    videoPreset: '1080p5994hlg',
+    originUser: 'Evertz',
+    originIp: '10.1.1.1',
+    gmid: '00-02-C5-FF-FE-2E-43-75',
+    ptpDomain: 100,
+    pairLegs: false,
+  });
+  assert.equal(specs[0].video.tcs, 'HLG');
+  assert.equal(specs[0].video.colorimetry, 'BT2020');
 });
 
 test('encap blank source warns ASM and still exports', () => {

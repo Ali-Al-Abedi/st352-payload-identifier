@@ -512,20 +512,31 @@ export function applyBulkOverrides(rawSpec, options = {}) {
   if (o.port !== undefined && o.port !== '') spec.port = Number(o.port);
 
   if (o.sourcePrimary || o.sourceSecondary) {
-    // Single-path backup files only have legs[0] — do not stamp sourcePrimary on them.
-    if (spec.redundant) {
-      if (spec.legs[0] && o.sourcePrimary) {
+    // sourceMap already applied in encapToSpecs — do not let globals clobber it
+    // on the packageSpecs → applyBulkOverrides path.
+    const device = (spec.nameCtx && spec.nameCtx.device) || '';
+    const mapHit = !!(o.sourceMap && device && o.sourceMap[device]);
+    if (!mapHit) {
+      // Single-path backup files only have legs[0] — do not stamp sourcePrimary on them.
+      if (spec.redundant) {
+        if (spec.legs[0] && o.sourcePrimary) {
+          spec.legs[0] = { ...spec.legs[0], source: o.sourcePrimary };
+        }
+        if (spec.legs[1] && o.sourceSecondary) {
+          spec.legs[1] = { ...spec.legs[1], source: o.sourceSecondary };
+        }
+      } else if (spec.legRole === 'backup') {
+        if (spec.legs[0]) {
+          if (o.sourceSecondary) {
+            spec.legs[0] = { ...spec.legs[0], source: o.sourceSecondary };
+          } else if (o.sourcePrimary && !hasSource(spec.legs[0])) {
+            // Backup-only keep + operator filled only "Source IP — primary".
+            spec.legs[0] = { ...spec.legs[0], source: o.sourcePrimary };
+          }
+        }
+      } else if (spec.legs[0] && o.sourcePrimary) {
         spec.legs[0] = { ...spec.legs[0], source: o.sourcePrimary };
       }
-      if (spec.legs[1] && o.sourceSecondary) {
-        spec.legs[1] = { ...spec.legs[1], source: o.sourceSecondary };
-      }
-    } else if (spec.legRole === 'backup') {
-      if (spec.legs[0] && o.sourceSecondary) {
-        spec.legs[0] = { ...spec.legs[0], source: o.sourceSecondary };
-      }
-    } else if (spec.legs[0] && o.sourcePrimary) {
-      spec.legs[0] = { ...spec.legs[0], source: o.sourcePrimary };
     }
   }
 
@@ -777,8 +788,9 @@ export const ENCAP_IMPORT_DEFAULTS = {
   videoTp: '2110TPN',
   videoSampling: 'YCbCr-4:2:2',
   videoDepth: 10,
-  videoTcs: 'SDR',
-  videoColorimetry: 'BT709',
+  // Blank → keep videoPreset TCS/colorimetry (do not clobber HLG/PQ with SDR/BT709).
+  videoTcs: '',
+  videoColorimetry: '',
   videoSsn: 'ST2110-20:2017',
   videoDialect: 'evertz',
   // Encap video uses Evertz DUP labels unless the user overrides both.
@@ -959,8 +971,8 @@ export function encapToSpecs(text, options = {}) {
   const specs = [];
   for (const g of groups.values()) {
     const flow = flowKey(g.device, g.mport, g.type, g.sidx);
-    if (!g.device) warn(flow, 'Device blank — weak session name.');
-    if (!g.mport) warn(flow, 'Media Port blank — weak session name.');
+    if (!g.device) warn(flow, 'Device blank — session name may be empty (file fails validation).');
+    if (!g.mport) warn(flow, 'Media Port blank — session name empty; file not in ZIP (s= required).');
 
     const keptLeg = g.primary || g.secondary;
     if (!keptLeg) {

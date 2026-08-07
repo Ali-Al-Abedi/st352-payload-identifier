@@ -56,6 +56,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **pairLegs off + dual Source IP (2026-08-07).** Unpaired primary/backup single-path
   SDPs no longer both get `sourcePrimary` SSM. Backup file uses `sourceSecondary`
   (`legRole` on the spec; `applyBulkOverrides` respects it).
+- **G2G Bulk source precedence (2026-08-07).** `sourceMap` survives `packageSpecs` →
+  `applyBulkOverrides` (globals no longer clobber map). Backup-only keep uses primary
+  Source IP when secondary blank. Hint matches real precedence (filled overrides CSV).
+  Blank encap `videoTcs`/`videoColorimetry` defaults so HLG/PQ presets are not forced to
+  SDR/BT709. Blank Media Port warn says file not in ZIP.
 - **CI VPID self-test (2026-08-06).** Guard `window.copyToClipboard` for Node extract —
   bare `window.` assignment crashed the GitHub Actions self-test (`window is not defined`).
 
