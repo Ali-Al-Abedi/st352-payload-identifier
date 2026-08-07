@@ -605,7 +605,8 @@ test('cleared backup multicast warns but file still exported', () => {
   assert.match(w.message, /backup: Destination IP blank/);
   assert.match(w.message, /Still exported as single-path/);
   assert.deepEqual(w.exported, ['238.1.1.116_1234.txt']);
-  assert.deepEqual(w.skipped, ['(backup — Destination IP blank)']);
+  assert.match(w.skipped[0], /backup Destination IP blank in CSV/);
+  assert.match(w.skipped[0], /238\.1\.1\.116/);
 });
 
 test('cleared primary with valid backup still exports one file', () => {
@@ -622,8 +623,10 @@ test('cleared primary with valid backup still exports one file', () => {
   assert.ok(w);
   assert.match(w.message, /primary: Destination IP blank/);
   assert.match(w.message, /from the backup leg/);
+  assert.match(w.message, /SDP\/ZIP multicast 238\.0\.139\.112/);
   assert.deepEqual(w.exported, ['238.0.139.112_1234.txt']);
-  assert.deepEqual(w.skipped, ['(primary — Destination IP blank)']);
+  assert.match(w.skipped[0], /primary Destination IP blank in CSV/);
+  assert.match(w.skipped[0], /238\.0\.139\.112/);
 });
 
 test('blanked primary port names skipped multicast file', () => {

@@ -860,9 +860,17 @@ export function encapToSpecs(text, options = {}) {
   const flowKey = (device, mport, type, sidx) =>
     `${device || '(no device)'}|${mport || '(no media port)'}|${type}|${sidx || ''}`;
   const formatDrops = (drops) => drops.map((d) => `${d.leg}: ${d.why}`).join('; ');
-  const dropFileLabel = (drop, fallbackPort) => {
+  const dropFileLabel = (drop, fallbackPort, pairPartnerMcast) => {
     if (drop.mcast && isMulticastV4(drop.mcast)) {
       return filenameForMcastPort(drop.mcast, fallbackPort || 1234);
+    }
+    if (drop.mcast) {
+      // Non-multicast / junk still named so Skipped is searchable.
+      return `${drop.mcast} (${drop.why})`;
+    }
+    // Cleared cell — address is gone from the CSV; name the surviving SDP multicast.
+    if (pairPartnerMcast) {
+      return `${drop.leg} Destination IP blank in CSV (cleared — unknown). SDP/ZIP kept pair partner: ${pairPartnerMcast}`;
     }
     return `(${drop.leg} — ${drop.why})`;
   };
@@ -908,7 +916,8 @@ export function encapToSpecs(text, options = {}) {
       const why = !mcast
         ? 'Destination IP blank'
         : `Destination IP "${mcast}" is not a multicast (need 224.0.0.0–239.255.255.255)`;
-      g.drops.push({ leg: legName, why, mcast: '', portHint: col(r, 'destination port') });
+      // Keep any non-empty cell text so Skipped can still name what was rejected.
+      g.drops.push({ leg: legName, why, mcast: mcast || '', portHint: col(r, 'destination port') });
       continue;
     }
 
@@ -956,7 +965,7 @@ export function encapToSpecs(text, options = {}) {
         {
           exported: [],
           skipped: g.drops.length
-            ? g.drops.map((d) => dropFileLabel(d, g.port || 1234))
+            ? g.drops.map((d) => dropFileLabel(d, g.port || 1234, ''))
             : ['(no usable multicast)'],
         },
       );
@@ -972,27 +981,32 @@ export function encapToSpecs(text, options = {}) {
     if (redundant) legsEarly.push({ mcast: g.secondary.mcast, source: secSrcEarly });
     const draftSpec = { type: g.type, redundant, port: g.port || 1234, legs: legsEarly };
     const exportedFiles = exportFilenames(draftSpec);
-    const skippedFiles = g.drops.map((d) => dropFileLabel(d, g.port || 1234));
+    const keptMcast = primary.mcast;
+    const skippedFiles = g.drops.map((d) => dropFileLabel(d, g.port || 1234, keptMcast));
 
     if (o.pairLegs && !(g.primary && g.secondary)) {
       if (g.drops.length) {
         const kept = g.primary ? 'primary' : 'backup';
         warn(
           flow,
-          `ST 2022-7 pair incomplete — ${formatDrops(g.drops)}. Still exported as single-path from the ${kept} leg. Restore the missing Destination IP/Port, or uncheck Pair primary/backup legs.`,
+          `ST 2022-7 pair incomplete — ${formatDrops(g.drops)}. Still exported as single-path from the ${kept} leg (SDP/ZIP multicast ${keptMcast}). ` +
+          (g.drops.some((d) => !d.mcast)
+            ? 'Cleared Destination IP cannot be recovered from the CSV — restore the blank cell from Magnum/undo to see the missing multicast name. '
+            : '') +
+          'Restore the missing Destination IP/Port, or uncheck Pair primary/backup legs.',
           { exported: exportedFiles, skipped: skippedFiles },
         );
       } else if (!g.primary && g.secondary) {
         warn(
           flow,
-          'ST 2022-7 pairing on but primary leg missing from CSV (only backup present) — still exported as single-path. Add Backup=False row or uncheck Pair legs.',
-          { exported: exportedFiles, skipped: ['(primary leg missing from CSV)'] },
+          `ST 2022-7 pairing on but primary leg missing from CSV (only backup present) — still exported as single-path (SDP/ZIP multicast ${keptMcast}). Add Backup=False row or uncheck Pair legs.`,
+          { exported: exportedFiles, skipped: [`(primary leg missing from CSV; SDP kept ${keptMcast})`] },
         );
       } else {
         warn(
           flow,
-          'ST 2022-7 pairing on but backup leg not in CSV — still exported as single-path. Add Backup=True row with multicast, or uncheck Pair primary/backup legs.',
-          { exported: exportedFiles, skipped: ['(backup leg missing from CSV)'] },
+          `ST 2022-7 pairing on but backup leg not in CSV — still exported as single-path (SDP/ZIP multicast ${keptMcast}). Add Backup=True row with multicast, or uncheck Pair primary/backup legs.`,
+          { exported: exportedFiles, skipped: [`(backup leg missing from CSV; SDP kept ${keptMcast})`] },
         );
       }
     }

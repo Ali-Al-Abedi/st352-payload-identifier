@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `{mcast}_{port}.txt` is written vs which multicast name is omitted (e.g. blanked port).
 - **Bulk Generate completion feedback (2026-08-07).** Banner “Generate complete — N files…”,
   Generate button flashes Done, Download ZIP shows file count.
+- **Blank Destination IP Skipped text (2026-08-07).** Cleared multicast cannot be recovered
+  from the CSV; Skipped names the surviving SDP/ZIP pair-partner multicast instead.
 
 ### Fixed
 - **CI VPID self-test (2026-08-06).** Guard `window.copyToClipboard` for Node extract —
