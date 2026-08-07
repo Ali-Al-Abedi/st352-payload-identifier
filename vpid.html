@@ -416,6 +416,19 @@
   }
   .spec-warning { color: var(--warn); }
   .spec-error { color: var(--err); }
+  .vpid-warnings {
+    margin: 8px 0 12px; padding: 8px 10px;
+    border: 1px solid rgba(245, 158, 11, 0.45);
+    background: rgba(245, 158, 11, 0.08);
+    border-radius: 8px; color: var(--warn);
+    font-size: 12px; line-height: 1.4;
+  }
+  .vpid-warnings strong { display: block; margin-bottom: 4px; color: var(--warn); }
+  .vpid-warnings ul { margin: 0; padding-left: 1.15em; }
+  .vpid-warnings li { margin: 2px 0; }
+  .badge.warn-badge {
+    background: rgba(245, 158, 11, 0.18); color: var(--warn); border-color: rgba(245, 158, 11, 0.5);
+  }
 
   /* Collapsible ST 2110-20 SDP fmtp panel inside the Decoded Source card */
   .sdp-details {
@@ -982,6 +995,7 @@
         </div>
         <div id="friendlyLabel" class="friendly-label">—</div>
         <div id="standardLine" class="standard-line"></div>
+        <div id="vpidWarnings" class="vpid-warnings" hidden></div>
         <div class="spec-grid" id="specGrid"></div>
         <details id="sdpDetails" class="sdp-details">
           <summary>ST 2110-20 SDP <code>a=fmtp</code> (RFC 4175 + ST 2110-20)</summary>
@@ -3896,13 +3910,13 @@ const VPID_LAYOUTS = {
       const b4_b3   = (b4 >> 3) & 1;
       const audCpy = (b4 >> 2) & 1;
       const depth = b4 & 0x3;
-      fields.push({ byte: 4, bits: "b7:b5", name: "Link assignment", value: link === 0 ? "Single link 12G-SDI" : `Reserved (${link.toString(16)}h)`, source: "ST 2082-10 §4.3.4" });
+      fields.push({ byte: 4, bits: "b7:b5", name: "Link assignment", value: link === 0 ? "Single link 12G-SDI" : `Reserved (${link.toString(16)}h)`, source: "ST 2082-10 §4.3.4", flag: link !== 0 ? "warn" : null });
       fields.push({ byte: 4, bits: "b4",    name: "Luma/Color signal", value: lumIctcp ? "ICtCp" : "Y'CbCr",       source: "ST 2082-10 §4.3.4" });
-      fields.push({ byte: 4, bits: "b3",    name: "Reserved",          value: b4_b3 === 0 ? "0 (correct)" : "1 (must be 0)", source: "ST 2082-10 §4.3.4" });
+      fields.push({ byte: 4, bits: "b3",    name: "Reserved",          value: b4_b3 === 0 ? "0 (correct)" : "1 (must be 0)", source: "ST 2082-10 §4.3.4", flag: b4_b3 !== 0 ? "warn" : null });
       fields.push({ byte: 4, bits: "b2",    name: "Audio copy (DS 3-8)", value: audCpy ? "Copied" : "Additional",  source: "ST 2082-10 §4.3.4" });
       fields.push({ byte: 4, bits: "b1:b0", name: "Bit depth",         value: BIT_DEPTH_2BIT_FULL[depth],          source: "ST 2082-10 §4.3.4" });
-      if (link !== 0)  warnings.push(`Byte 4 b7:b5 = ${link.toString(16)}h is Reserved per ST 2082-10 §4.3.4/§5.8.4 (only 0h = "Single link 12G-SDI" is defined; other values are reserved).`);
-      if (b4_b3 !== 0) warnings.push("Byte 4 b3 is Reserved per ST 2082-10 §4.3.4/§5.8.4 (must be 0).");
+      if (link !== 0)  warnings.push(`Byte 4 b7:b5 = ${link.toString(16)}h reserved (only 0h = single-link).`);
+      if (b4_b3 !== 0) warnings.push("Byte 4 b3 reserved — must be 0.");
       const hpix  = hSamp ? 4096 : 3840;
       return {
         fields, warnings,
@@ -7831,6 +7845,44 @@ function render(decoded) {
     $('#standardLine').innerHTML = `<code>${r.description}</code> — defined by <code>${r.standard}</code> ${statusBadge}`;
   } else {
     $('#standardLine').innerHTML = `<span class="invalid-state">${decoded.error || "Decode failed."}</span>`;
+  }
+
+  // Spec warnings (reserved/invalid bits) — decoder already collects these; show them.
+  const warnBox = $('#vpidWarnings');
+  const warns = Array.isArray(decoded.warnings) ? decoded.warnings.filter(Boolean) : [];
+  if (warnBox) {
+    warnBox.replaceChildren();
+    if (warns.length) {
+      const title = document.createElement('strong');
+      title.textContent = `Spec warnings (${warns.length}) — decodes, but not fully compliant`;
+      const ul = document.createElement('ul');
+      for (const w of warns) {
+        const li = document.createElement('li');
+        li.textContent = w;
+        ul.appendChild(li);
+      }
+      warnBox.appendChild(title);
+      warnBox.appendChild(ul);
+      warnBox.hidden = false;
+    } else {
+      warnBox.hidden = true;
+    }
+  }
+  const hdrMini = $('#hdrBadgeMini');
+  if (hdrMini && warns.length && decoded.valid) {
+    // Keep HDR badge text; add a sibling warn badge if missing.
+    let warnBadge = document.getElementById('vpidWarnBadge');
+    if (!warnBadge) {
+      warnBadge = document.createElement('span');
+      warnBadge.id = 'vpidWarnBadge';
+      warnBadge.className = 'badge warn-badge';
+      hdrMini.insertAdjacentElement('afterend', warnBadge);
+    }
+    warnBadge.textContent = `WARN ${warns.length}`;
+    warnBadge.hidden = false;
+  } else {
+    const warnBadge = document.getElementById('vpidWarnBadge');
+    if (warnBadge) warnBadge.hidden = true;
   }
 
   // HDR banner — full-width strip at the top of the card. Label + colour

@@ -38,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to `00 00 00 00` / first family; as soon as Byte 1 is typed, the family dropdown matches.
 - **Bulk: Video preset under More options (2026-08-07).** Same for 2022-7 pair toggle — all apply
   on Generate.
+- **Show VPID spec warnings in UI (2026-08-07).** Decoder already flagged reserved/invalid bits;
+  Decoded Source now shows a WARN banner + amber field values (e.g. `CE DA E0 99`).
 - **Blank Destination IP Skipped text (2026-08-07).** Cleared multicast cannot be recovered
   from the CSV; Skipped names the surviving SDP/ZIP pair-partner multicast instead.
 - **Text hierarchy colors (2026-08-07).** Descriptions/FAQ use cool slate; settings labels
