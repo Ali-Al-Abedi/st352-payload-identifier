@@ -54,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Bulk Generate under More options (2026-08-07).** Button lives with the options it
-  applies; Download ZIP stays outside. Section open by default.
+  applies; Download ZIP stays outside. More options collapsed by default.
 
 ### Fixed
 - **pairLegs off + dual Source IP (2026-08-07).** Unpaired primary/backup single-path
