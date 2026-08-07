@@ -914,7 +914,7 @@
   <div class="tool-hero">
     <div>
       <h2>ST 352 Payload Identifier</h2>
-      <p>Paste a 4-byte VPID, pick a quick-start chip, or build one bit-by-bit. Decodes SDI rate, HDR, and colorimetry instantly — copy, export, or share a link.</p>
+      <p>Decode or build a 4-byte ST 352 VPID.</p>
     </div>
   </div>
 
@@ -1137,21 +1137,21 @@ Example:
   <div class="tool-hero">
     <div>
       <h2>Magnum-import ST 2110 SDPs</h2>
-      <p>Build one essence file or a bulk ZIP from an encap CSV. Video presets match the VPID chips and fill <code>a=fmtp</code> — edit anything, then download and import into Magnum.</p>
+      <p>Single SDP or Bulk ZIP from a Magnum encap CSV.</p>
     </div>
   </div>
 
   <section class="faq" aria-label="SDP one-pager FAQ">
-    <h3>One-pager FAQ</h3>
+    <h3>FAQ</h3>
     <dl>
       <dt>Video preset</dt>
-      <dd>Picks a known picture format (e.g. 1080p59.94 HLG Rec.2020) and fills width, height, rate, sampling, depth, TCS, colorimetry. Every field stays editable after.</dd>
-      <dt>ST 2022-7 primary + backup legs</dt>
-      <dd>On = one file with both redundant multicast paths (<code>a=group:DUP</code>). Off = single-path SDP.</dd>
+      <dd>Fills fmtp (size/rate/HDR). Editable after.</dd>
+      <dt>ST 2022-7</dt>
+      <dd>On = both legs in one SDP. Off = single-path.</dd>
       <dt>Source IP</dt>
-      <dd>Optional SSM join (<code>a=source-filter</code>). Blank / <code>0.0.0.0</code> exports as ASM (still ready) with a Bulk warning — fill Source IP primary/secondary or a source-map CSV to add SSM. Never skipped for missing source.</dd>
+      <dd>Optional SSM. Blank / <code>0.0.0.0</code> = ASM.</dd>
       <dt>Magnum import</dt>
-      <dd>Download as <code>.txt</code> (Single) or a ZIP of <code>{multicast}_{port}.txt</code> (Bulk). ST 2022-7 pairs produce <strong>two identical</strong> files named for primary and backup multicast. Prove one Magnum import before demos.</dd>
+      <dd><code>.txt</code> or ZIP of <code>{mcast}_{port}.txt</code>. 2022-7 → two identical files (primary + backup names).</dd>
     </dl>
   </section>
 
@@ -1192,7 +1192,7 @@ Example:
               <option value="2160p5994pq">2160p59.94 PQ Rec.2020 — CE EA A0 01</option>
               <option value="custom">Custom</option>
             </select>
-            <div class="hint">Fills the fmtp fields below from a known format — edit anything afterward.</div>
+            <div class="hint">Fills fmtp — edit after.</div>
           </div>
           <div class="row-3">
             <div class="field"><label>Width</label><input id="videoWidth" type="number" class="video-field"></div>
@@ -1235,7 +1235,7 @@ Example:
           <div class="field">
             <label>DID_SDID pairs (optional)</label>
             <input id="ancDidSdid" placeholder="0x61/0x02|0x41/0x05">
-            <div class="hint">Pipe-separated DID/SDID pairs. Provide VPID_Code and/or at least one pair.</div>
+            <div class="hint">Pipe-separated DID/SDID. Need VPID_Code and/or ≥1 pair.</div>
           </div>
         </div>
 
@@ -1295,7 +1295,7 @@ Example:
   <section id="tab-bulk" class="hidden">
     <div class="card">
       <h2>Bulk generate from CSV</h2>
-      <p class="hint" style="margin-bottom:12px">Upload a <strong>device encap CSV</strong> — not a single IP. Output is a ZIP of Magnum-import <code>.txt</code> SDPs named <code>{multicast}_{port}.txt</code>. For one multicast only, use the <strong>Single</strong> tab.</p>
+      <p class="hint" style="margin-bottom:12px">Upload encap CSV → ZIP of <code>{mcast}_{port}.txt</code>. One flow? Use <strong>Single</strong>.</p>
 
       <div class="field">
         <label>CSV file</label>
@@ -1337,7 +1337,7 @@ Example:
             <div class="field"><label>Source IP — primary</label><input id="impSrcPrimary" placeholder="optional, for a=source-filter"></div>
             <div class="field"><label>Source IP — secondary</label><input id="impSrcSecondary" placeholder="optional"></div>
           </div>
-          <div class="hint">Leave blank for ASM (no source-filter). If the CSV has Source IP columns, those win.</div>
+          <div class="hint">Blank = ASM. CSV Source IP wins if present.</div>
         </div>
       </details>
 
@@ -10759,15 +10759,9 @@ function encapToSpecs(text, options = {}) {
     if (drop.mcast && isMulticastV4(drop.mcast)) {
       return filenameForMcastPort(drop.mcast, fallbackPort || 1234);
     }
-    if (drop.mcast) {
-      // Non-multicast / junk still named so Skipped is searchable.
-      return `${drop.mcast} (${drop.why})`;
-    }
-    // Cleared cell — address is gone from the CSV; name the surviving SDP multicast.
-    if (pairPartnerMcast) {
-      return `${drop.leg} Destination IP blank in CSV (cleared — unknown). SDP/ZIP kept pair partner: ${pairPartnerMcast}`;
-    }
-    return `(${drop.leg} — ${drop.why})`;
+    if (drop.mcast) return `${drop.mcast} (${drop.why})`;
+    if (pairPartnerMcast) return `${drop.leg} IP blank (kept ${pairPartnerMcast})`;
+    return `${drop.leg}: ${drop.why}`;
   };
 
   // Group legs by essence identity. Bad Destination IP/Port on one leg is recorded
@@ -10796,7 +10790,7 @@ function encapToSpecs(text, options = {}) {
       const label = stype ? `"${stype}"` : '(blank)';
       skipEssence(
         flowKey(device, mport, stype || 'unknown', sidx),
-        `Not exported — stream type ${label} is not ST 2110 video/audio/ANC`,
+        `Not exported — ${label} is not ST 2110 video/audio/ANC`,
         stype || '(blank stream type)',
       );
       continue;
@@ -10809,9 +10803,8 @@ function encapToSpecs(text, options = {}) {
     const mcast = col(r, 'destination ip');
     if (!isMulticastV4(mcast)) {
       const why = !mcast
-        ? 'Destination IP blank'
-        : `Destination IP "${mcast}" is not a multicast (need 224.0.0.0–239.255.255.255)`;
-      // Keep any non-empty cell text so Skipped can still name what was rejected.
+        ? 'IP blank'
+        : `IP "${mcast}" not multicast`;
       g.drops.push({ leg: legName, why, mcast: mcast || '', portHint: col(r, 'destination port') });
       continue;
     }
@@ -10820,16 +10813,15 @@ function encapToSpecs(text, options = {}) {
     const port = Number(portRaw);
     if (!portRaw || !Number.isInteger(port) || port < 1 || port > 65535) {
       const why = !portRaw
-        ? 'Destination Port blank'
-        : `Destination Port "${portRaw}" invalid (need integer 1–65535)`;
-      // Keep multicast so the Skipped column can name e.g. 238.0.139.121_1234.txt
+        ? 'port blank'
+        : `port "${portRaw}" invalid`;
       g.drops.push({ leg: legName, why, mcast, portHint: portRaw });
       continue;
     }
 
     if (g.port === null) g.port = port;
     else if (g.port !== port) {
-      warn(flow, `Destination Port mismatch across legs (${g.port} vs ${port}) — using ${g.port}. Make both legs match.`);
+      warn(flow, `Port mismatch (${g.port} vs ${port}) — using ${g.port}.`);
     }
 
     // A later valid row for the same leg supersedes an earlier drop on that leg.
@@ -10843,19 +10835,15 @@ function encapToSpecs(text, options = {}) {
   const specs = [];
   for (const g of groups.values()) {
     const flow = flowKey(g.device, g.mport, g.type, g.sidx);
-    if (!g.device) {
-      warn(flow, 'Device blank — session name / filenames may be weak. Fill the Device column.');
-    }
-    if (!g.mport) {
-      warn(flow, 'Media Port blank — session name / filenames may be weak. Fill the Media Port column.');
-    }
+    if (!g.device) warn(flow, 'Device blank — weak session name.');
+    if (!g.mport) warn(flow, 'Media Port blank — weak session name.');
 
     const primary = g.primary || g.secondary;
     if (!primary) {
-      const detail = g.drops.length ? formatDrops(g.drops) : 'no primary/backup rows with a usable multicast';
+      const detail = g.drops.length ? formatDrops(g.drops) : 'no usable multicast';
       skipEssence(
         flow,
-        `Not exported — ${detail}. Fix Destination IP/Port on at least one leg.`,
+        `Not exported — ${detail}`,
         'essence not exported (no usable multicast)',
         {
           exported: [],
@@ -10868,7 +10856,6 @@ function encapToSpecs(text, options = {}) {
     }
 
     const redundant = !!(o.pairLegs && g.primary && g.secondary);
-    // Build legs early so we can name In-ZIP / Skipped files on incomplete pairs.
     const dmEarly = (o.sourceMap && o.sourceMap[g.device]) || null;
     const primSrcEarly = (dmEarly && dmEarly.primary) || o.sourcePrimary || primary.source;
     const secSrcEarly = (dmEarly && dmEarly.secondary) || o.sourceSecondary || (g.secondary && g.secondary.source) || '';
@@ -10884,41 +10871,36 @@ function encapToSpecs(text, options = {}) {
         const kept = g.primary ? 'primary' : 'backup';
         warn(
           flow,
-          `ST 2022-7 pair incomplete — ${formatDrops(g.drops)}. Still exported as single-path from the ${kept} leg (SDP/ZIP multicast ${keptMcast}). ` +
-          (g.drops.some((d) => !d.mcast)
-            ? 'Cleared Destination IP cannot be recovered from the CSV — restore the blank cell from Magnum/undo to see the missing multicast name. '
-            : '') +
-          'Restore the missing Destination IP/Port, or uncheck Pair primary/backup legs.',
+          `2022-7 incomplete — ${formatDrops(g.drops)}. Single-path from ${kept} (${keptMcast}).`,
           { exported: exportedFiles, skipped: skippedFiles },
         );
       } else if (!g.primary && g.secondary) {
         warn(
           flow,
-          `ST 2022-7 pairing on but primary leg missing from CSV (only backup present) — still exported as single-path (SDP/ZIP multicast ${keptMcast}). Add Backup=False row or uncheck Pair legs.`,
-          { exported: exportedFiles, skipped: [`(primary leg missing from CSV; SDP kept ${keptMcast})`] },
+          `2022-7 incomplete — primary missing. Single-path from backup (${keptMcast}).`,
+          { exported: exportedFiles, skipped: [`(primary missing; kept ${keptMcast})`] },
         );
       } else {
         warn(
           flow,
-          `ST 2022-7 pairing on but backup leg not in CSV — still exported as single-path (SDP/ZIP multicast ${keptMcast}). Add Backup=True row with multicast, or uncheck Pair primary/backup legs.`,
-          { exported: exportedFiles, skipped: [`(backup leg missing from CSV; SDP kept ${keptMcast})`] },
+          `2022-7 incomplete — backup missing. Single-path from primary (${keptMcast}).`,
+          { exported: exportedFiles, skipped: [`(backup missing; kept ${keptMcast})`] },
         );
       }
     }
 
-    // Source-filter precedence: per-device map > global override > (blank) export source.
     const dm = dmEarly;
     const primSrc = primSrcEarly;
     const secSrc = secSrcEarly;
 
     const missingSsm = (src) => !hasSource({ source: src });
     if (missingSsm(primSrc)) {
-      warn(flow, 'Source IP blank/0.0.0.0 → ASM (no a=source-filter). Fill Source IP primary or source map for SSM.', {
+      warn(flow, 'Source blank → ASM. Fill Source IP for SSM.', {
         exported: exportedFiles,
         skipped: [],
       });
     } else if (redundant && missingSsm(secSrc)) {
-      warn(flow, 'Backup Source IP blank/0.0.0.0 → ASM on backup leg. Fill Source IP secondary or source map.', {
+      warn(flow, 'Backup source blank → ASM on backup.', {
         exported: exportedFiles,
         skipped: [],
       });
@@ -11374,7 +11356,7 @@ function packageSpecs(specs, results, skipped, warnings, skippedRows) {
     `<tr><td>ANC (2110-40)</td><td>${byType.anc}</td></tr>` +
     `<tr><td><strong>Total</strong></td><td><strong>${validBulk.length}</strong></td></tr>` +
     '</tbody></table>' +
-    '<div class="hint" style="margin-top:8px">ST 2022-7 pairs → two files (primary + backup multicast names) with identical SDP content. Single-path → one file.</div>';
+    '<div class="hint" style="margin-top:8px">2022-7 → two identical files (primary + backup names). Single-path → one.</div>';
 
   if (skippedRows && skippedRows.length) {
     const show = skippedRows.slice(0, 200);
@@ -11384,7 +11366,7 @@ function packageSpecs(specs, results, skipped, warnings, skippedRows) {
       return `<tr><td class="badge-err">${esc(s.flow || '')}</td><td>${exp}</td><td class="badge-err">${sk}</td><td>${esc(s.message)}</td></tr>`;
     }).join('');
     html += `<h2 style="margin-top:16px">Not in ZIP (${skippedRows.length}${skippedRows.length > show.length ? `, showing first ${show.length}` : ''})</h2>` +
-      `<div class="hint">No file written for these essences.</div>` +
+      `<div class="hint">No file written.</div>` +
       `<table><thead><tr><th>Flow</th><th>In ZIP</th><th>Skipped</th><th>Why</th></tr></thead><tbody>${rows}</tbody></table>`;
   } else if (skipped && Object.keys(skipped).length) {
     const rows = Object.entries(skipped).sort((a, b) => b[1] - a[1])
@@ -11400,7 +11382,7 @@ function packageSpecs(specs, results, skipped, warnings, skippedRows) {
       return `<tr><td class="badge-warn">${esc(w.flow || '')}</td><td>${exp}</td><td class="badge-err">${sk}</td><td>${esc(w.message)}</td></tr>`;
     }).join('');
     html += `<h2 style="margin-top:16px">Warnings — still in ZIP (${warnings.length}${warnings.length > show.length ? `, showing first ${show.length}` : ''})</h2>` +
-      `<div class="hint"><strong>In ZIP</strong> = filename(s) written. <strong>Skipped</strong> = multicast name that will NOT appear (usually the broken leg).</div>` +
+      `<div class="hint"><strong>In ZIP</strong> = written. <strong>Skipped</strong> = not written.</div>` +
       `<table><thead><tr><th>Flow</th><th>In ZIP</th><th>Skipped</th><th>What to do</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
   if (errorSamples.length) {
@@ -11444,7 +11426,7 @@ function runBulk() {
   validBulk = [];
   $('zipBtn').textContent = 'Download ZIP';
   if (!text.trim()) {
-    setBulkSummary('Upload a full device encap CSV first (not a single IP).', 'err');
+    setBulkSummary('Upload an encap CSV first.', 'err');
     $('zipBtn').disabled = true;
     return;
   }
@@ -11458,7 +11440,7 @@ function runBulk() {
   const looksLikeIpOnly = rows.length === 1 && header.length === 1 && /^\d{1,3}(\.\d{1,3}){3}$/.test(firstCell);
   if (looksLikeIpOnly) {
     setBulkSummary(
-      'That is a single IP (' + firstCell + '), not a CSV. Bulk needs a device encap export (header + rows). For one multicast, switch to Single and enter it under Primary multicast.',
+      'Single IP — not a CSV. Use Bulk with an encap export, or Single for one multicast.',
       'err',
     );
     $('zipBtn').disabled = true;
@@ -11475,11 +11457,11 @@ function runBulk() {
     const warnN = (out.warnings || []).length;
     const kind = valid === 0 ? 'err' : (warnN || notExported ? 'warn' : 'ok');
     setBulkSummary(
-      `Generate complete — ${valid} file${valid === 1 ? '' : 's'} ready in ZIP` +
+      `Done — ${valid} in ZIP` +
       (notExported ? `, ${notExported} not exported` : '') +
-      (warnN ? `, ${warnN} warning(s) (still in ZIP)` : '') +
-      (valid !== out.mapped ? ` (${out.mapped} mapped, ${out.mapped - valid} failed validate)` : '') +
-      '. Click Download ZIP.',
+      (warnN ? `, ${warnN} warning(s)` : '') +
+      (valid !== out.mapped ? ` (${out.mapped - valid} invalid)` : '') +
+      '. Download ZIP.',
       kind,
     );
     if (valid > 0) flashGenerateDone();
@@ -11490,10 +11472,7 @@ function runBulk() {
   let parsed;
   try { parsed = csvToSpecs(text); } catch (err) { setBulkSummary('CSV parse error: ' + err.message, 'err'); return; }
   if (!parsed.records.length) {
-    setBulkSummary(
-      'No data rows found after the header. Upload a full CSV (encap export with Device / Media Port / Destination IP columns), not a single value.',
-      'err',
-    );
+    setBulkSummary('No data rows after header.', 'err');
     $('zipBtn').disabled = true;
     return;
   }
@@ -11501,9 +11480,9 @@ function runBulk() {
   const { valid, invalid } = packageSpecs(specs, results, null);
   const kind = valid === 0 ? 'err' : (invalid ? 'warn' : 'ok');
   setBulkSummary(
-    `Generate complete — ${valid}/${parsed.records.length} rows valid (${valid} file${valid === 1 ? '' : 's'} in ZIP)` +
+    `Done — ${valid}/${parsed.records.length} valid` +
     (invalid ? `, ${invalid} invalid` : '') +
-    '. Click Download ZIP.',
+    '. Download ZIP.',
     kind,
   );
   if (valid > 0) flashGenerateDone();

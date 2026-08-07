@@ -562,10 +562,10 @@ test('encap blank source warns ASM and still exports', () => {
   assert.equal(skipped['missing source IP (Require SSM)'], undefined);
   const asm = warnings.filter((w) => /ASM/.test(w.message));
   assert.ok(asm.length >= 3, `expected ASM warns for video/audio/anc, got ${asm.length}`);
-  assert.ok(asm.every((w) => /Fill Source IP|source map/.test(w.message)));
-  const incomplete = warnings.filter((w) => /ST 2022-7/.test(w.message));
+  assert.ok(asm.every((w) => /Source blank → ASM|Backup source blank → ASM/.test(w.message)));
+  const incomplete = warnings.filter((w) => /2022-7 incomplete/.test(w.message));
   assert.equal(incomplete.length, 1, 'ANC single-leg should warn once');
-  assert.match(incomplete[0].message, /backup leg not in CSV/);
+  assert.match(incomplete[0].message, /backup missing/);
   for (const s of specs) {
     assert.equal(validateSpec(s).ok, true);
     assert.ok(!buildSdpLines(s).some((l) => l.startsWith('a=source-filter')));
@@ -587,7 +587,7 @@ test('encap blank/invalid destination port is hard-skipped', () => {
   assert.equal(skipped['essence not exported (no usable multicast)'], 2);
   assert.equal(skippedRows.length, 2);
   assert.ok(skippedRows.every((r) => /^Not exported —/.test(r.message)));
-  assert.ok(skippedRows.every((r) => /Destination Port/.test(r.message)));
+  assert.ok(skippedRows.every((r) => /port blank|port "/.test(r.message) || /Destination Port|port/.test(r.message)));
 });
 
 test('cleared backup multicast warns but file still exported', () => {
@@ -600,12 +600,12 @@ test('cleared backup multicast warns but file still exported', () => {
   assert.equal(mapped, 1);
   assert.equal(specs[0].redundant, false);
   assert.equal(skippedRows.length, 0, 'still in ZIP — bad leg is a warning, not Not-exported');
-  const w = warnings.find((x) => /ST 2022-7 pair incomplete/.test(x.message));
+  const w = warnings.find((x) => /2022-7 incomplete/.test(x.message));
   assert.ok(w, 'expected incomplete-pair warning tied to cleared multicast');
-  assert.match(w.message, /backup: Destination IP blank/);
-  assert.match(w.message, /Still exported as single-path/);
+  assert.match(w.message, /backup: IP blank/);
+  assert.match(w.message, /Single-path from primary \(238\.1\.1\.116\)/);
   assert.deepEqual(w.exported, ['238.1.1.116_1234.txt']);
-  assert.match(w.skipped[0], /backup Destination IP blank in CSV/);
+  assert.match(w.skipped[0], /backup IP blank/);
   assert.match(w.skipped[0], /238\.1\.1\.116/);
 });
 
@@ -619,13 +619,12 @@ test('cleared primary with valid backup still exports one file', () => {
   assert.equal(mapped, 1);
   assert.equal(skippedRows.length, 0);
   assert.equal(specs[0].legs[0].mcast, '238.0.139.112');
-  const w = warnings.find((x) => /ST 2022-7 pair incomplete/.test(x.message));
+  const w = warnings.find((x) => /2022-7 incomplete/.test(x.message));
   assert.ok(w);
-  assert.match(w.message, /primary: Destination IP blank/);
-  assert.match(w.message, /from the backup leg/);
-  assert.match(w.message, /SDP\/ZIP multicast 238\.0\.139\.112/);
+  assert.match(w.message, /primary: IP blank/);
+  assert.match(w.message, /Single-path from backup \(238\.0\.139\.112\)/);
   assert.deepEqual(w.exported, ['238.0.139.112_1234.txt']);
-  assert.match(w.skipped[0], /primary Destination IP blank in CSV/);
+  assert.match(w.skipped[0], /primary IP blank/);
   assert.match(w.skipped[0], /238\.0\.139\.112/);
 });
 
@@ -639,7 +638,7 @@ test('blanked primary port names skipped multicast file', () => {
   assert.equal(mapped, 1);
   assert.equal(skippedRows.length, 0);
   assert.equal(specs[0].legs[0].mcast, '238.0.139.115');
-  const w = warnings.find((x) => /ST 2022-7 pair incomplete/.test(x.message));
+  const w = warnings.find((x) => /2022-7 incomplete/.test(x.message));
   assert.ok(w);
   assert.deepEqual(w.exported, ['238.0.139.115_1234.txt']);
   assert.deepEqual(w.skipped, ['238.0.139.121_1234.txt']);

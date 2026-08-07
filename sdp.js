@@ -864,15 +864,9 @@ export function encapToSpecs(text, options = {}) {
     if (drop.mcast && isMulticastV4(drop.mcast)) {
       return filenameForMcastPort(drop.mcast, fallbackPort || 1234);
     }
-    if (drop.mcast) {
-      // Non-multicast / junk still named so Skipped is searchable.
-      return `${drop.mcast} (${drop.why})`;
-    }
-    // Cleared cell — address is gone from the CSV; name the surviving SDP multicast.
-    if (pairPartnerMcast) {
-      return `${drop.leg} Destination IP blank in CSV (cleared — unknown). SDP/ZIP kept pair partner: ${pairPartnerMcast}`;
-    }
-    return `(${drop.leg} — ${drop.why})`;
+    if (drop.mcast) return `${drop.mcast} (${drop.why})`;
+    if (pairPartnerMcast) return `${drop.leg} IP blank (kept ${pairPartnerMcast})`;
+    return `${drop.leg}: ${drop.why}`;
   };
 
   // Group legs by essence identity. Bad Destination IP/Port on one leg is recorded
@@ -901,7 +895,7 @@ export function encapToSpecs(text, options = {}) {
       const label = stype ? `"${stype}"` : '(blank)';
       skipEssence(
         flowKey(device, mport, stype || 'unknown', sidx),
-        `Not exported — stream type ${label} is not ST 2110 video/audio/ANC`,
+        `Not exported — ${label} is not ST 2110 video/audio/ANC`,
         stype || '(blank stream type)',
       );
       continue;
@@ -914,9 +908,8 @@ export function encapToSpecs(text, options = {}) {
     const mcast = col(r, 'destination ip');
     if (!isMulticastV4(mcast)) {
       const why = !mcast
-        ? 'Destination IP blank'
-        : `Destination IP "${mcast}" is not a multicast (need 224.0.0.0–239.255.255.255)`;
-      // Keep any non-empty cell text so Skipped can still name what was rejected.
+        ? 'IP blank'
+        : `IP "${mcast}" not multicast`;
       g.drops.push({ leg: legName, why, mcast: mcast || '', portHint: col(r, 'destination port') });
       continue;
     }
@@ -925,16 +918,15 @@ export function encapToSpecs(text, options = {}) {
     const port = Number(portRaw);
     if (!portRaw || !Number.isInteger(port) || port < 1 || port > 65535) {
       const why = !portRaw
-        ? 'Destination Port blank'
-        : `Destination Port "${portRaw}" invalid (need integer 1–65535)`;
-      // Keep multicast so the Skipped column can name e.g. 238.0.139.121_1234.txt
+        ? 'port blank'
+        : `port "${portRaw}" invalid`;
       g.drops.push({ leg: legName, why, mcast, portHint: portRaw });
       continue;
     }
 
     if (g.port === null) g.port = port;
     else if (g.port !== port) {
-      warn(flow, `Destination Port mismatch across legs (${g.port} vs ${port}) — using ${g.port}. Make both legs match.`);
+      warn(flow, `Port mismatch (${g.port} vs ${port}) — using ${g.port}.`);
     }
 
     // A later valid row for the same leg supersedes an earlier drop on that leg.
@@ -948,19 +940,15 @@ export function encapToSpecs(text, options = {}) {
   const specs = [];
   for (const g of groups.values()) {
     const flow = flowKey(g.device, g.mport, g.type, g.sidx);
-    if (!g.device) {
-      warn(flow, 'Device blank — session name / filenames may be weak. Fill the Device column.');
-    }
-    if (!g.mport) {
-      warn(flow, 'Media Port blank — session name / filenames may be weak. Fill the Media Port column.');
-    }
+    if (!g.device) warn(flow, 'Device blank — weak session name.');
+    if (!g.mport) warn(flow, 'Media Port blank — weak session name.');
 
     const primary = g.primary || g.secondary;
     if (!primary) {
-      const detail = g.drops.length ? formatDrops(g.drops) : 'no primary/backup rows with a usable multicast';
+      const detail = g.drops.length ? formatDrops(g.drops) : 'no usable multicast';
       skipEssence(
         flow,
-        `Not exported — ${detail}. Fix Destination IP/Port on at least one leg.`,
+        `Not exported — ${detail}`,
         'essence not exported (no usable multicast)',
         {
           exported: [],
@@ -973,7 +961,6 @@ export function encapToSpecs(text, options = {}) {
     }
 
     const redundant = !!(o.pairLegs && g.primary && g.secondary);
-    // Build legs early so we can name In-ZIP / Skipped files on incomplete pairs.
     const dmEarly = (o.sourceMap && o.sourceMap[g.device]) || null;
     const primSrcEarly = (dmEarly && dmEarly.primary) || o.sourcePrimary || primary.source;
     const secSrcEarly = (dmEarly && dmEarly.secondary) || o.sourceSecondary || (g.secondary && g.secondary.source) || '';
@@ -989,41 +976,36 @@ export function encapToSpecs(text, options = {}) {
         const kept = g.primary ? 'primary' : 'backup';
         warn(
           flow,
-          `ST 2022-7 pair incomplete — ${formatDrops(g.drops)}. Still exported as single-path from the ${kept} leg (SDP/ZIP multicast ${keptMcast}). ` +
-          (g.drops.some((d) => !d.mcast)
-            ? 'Cleared Destination IP cannot be recovered from the CSV — restore the blank cell from Magnum/undo to see the missing multicast name. '
-            : '') +
-          'Restore the missing Destination IP/Port, or uncheck Pair primary/backup legs.',
+          `2022-7 incomplete — ${formatDrops(g.drops)}. Single-path from ${kept} (${keptMcast}).`,
           { exported: exportedFiles, skipped: skippedFiles },
         );
       } else if (!g.primary && g.secondary) {
         warn(
           flow,
-          `ST 2022-7 pairing on but primary leg missing from CSV (only backup present) — still exported as single-path (SDP/ZIP multicast ${keptMcast}). Add Backup=False row or uncheck Pair legs.`,
-          { exported: exportedFiles, skipped: [`(primary leg missing from CSV; SDP kept ${keptMcast})`] },
+          `2022-7 incomplete — primary missing. Single-path from backup (${keptMcast}).`,
+          { exported: exportedFiles, skipped: [`(primary missing; kept ${keptMcast})`] },
         );
       } else {
         warn(
           flow,
-          `ST 2022-7 pairing on but backup leg not in CSV — still exported as single-path (SDP/ZIP multicast ${keptMcast}). Add Backup=True row with multicast, or uncheck Pair primary/backup legs.`,
-          { exported: exportedFiles, skipped: [`(backup leg missing from CSV; SDP kept ${keptMcast})`] },
+          `2022-7 incomplete — backup missing. Single-path from primary (${keptMcast}).`,
+          { exported: exportedFiles, skipped: [`(backup missing; kept ${keptMcast})`] },
         );
       }
     }
 
-    // Source-filter precedence: per-device map > global override > (blank) export source.
     const dm = dmEarly;
     const primSrc = primSrcEarly;
     const secSrc = secSrcEarly;
 
     const missingSsm = (src) => !hasSource({ source: src });
     if (missingSsm(primSrc)) {
-      warn(flow, 'Source IP blank/0.0.0.0 → ASM (no a=source-filter). Fill Source IP primary or source map for SSM.', {
+      warn(flow, 'Source blank → ASM. Fill Source IP for SSM.', {
         exported: exportedFiles,
         skipped: [],
       });
     } else if (redundant && missingSsm(secSrc)) {
-      warn(flow, 'Backup Source IP blank/0.0.0.0 → ASM on backup leg. Fill Source IP secondary or source map.', {
+      warn(flow, 'Backup source blank → ASM on backup.', {
         exported: exportedFiles,
         skipped: [],
       });
