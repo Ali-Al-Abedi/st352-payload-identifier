@@ -13,8 +13,9 @@
     --border: #262626;
     --border-strong: #3a3a3a;
     --text: #ffffff;
-    --text-dim: #f5f5f5;
-    --text-faint: #ebebeb;
+    --text-ui: #c5cfc5;       /* menus, tabs, toggles, chrome */
+    --text-dim: #8ea3b5;      /* descriptions, FAQ, hints, subtitles */
+    --text-faint: #6a756c;    /* field labels, section caps */
     --accent: #39ff14;
     --accent-dim: #0f9d3a;
     --on-accent: #04150c;
@@ -180,7 +181,7 @@
   .btn {
     background: var(--bg-elev);
     border: 1px solid var(--border);
-    color: var(--text-dim);
+    color: var(--text-ui);
     padding: 10px 14px;
     border-radius: 8px;
     cursor: pointer;
@@ -210,7 +211,7 @@
   .chip {
     background: var(--bg);
     border: 1px solid var(--border);
-    color: var(--text-dim);
+    color: var(--text-ui);
     padding: 7px 12px;
     border-radius: 999px;
     cursor: pointer;
@@ -269,7 +270,7 @@
   .tool-hero h2 {
     font-size: 18px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 4px;
   }
-  .tool-hero p { color: var(--text-dim); font-size: 13px; max-width: 62ch; }
+  .tool-hero p { color: var(--text-dim); font-size: 13.5px; max-width: 62ch; line-height: 1.5; }
   .friendly-label:not(.invalid) {
     text-shadow: 0 0 28px rgba(57, 255, 20, 0.22);
   }
@@ -416,7 +417,7 @@
   }
   .sdp-details > summary {
     cursor: pointer; font-size: 12px; font-weight: 600;
-    color: var(--text-dim); letter-spacing: 0.02em;
+    color: var(--text-ui); letter-spacing: 0.02em;
     list-style: none; user-select: none;
   }
   .sdp-details > summary::-webkit-details-marker { display: none; }
@@ -729,7 +730,7 @@
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
   }
   .app-tabs a {
-    color: var(--text-dim); text-decoration: none; font-size: 16px; font-weight: 800;
+    color: var(--text-ui); text-decoration: none; font-size: 16px; font-weight: 800;
     letter-spacing: 0.08em; text-transform: uppercase; padding: 12px 28px;
     border-radius: 999px; transition: color 0.18s, background 0.18s, box-shadow 0.18s;
   }
@@ -746,7 +747,7 @@
   }
 #tool-sdp .tabs button {
     background: none; border: none;
-    color: var(--text-dim); padding: 8px 16px; cursor: pointer; font-size: 12px;
+    color: var(--text-ui); padding: 8px 16px; cursor: pointer; font-size: 12px;
     font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
     font-family: inherit; border-radius: 999px; transition: all 0.18s ease;
   }
@@ -794,7 +795,7 @@
 
 #tool-sdp .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
 #tool-sdp .seg button {
-    background: transparent; border: none; color: var(--text-dim); padding: 8px 14px;
+    background: transparent; border: none; color: var(--text-ui); padding: 8px 14px;
     cursor: pointer; font-size: 12px; font-weight: 700; font-family: inherit;
     transition: background 0.15s, color 0.15s;
   }
@@ -802,7 +803,7 @@
     background: linear-gradient(180deg, #7dff5a, var(--accent)); color: var(--on-accent);
   }
 
-#tool-sdp .toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+#tool-sdp .toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; color: var(--text-ui); font-size: 13px; }
 #tool-sdp .toggle input { width: auto; }
 
 #tool-sdp .btn {
@@ -815,7 +816,7 @@
   }
 #tool-sdp .btn:hover { box-shadow: 0 0 28px rgba(57, 255, 20, 0.32); }
 #tool-sdp .btn.ghost {
-    background: none; color: var(--text-dim); border-color: var(--border); box-shadow: none;
+    background: none; color: var(--text-ui); border-color: var(--border); box-shadow: none;
   }
 #tool-sdp .btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
 #tool-sdp .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
@@ -845,7 +846,7 @@
 #tool-sdp .badge-ok { color: var(--ok); font-weight: 700; }
 #tool-sdp .badge-err { color: var(--err); font-weight: 700; }
 #tool-sdp .badge-warn { color: var(--warn); font-weight: 600; }
-#tool-sdp .hint { color: var(--text-faint); font-size: 11px; margin-top: 4px; }
+#tool-sdp .hint { color: var(--text-dim); font-size: 12px; margin-top: 4px; line-height: 1.45; }
 #tool-sdp #csvSummary {
     color: var(--text); font-size: 14px; font-weight: 700; margin-top: 10px;
     padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border);
@@ -874,7 +875,7 @@
   }
 #tool-sdp .faq dl { margin: 0; display: grid; gap: 10px; }
 #tool-sdp .faq dt { color: var(--text); font-weight: 700; font-size: 13px; }
-#tool-sdp .faq dd { color: var(--text-dim); font-size: 13px; margin: 2px 0 0; line-height: 1.45; max-width: 78ch; }
+#tool-sdp .faq dd { color: var(--text-dim); font-size: 13.5px; margin: 2px 0 0; line-height: 1.5; max-width: 78ch; }
 #tool-sdp .faq code { color: var(--accent); }
 #tool-sdp .hidden { display: none !important; }
   #tool-sdp { display: none; }
@@ -1239,7 +1240,7 @@ Example:
         </div>
 
         <details class="card" style="margin:0">
-          <summary style="cursor:pointer;color:var(--text-dim);font-size:12px;font-weight:600">Session, transport &amp; legs</summary>
+          <summary style="cursor:pointer;color:var(--text-ui);font-size:12px;font-weight:600">Session, transport &amp; legs</summary>
           <div style="margin-top:12px">
             <div class="field"><label>Session name (s=)</label><input id="sessionName"></div>
             <div class="row">
@@ -1318,7 +1319,7 @@ Example:
       </div>
 
       <details style="margin:8px 0 14px">
-        <summary style="cursor:pointer;color:var(--text-dim);font-size:12px;font-weight:600">More options</summary>
+        <summary style="cursor:pointer;color:var(--text-ui);font-size:12px;font-weight:600">More options</summary>
         <div style="margin-top:12px">
           <div class="row">
             <div class="field"><label>Origin user</label><input id="impOriginUser" value="Evertz"></div>
