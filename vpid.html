@@ -8788,6 +8788,11 @@ function renderBuilder(decoded) {
     grpRegistry.appendChild(o);
   }
   sel.appendChild(grpRegistry);
+  // Force selection from typed hex (selected= on <option> can lose to the first
+  // enabled entry in some browsers, especially while rebuilding the form).
+  if (VPID_LAYOUTS[decoded.bytes[0]] || SMPTE_BYTE1_REGISTRY[decoded.bytes[0]]) {
+    sel.value = String(decoded.bytes[0]);
+  }
   wrap.appendChild(sel);
 
   // Helper hint under the selector
@@ -9512,16 +9517,28 @@ function caretPosForHexDigits(formatted, digits) {
 }
 
 function decodeHexField(formatted) {
-  const bytes = parseHex(formatted);
-  if (!bytes) {
-    if (formatted.replace(/\s/g, "").length === 0) {
-      render({ valid: false, bytes: [0, 0, 0, 0], error: "Enter a 4-byte VPID (e.g. 89 CA 80 01).", fields: [], warnings: [], characteristics: null });
-    } else {
-      render({ valid: false, bytes: [0, 0, 0, 0], error: "Need 4 bytes (8 hex digits).", fields: [], warnings: [], characteristics: null });
-    }
+  const cleaned = formatted.replace(/[^0-9a-fA-F]/g, "").slice(0, 8);
+  if (cleaned.length === 0) {
+    render({ valid: false, bytes: [0, 0, 0, 0], error: "Enter a 4-byte VPID (e.g. 89 CA 80 01).", fields: [], warnings: [], characteristics: null });
     return;
   }
-  render(decodeVpidBytes(...bytes));
+  // Pad incomplete hex with 00 so Byte 1 family (and builders) track as you type.
+  // Full 8 digits → normal decode; fewer → same path with a finish-typing warning.
+  const bytes = [0, 0, 0, 0];
+  for (let i = 0; i + 2 <= cleaned.length; i += 2) {
+    bytes[i / 2] = parseInt(cleaned.slice(i, i + 2), 16);
+  }
+  // Odd trailing nibble (e.g. "84 3") — wait for the full byte before shifting family/fields.
+  if (cleaned.length === 1) {
+    render({ valid: false, bytes: [0, 0, 0, 0], error: "Need 4 bytes (8 hex digits).", fields: [], warnings: [], characteristics: null });
+    return;
+  }
+  const decoded = decodeVpidBytes(...bytes);
+  if (cleaned.length < 8) {
+    const warn = "Finish typing — need 4 bytes (8 hex digits). Missing bytes read as 00.";
+    decoded.warnings = [warn, ...(decoded.warnings || [])];
+  }
+  render(decoded);
 }
 
 function setHexInputFormatted(el, raw, digitsBefore) {

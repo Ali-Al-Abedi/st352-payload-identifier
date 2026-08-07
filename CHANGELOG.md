@@ -34,6 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   editable; clearer “Type VPID here” label and dashed underline.
 - **Tighter VPID UI copy (2026-08-07).** Greyed-entry hint, builder notes, fmtp note, limits —
   shortened for engineers.
+- **Byte 1 family tracks typed hex (2026-08-07).** Incomplete VPID no longer resets the builder
+  to `00 00 00 00` / first family; as soon as Byte 1 is typed, the family dropdown matches.
 - **Blank Destination IP Skipped text (2026-08-07).** Cleared multicast cannot be recovered
   from the CSV; Skipped names the surviving SDP/ZIP pair-partner multicast instead.
 - **Text hierarchy colors (2026-08-07).** Descriptions/FAQ use cool slate; settings labels
