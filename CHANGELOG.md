@@ -57,6 +57,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   applies; Download ZIP stays outside. More options collapsed by default.
 
 ### Changed
+- **Plain-English 0x82 mode warnings + field highlight (2026-09-12).** ST 352 §B.2
+  scan-vs-rate / scan-vs-sampling messages now say which byte is wrong and what to set
+  (with a corrected example VPID). Warnings may carry `{ byte, bits }` so cross-field
+  rules highlight the offending field red in the byte breakdown — previously only
+  reserved-bit warnings did.
 - **Cyan field labels (2026-09-12).** Label captions and table headers across VPID + SDP
   (`Byte 1 family`, `Scan`, spec grid, byte breakdown field names, compare/batch headers,
   SDP form labels) use a new `--label` cyan token instead of faint grey.
