@@ -1662,6 +1662,29 @@ function bitDepthTo2Bit(v) {
 // ST 292-1:2018 T6, ST 372:2017 T6, ST 292-2:2011 T4): Bh, Ch, Dh, Fh.
 // 7h (ST 2048-2 FS) and Eh (4:4:4 X'Y'Z') are defined, not reserved.
 const RESERVED_SAMPLING = new Set([0xB, 0xC, 0xD, 0xF]);
+// ITU-R BT.2077-2 Table 3-10 reserves MORE than ST 352 does: it lists 7h and Eh
+// as Reserved, where ST 352:2013 Table 3 defines them (ST 2048-2 FS / 4:4:4
+// X'Y'Z'). Per-spec set, because the 6G/24G layout factory is shared with the
+// ST 2081/ST 2082 codes that follow the SMPTE table.
+const RESERVED_SAMPLING_BT2077_2 = new Set([0x7, 0xB, 0xC, 0xD, 0xE, 0xF]);
+
+/* Byte 4 b2 in the ST 425-3 / ST 425-5 families: it carries audio status only
+ * on the second/later link, and on Link 1 it is "reserved and set to (0h)"
+ * (ST 425-3 §6.2.3.5: "For the 3G-SDI Link 1, bit b2 shall be reserved and set
+ * to (0h)"). So on Link 1:
+ *   b2 = 0 is exactly conformant — it must NOT read as a reserved *code*, or a
+ *          perfectly good Link-1 VPID lights up red;
+ *   b2 = 1 violates "shall be set to (0h)" — that DOES warn (it never used to).
+ */
+function audioStatusB2(name, isOtherLink, audCpy, source, copiedLabel, additionalLabel) {
+  if (isOtherLink) {
+    return { byte: 4, bits: "b2", name,
+             value: audCpy ? copiedLabel : additionalLabel, source };
+  }
+  return audCpy
+    ? { byte: 4, bits: "b2", name, value: "1 (must be 0 on Link 1)", source, flag: "warn" }
+    : { byte: 4, bits: "b2", name, value: "n/a on Link 1 (0 as required)", source };
+}
 
 // Decode (trans, pic) bits into a scan-mode label.
 // Per ST 274 / ST 292-1 / ST 425-1 conventions:
@@ -2041,7 +2064,13 @@ function decodeStereoQuadLevelA(b2, b3, b4, layoutHex) {
   const samp   = b3 & 0xF;
   fields.push({ byte: 3, bits: "b7",    name: "Aspect ratio",            value: aspect ? "16:9" : "Unknown",      source: "ST 425-3 §6.2.3" });
   fields.push({ byte: 3, bits: "b6",    name: "Horizontal pixel count", value: hSamp ? "2048" : "1920",          source: "ST 425-3 §6.2.3" });
-  fields.push({ byte: 3, bits: "b5:b4", name: "Colorimetry",             value: COLORIMETRY_2BIT[cm].label,       source: "ST 425-3 §6.2.3" });
+  // ST 425-6 §7.3 routes byte 3 to ST 425-3 §6.2.3.4, where 1h is DEFINED as
+  // "the colorimetry is defined in the Color VANC packet as defined in SMPTE
+  // ST 2048-1" (st425-3-2019.txt:1230) — it is not reserved here, unlike the
+  // post-2017 ST 425-1 Level A convention in the global table.
+  fields.push({ byte: 3, bits: "b5:b4", name: "Colorimetry",
+                value: cm === 0x1 ? "Color VANC Packet (ST 2048-1)" : COLORIMETRY_2BIT[cm].label,
+                source: "ST 425-3 §6.2.3.4 via ST 425-6 §7.3" });
   fields.push({ byte: 3, bits: "b3:b0", name: "Sampling structure",     value: SAMPLING[samp],                   source: "ST 352 Table 3" });
 
   // ----- Byte 4 (ST 425-6 §7.4 Table 4 Level A column) -----
@@ -2062,7 +2091,6 @@ function decodeStereoQuadLevelA(b2, b3, b4, layoutHex) {
   }
   fields.push({ byte: 4, bits: "b1:b0", name: "Bit depth",        value: BIT_DEPTH_3D_A_BDL[depth],         source: "ST 425-6 §7.4 Table 4 (LA)" });
   if (depth === 0 || depth === 3) warnings.push(`Byte 4 b1:b0 = ${depth.toString(16)}h is Reserved per ST 425-6 Table 4 Level A.`);
-  if (cm === 0x1) warnings.push("Byte 3 b5:b4 = 1h is Reserved per ST 425-1:2017 §4.1.6.2.2 (only 0h Rec.709, 2h UHDTV, 3h Unknown defined).");
   if ([0xB, 0xC, 0xD, 0xF].includes(samp)) warnings.push(`Byte 3 b3:b0 = ${samp.toString(16)}h is Reserved per ST 352 Table 3.`);
 
   const hpix = hSamp ? 2048 : 1920;
@@ -3403,7 +3431,7 @@ const VPID_LAYOUTS = {
       fields.push({ byte: 4, bits: "b5",    name: "Reserved",       value: b4_b5 ? "1 (must be 0)" : "0",     source: "ST 425-3 §6.2.3.5" });
       fields.push({ byte: 4, bits: "b4",    name: "Luma/color signal", value: sigBit ? "ICTCP" : "Y'CbCr",     source: "ST 425-3 §6.2.3.5" });
       fields.push({ byte: 4, bits: "b3",    name: "Reserved",       value: b4_b3 ? "1 (must be 0)" : "0",     source: "ST 425-3 §6.2.3.5" });
-      fields.push({ byte: 4, bits: "b2",    name: "Audio status (link 2)", value: link ? (audCpy ? "Copied audio" : "Additional channels") : "Reserved (link 1)", source: "ST 425-3 §6.2.3.5" });
+      fields.push(audioStatusB2("Audio status (link 2)", !!link, audCpy, "ST 425-3 §6.2.3.5", "Copied audio", "Additional channels"));
       fields.push({ byte: 4, bits: "b1:b0", name: "Bit depth",       value: BIT_DEPTH_2BIT_FULL[depth],       source: "ST 425-3 §6.2.3.5" });
       if (b4_b7) warnings.push("ST 425-3 §6.2.3.5: Byte 4 b7 is Reserved — must be 0.");
       if (b4_b5) warnings.push("ST 425-3 §6.2.3.5: Byte 4 b5 is Reserved — must be 0.");
@@ -3516,7 +3544,7 @@ const VPID_LAYOUTS = {
       fields.push({ byte: 4, bits: "b5",    name: "Reserved",          value: b4_b5 ? "1 (must be 0)" : "0", source: "ST 425-3 §7.2.3.5" });
       fields.push({ byte: 4, bits: "b4",    name: "Luma/color signal", value: sigBit ? "ICTCP" : "Y'CbCr",     source: "ST 425-3 §7.2.3.5" });
       fields.push({ byte: 4, bits: "b3",    name: "Reserved",          value: b4_b3 ? "1 (must be 0)" : "0", source: "ST 425-3 §7.2.3.5" });
-      fields.push({ byte: 4, bits: "b2",    name: "Audio copy (link 2)", value: ch >= 2 ? (audCpy ? "Copied" : "Additional") : "Reserved (link 1)",  source: "ST 425-3 §7.2.3.5" });
+      fields.push(audioStatusB2("Audio copy (link 2)", ch >= 2, audCpy, "ST 425-3 §7.2.3.5", "Copied", "Additional"));
       fields.push({ byte: 4, bits: "b1:b0", name: "Bit depth",          value: BIT_DEPTH_ST372[depth],            source: "ST 425-3 §7.2.3.5" });
       if (b4_b5) warnings.push("ST 425-3 §7.2.3.5: Byte 4 b5 is Reserved — must be 0.");
       if (b4_b3) warnings.push("ST 425-3 §7.2.3.5: Byte 4 b3 is Reserved — must be 0.");
@@ -3633,7 +3661,7 @@ const VPID_LAYOUTS = {
       fields.push({ byte: 4, bits: "b5",    name: "Reserved",          value: b4_b5 ? "1 (must be 0)" : "0", source: "ST 425-3 §8.2.3.5" });
       fields.push({ byte: 4, bits: "b4",    name: "Luma/color signal", value: sigBit ? "ICTCP" : "Y'CbCr",     source: "ST 425-3 §8.2.3.5" });
       fields.push({ byte: 4, bits: "b3",    name: "Reserved",          value: b4_b3 ? "1 (must be 0)" : "0", source: "ST 425-3 §8.2.3.5" });
-      fields.push({ byte: 4, bits: "b2",    name: "Audio copy (link 2)", value: ch >= 2 ? (audCpy ? "Copied" : "Additional") : "Reserved (link 1)",   source: "ST 425-3 §8.2.3.5" });
+      fields.push(audioStatusB2("Audio copy (link 2)", ch >= 2, audCpy, "ST 425-3 §8.2.3.5", "Copied", "Additional"));
       fields.push({ byte: 4, bits: "b1:b0", name: "Bit depth",          value: BIT_DEPTH_ST425_3_BDS[depth],        source: "ST 425-3 §8.2.3.5" });
       if (b4_b5) warnings.push("ST 425-3 §8.2.3.5: Byte 4 b5 is Reserved — must be 0.");
       if (b4_b3) warnings.push("ST 425-3 §8.2.3.5: Byte 4 b3 is Reserved — must be 0.");
@@ -3746,7 +3774,7 @@ const VPID_LAYOUTS = {
       fields.push({ byte: 4, bits: "b5",    name: "Reserved",         value: b4_b5 ? "1 (must be 0)" : "0", source: "ST 425-5 §6.2.3.5" });
       fields.push({ byte: 4, bits: "b4",    name: "Luma/color signal", value: sigBit ? "ICTCP" : "Y'CbCr",     source: "ST 425-5 §6.2.3.5" });
       fields.push({ byte: 4, bits: "b3",    name: "Reserved",         value: b4_b3 ? "1 (must be 0)" : "0", source: "ST 425-5 §6.2.3.5" });
-      fields.push({ byte: 4, bits: "b2",    name: "Audio status (links 2-4)", value: ch >= 1 ? (audCpy ? "Copied" : "Additional") : "Reserved (link 1)", source: "ST 425-5 §6.2.3.5" });
+      fields.push(audioStatusB2("Audio status (links 2-4)", ch >= 1, audCpy, "ST 425-5 §6.2.3.5", "Copied", "Additional"));
       fields.push({ byte: 4, bits: "b1:b0", name: "Bit depth",         value: BIT_DEPTH_2BIT_FULL[depth],          source: "ST 425-5 §6.2.3.5" });
       if (b4_b5) warnings.push("ST 425-5 §6.2.3.5: Byte 4 b5 is Reserved — must be 0.");
       if (b4_b3) warnings.push("ST 425-5 §6.2.3.5: Byte 4 b3 is Reserved — must be 0.");
@@ -3853,7 +3881,7 @@ const VPID_LAYOUTS = {
       fields.push({ byte: 4, bits: "b7:b5", name: "Data stream",       value: `Data stream ${ds}`,              source: "ST 425-5 §7.2.3.5" });
       fields.push({ byte: 4, bits: "b4",    name: "Luma/color signal", value: sigBit ? "ICTCP" : "Y'CbCr",      source: "ST 425-5 §7.2.3.5" });
       fields.push({ byte: 4, bits: "b3",    name: "Reserved",          value: b4_b3 ? "1 (must be 0)" : "0", source: "ST 425-5 §7.2.3.5" });
-      fields.push({ byte: 4, bits: "b2",    name: "Audio status (links 2-4)", value: ds >= 2 ? (audCpy ? "Copied" : "Additional") : "Reserved (link 1)", source: "ST 425-5 §7.2.3.5" });
+      fields.push(audioStatusB2("Audio status (links 2-4)", ds >= 2, audCpy, "ST 425-5 §7.2.3.5", "Copied", "Additional"));
       fields.push({ byte: 4, bits: "b1:b0", name: "Bit depth",         value: BIT_DEPTH_ST372[depth],              source: "ST 425-5 §7.2.3.5" });
       if (b4_b3) warnings.push("ST 425-5 §7.2.3.5: Byte 4 b3 is Reserved — must be 0.");
       if (ds < 2 && audCpy === 1) warnings.push("ST 425-5 §7.2.3.5: Byte 4 b2 is Reserved (must be 0) for 3G-SDI Link 1 data streams (b7:b5 = 0h or 1h).");
@@ -5705,9 +5733,13 @@ function make6Gor24GLayout(opts) {
       fields.push({ byte: 3, bits: "b7",    name: "Aspect ratio",         value: aspect ? "16:9" : "Unknown",                                              source: tables.tableByte234 });
       fields.push({ byte: 3, bits: "b6",    name: "Horizontal pixel count", value: hSamp ? `${dciHpix} (${hpixDCILabel})` : `${uhdHpix} (${hpixUHDLabel})`,  source: tables.tableByte234 });
       fields.push({ byte: 3, bits: "b5:b4", name: "Colorimetry",          value: COLORIMETRY_2BIT[colorim].label,                                          source: tables.tableByte234 });
-      const sampReserved = RESERVED_SAMPLING.has(samp);
-      fields.push({ byte: 3, bits: "b3:b0", name: "Sampling structure",   value: SAMPLING[samp],                                                            source: tables.tableSamp, flag: sampReserved ? "warn" : null });
-      if (sampReserved) warnings.push(`Byte 3 b3:b0 = ${samp.toString(16)}h is Reserved per ST 352 Table 3.`);
+      const isBT2077_2   = this.spec === 'BT.2077-2';
+      const sampReserved = (isBT2077_2 ? RESERVED_SAMPLING_BT2077_2 : RESERVED_SAMPLING).has(samp);
+      // Render "Reserved" when this spec reserves the code, so the value and the
+      // warning can't disagree (BT.2077-2 reserves 7h/Eh that ST 352 defines).
+      const sampLabel = sampReserved ? `Reserved (${samp.toString(16).toUpperCase()}h)` : SAMPLING[samp];
+      fields.push({ byte: 3, bits: "b3:b0", name: "Sampling structure",   value: sampLabel,                                                                 source: tables.tableSamp, flag: sampReserved ? "warn" : null });
+      if (sampReserved) warnings.push(`Byte 3 b3:b0 = ${samp.toString(16).toUpperCase()}h is Reserved per ${isBT2077_2 ? 'BT.2077-2 Table 3-10' : 'ST 352 Table 3'}.`);
       if (colorimMustBeRecOnly && (colorim === 0x1 || colorim === 0x3)) {
         warnings.push(`Byte 3 b5:b4 = ${colorim.toString(16)}h is Reserved per BT.2077-2 Table 3-7 (only 0h=Rec.709 and 2h=Rec.2020 are defined).`);
       }
@@ -6144,7 +6176,11 @@ function makeBT2077_3_BasicStreamLayout(opts) {
       fields.push({ byte: 3, bits: "b3:b0", name: "Sampling structure",      value: SAMPLING[samp],                                                source: "BT.2077-3 Table 4-18", flag: sampReserved ? "warn" : null });
       if (hSamp) warnings.push("BT.2077-3 Part 4 1.5G basic-stream class only defines 1920 horizontal pixels (b6=0).");
       if (sampReserved) warnings.push(`Byte 3 b3:b0 = ${samp.toString(16)}h is Reserved per ST 352 Table 3.`);
-      if (colorim === 0x1 || colorim === 0x3) warnings.push(`Byte 3 b5:b4 = ${colorim.toString(16)}h is Reserved per BT.2077-3 §2.3 (only 0h=Rec.709 and 2h=Rec.2020 are defined).`);
+      // BT.2077-3 §2.3 defines 0h Rec.709, 2h UHDTV and **3h unknown**
+      // ("b5,b4 = 3h identifies unknown colorimetry"), then "Other values are
+      // reserved" — so only 1h is reserved here. 3h used to be flagged, which
+      // contradicted the very section the warning cited.
+      if (colorim === 0x1) warnings.push(`Byte 3 b5:b4 = 1h is Reserved per BT.2077-3 §2.3 (0h=Rec.709, 2h=UHDTV, 3h=unknown are the defined values).`);
 
       // Per-layout byte 4 decoder
       const b4Result = opts.byte4.decode(b4, this);

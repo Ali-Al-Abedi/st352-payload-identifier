@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Four false "Reserved" errors on spec-conformant VPIDs (2026-09-12).** Each was
+  verified line-by-line against the governing document, not inferred:
+  - **Byte 4 b2 on 3G-SDI Link 1 (`0x94`–`0x98`)** was labelled `Reserved (link 1)`,
+    which the Reserved-code audit escalated into a red error — so *every* conformant
+    Link-1 VPID looked broken. ST 425-3:2019 §6.2.3.5 only requires the bit be 0 on
+    Link 1; a new shared `audioStatusB2()` helper now reads `n/a on Link 1 (0 as
+    required)` when it is 0, and raises the error that was previously **missing**
+    when it is 1.
+  - **Colorimetry `1h` on `0x99` (ST 425-6 Level A)** was rejected citing ST 425-1.
+    ST 425-6 §7.3 routes byte 3 to ST 425-3 §6.2.3.4, which *defines* `1h` as
+    "Color VANC packet as defined in SMPTE ST 2048-1" — same override `0x94` already
+    used. Now decodes as Color VANC Packet with no error.
+  - **Colorimetry `3h` on BT.2077-3 (`0xF4`–`0xF9`)** was flagged Reserved by a
+    warning that cited BT.2077-3 §2.3 — the very section reading "b5,b4 = 3h
+    identifies unknown colorimetry". Narrowed to `1h` only.
+  - **Sampling `7h` (ST 2048-2 FS)** was globally mislabelled Reserved, which also
+    made it a false error. ST 352:2013 Table 3, ST 292-1:2018 Table 6, ST 372:2017
+    Table 6 and ST 292-2:2011 Table 4 all define it as 4:4:4 RFS/GFS/BFS.
+
+### Changed
+- **Reserved sampling codes are now per-spec (2026-09-12).** ITU-R BT.2077-2
+  Table 3-10 reserves `7h` and `Eh`, which ST 352 Table 3 defines. The shared
+  6G/24G layout factory now picks the right set per spec, and renders the field as
+  `Reserved (7h)`/`Reserved (Eh)` there so the value can't contradict the warning,
+  while the ST 2081/ST 2082 codes keep the SMPTE meanings.
+
 ### Added
 - **Bulk Magnum encap: tiered validation (2026-08-07).** Hard-skip bad multicast /
   blank destination port; soft-warn ASM (blank/`0.0.0.0` source — still exported),
