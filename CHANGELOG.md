@@ -57,6 +57,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   applies; Download ZIP stays outside. More options collapsed by default.
 
 ### Changed
+- **Spec re-audit, pass 1: flagged fields must be explained; "Not defined" surfaced (2026-09-12).**
+  Structural sweep across all 78 layouts (bit coverage, encoder round-trip, value
+  vocabulary) found two systemic holes the earlier audit missed:
+  1. **A field flagged red could have no explanation.** Layouts set `flag:'warn'` on a
+     reserved-bit field without pushing a `warnings` entry, so the operator saw a red
+     highlight and no reason (e.g. `8E 00 80 11`, Byte 4 b5:b4 = 1h). `auditFieldCodes()`
+     now enforces the invariant: every flagged field gets a plain-English warning line.
+     Verified 0 flagged-but-unexplained fields across all layouts.
+  2. **`Not defined` codes passed silently.** The net only matched the word "Reserved",
+     so picture rate `0h` (ST 352:2013 Table 2, "No defined value") decoded with no
+     indication at all. Now amber, with troubleshooting text.
+  Also: a field can no longer appear in both tiers at once (rate `0h` on an interlaced
+  `82` used to be red *and* amber — red now wins); verified 0 collisions. Bit-coverage
+  check confirms every bit of bytes 2-4 in every layout is accounted for by exactly one
+  field (0 uncovered, 0 double-counted).
 - **Two severity tiers: red "What's wrong" vs amber "Worth knowing" (2026-09-12).**
   A spec-legal `Unknown` code is still something an engineer may need to chase
   (e.g. `89 CA 00 01` — a 1080p59.94 source declaring no aspect ratio), so it now

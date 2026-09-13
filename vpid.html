@@ -2346,16 +2346,20 @@ const VPID_LAYOUTS = {
       // ST 352 §B.2 — two modes:
       //   Progressive (b6=1): rate ∈ {9h, Ah}, sampling = 0h (DL 270 Mb/s) or 3h (SL 360 Mb/s).
       //   Interlaced 4:4:4:4 (b6=0): rate ∈ {5h, 6h}, sampling ∈ {5h, 6h, 9h, Ah}.
+      // "Not defined" / "Reserved" rate codes have no Hz to quote.
+      const rateTxt = PICTURE_RATE[rate].hz
+        ? `${PICTURE_RATE[rate].label} Hz`
+        : `${PICTURE_RATE[rate].label} (${rate.toString(16).toUpperCase()}h)`;
       if (scanBit === 1 && !(rate === 0x9 || rate === 0xA)) {
         warnings.push({
           byte: 2, bits: "b3:b0",
-          msg: `Byte 2 frame rate is ${PICTURE_RATE[rate].label} Hz, but this VPID says progressive — progressive only allows 50 or 59.94. Use rate 9h or Ah. (ST 352 §B.2)`,
+          msg: `Byte 2 frame rate is ${rateTxt}, but this VPID says progressive — progressive only allows 50 or 59.94. Use rate 9h or Ah. (ST 352 §B.2)`,
         });
       }
       if (scanBit === 0 && !(rate === 0x5 || rate === 0x6)) {
         warnings.push({
           byte: 2, bits: "b3:b0",
-          msg: `Byte 2 frame rate is ${PICTURE_RATE[rate].label} Hz, but this VPID says interlaced — interlaced only allows 25 or 29.97. Use rate 5h or 6h. (ST 352 §B.2)`,
+          msg: `Byte 2 frame rate is ${rateTxt}, but this VPID says interlaced — interlaced only allows 25 or 29.97. Use rate 5h or 6h. (ST 352 §B.2)`,
         });
       }
       // Byte 3: b7 aspect, b6 hSamp, b5:b4 Reserved, b3:b0 sampling
@@ -7082,26 +7086,44 @@ function auditFieldCodes(result) {
     if (w && typeof w === 'object' && w.byte && w.bits) explained.add(`${w.byte}|${w.bits}`);
   }
   const warnBlob = warnings.map(warnText).join(' ~ ');
+  const alreadySaid = (f) => explained.has(`${f.byte}|${f.bits}`) ||
+    (warnBlob.includes(`Byte ${f.byte}`) && warnBlob.includes(f.bits));
+
   for (const f of result.fields) {
     const value = String(f.value ?? '');
-    // Reserved *bit* fields ("Reserved" = the field's own name) are already
-    // handled per layout with "0 (correct)" / "should be 0" + their own flag.
-    if (f.name === 'Reserved') continue;
     const key = `${f.byte}|${f.bits}`;
-    if (/\bReserved\b/i.test(value)) {
-      f.flag = 'warn';
-      const alreadySaid = explained.has(key) ||
-        (warnBlob.includes(`Byte ${f.byte}`) && warnBlob.includes(f.bits));
-      if (!alreadySaid) {
+    // A Reserved *code* in an enumerated field (as opposed to a Reserved *bit*,
+    // where "Reserved" is the field's own name) is always a problem.
+    const isReservedCode = f.name !== 'Reserved' && /\bReserved\b/i.test(value);
+    if (isReservedCode) f.flag = 'warn';
+
+    if (f.flag === 'warn') {
+      // Invariant: a field flagged as wrong must ALWAYS be explained in the
+      // problem box. Layouts used to flag a field and push no warning, which
+      // left the red highlight with no text telling the operator why.
+      if (!alreadySaid(f)) {
         warnings.push({
           byte: f.byte, bits: f.bits,
-          msg: `Byte ${f.byte} ${f.bits} (${f.name}) is set to a Reserved code — no standard defines it, so receivers can't be expected to read this signal correctly.`,
+          msg: isReservedCode
+            ? `Byte ${f.byte} ${f.bits} (${f.name}) is set to a Reserved code — no standard defines it, so receivers can't be expected to read this signal correctly.`
+            : (f.name === 'Reserved'
+              ? `Byte ${f.byte} ${f.bits} is a Reserved bit field and must be 0, but this VPID has ${value.replace(/\s*\(should be 0\)\s*/i, '')} — whatever generated it is setting bits it shouldn't.`
+              : `Byte ${f.byte} ${f.bits} (${f.name}) reads "${value}" — the standard doesn't allow that here.`),
         });
         explained.add(key);
       }
-    } else if (/^Unknown\b/i.test(value) && !f.flag) {
+      continue;
+    }
+
+    // "Not defined" (e.g. picture rate 0h, ST 352:2013 Table 2 "No defined
+    // value") is an assigned code meaning the source declared nothing —
+    // same class as "Unknown", so it belongs in the amber tier, not red.
+    if ((/^Unknown\b/i.test(value) || /^Not defined\b/i.test(value)) && !alreadySaid(f)) {
       // Legal per spec, but the source is declining to declare something real
       // gear downstream may need — worth surfacing as a heads-up, not an error.
+      // Skipped when the layout already raised a red problem on this same field
+      // (e.g. a rate that is both undeclared AND illegal for the mode): one
+      // field must never appear in both tiers.
       f.flag = 'note';
       f.note = 'not declared by the source (allowed)';
       notices.push({
@@ -7118,6 +7140,8 @@ const UNKNOWN_NOTICE = {
   'Aspect ratio': 'the source is not telling you its aspect ratio. That is legal, but nearly every real HD/UHD source declares 16:9 — so if a downstream device is stretching, squashing, or pillar-boxing the picture, check this first.',
   'Colorimetry': 'the source is not telling you its colorimetry. That is legal, but converters and monitors then have to guess between Rec.709 and Rec.2020 — if colour or saturation looks wrong downstream, start here.',
   'Transfer characteristics': 'the source is not telling you its transfer characteristic (SDR / HLG / PQ). That is legal, but downstream HDR handling becomes a guess — check here if the picture looks washed out or too dark.',
+  'Picture rate': 'the source is not telling you its frame rate — code 0h means "no defined value". Legal, but anything that needs the rate (converters, sync, frame stores) has to work it out for itself.',
+  'Frame rate': 'the source is not telling you its frame rate — code 0h means "no defined value". Legal, but anything that needs the rate (converters, sync, frame stores) has to work it out for itself.',
   _default: 'the source is declaring "unknown" here. That is legal, but anything downstream that needs this value has to guess.',
 };
 
