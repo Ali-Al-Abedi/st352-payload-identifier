@@ -142,20 +142,7 @@
       0 0 40px rgba(57, 255, 20, 0.22),
       0 18px 50px rgba(0, 0, 0, 0.35);
   }
-  .hex-input-wrap.has-warn {
-    border-color: rgba(245, 158, 11, 0.85);
-    box-shadow:
-      0 0 0 2px rgba(245, 158, 11, 0.35),
-      0 0 36px rgba(245, 158, 11, 0.22),
-      0 18px 50px rgba(0, 0, 0, 0.35);
-  }
-  .hex-input-wrap.has-warn:focus-within {
-    border-color: rgba(245, 158, 11, 0.95);
-    box-shadow:
-      0 0 0 2px rgba(245, 158, 11, 0.45),
-      0 0 40px rgba(245, 158, 11, 0.28),
-      0 18px 50px rgba(0, 0, 0, 0.35);
-  }
+  .hex-input-wrap.has-warn,
   .hex-input-wrap.has-error {
     border-color: rgba(239, 68, 68, 0.9);
     box-shadow:
@@ -163,6 +150,7 @@
       0 0 36px rgba(239, 68, 68, 0.2),
       0 18px 50px rgba(0, 0, 0, 0.35);
   }
+  .hex-input-wrap.has-warn:focus-within,
   .hex-input-wrap.has-error:focus-within {
     border-color: rgba(239, 68, 68, 1);
     box-shadow:
@@ -179,12 +167,7 @@
     font-weight: 700;
     letter-spacing: 0.02em;
   }
-  .vpid-status-strip.is-warn {
-    display: block;
-    background: rgba(245, 158, 11, 0.16);
-    border: 1px solid rgba(245, 158, 11, 0.55);
-    color: var(--warn);
-  }
+  .vpid-status-strip.is-warn,
   .vpid-status-strip.is-error {
     display: block;
     background: rgba(239, 68, 68, 0.14);
@@ -472,29 +455,23 @@
   }
   .spec-warning { color: var(--warn); }
   .spec-error { color: var(--err); }
+  /* Problems are always red — warnings and hard-invalid alike. */
   .vpid-warnings {
     margin: 0 0 14px; padding: 12px 14px;
-    border: 1px solid rgba(245, 158, 11, 0.65);
-    background: rgba(245, 158, 11, 0.14);
-    border-left: 4px solid var(--warn);
-    border-radius: 8px; color: var(--warn);
+    border: 1px solid rgba(239, 68, 68, 0.65);
+    background: rgba(239, 68, 68, 0.12);
+    border-left: 4px solid var(--err);
+    border-radius: 8px; color: var(--err);
     font-size: 13px; line-height: 1.45;
   }
   .vpid-warnings strong {
-    display: block; margin-bottom: 6px; color: var(--warn);
+    display: block; margin-bottom: 6px; color: var(--err);
     font-size: 14px; letter-spacing: 0.02em;
   }
   .vpid-warnings ul { margin: 0; padding-left: 1.15em; }
-  .vpid-warnings li { margin: 4px 0; }
-  .vpid-warnings.is-error {
-    border-color: rgba(239, 68, 68, 0.65);
-    background: rgba(239, 68, 68, 0.12);
-    border-left-color: var(--err);
-    color: var(--err);
-  }
-  .vpid-warnings.is-error strong { color: var(--err); }
+  .vpid-warnings li { margin: 4px 0; color: var(--err); }
   .badge.warn-badge {
-    background: rgba(245, 158, 11, 0.22); color: var(--warn); border-color: rgba(245, 158, 11, 0.65);
+    background: rgba(239, 68, 68, 0.2); color: var(--err); border-color: rgba(239, 68, 68, 0.65);
     font-weight: 700;
   }
   .badge.error-badge {
@@ -587,7 +564,7 @@
   .batch-table tr.batch-row-registry td { color: var(--text-dim); background: rgba(245,158,11,0.05); }
   .batch-table .batch-hex { font-family: 'JetBrains Mono', monospace; color: var(--accent); font-weight: 600; }
   .batch-table .batch-friendly { font-weight: 500; }
-  .batch-table .batch-warns { color: var(--warn); font-size: 11px; font-style: italic; }
+  .batch-table .batch-warns { color: var(--err); font-size: 11px; font-style: italic; font-weight: 600; }
 
   /* Receiver telemetry importer */
   .import-source {
@@ -770,18 +747,19 @@
   .reg-active      { background: rgba(74,158,255,0.18); color: #79b3ff; border: 1px solid rgba(74,158,255,0.35); }
   .reg-deprecated  { background: rgba(255,59,59,0.16);  color: #ff7e7e; border: 1px solid rgba(255,59,59,0.35); }
   .reg-provisional { background: rgba(255,170,0,0.16);  color: #ffc149; border: 1px solid rgba(255,170,0,0.4); }
-  .warn-state { color: var(--warn); font-weight: 700; }
+  .warn-state { color: var(--err); font-weight: 700; }
   .byte.has-warn {
-    border-color: rgba(245, 158, 11, 0.55);
-    box-shadow: inset 3px 0 0 var(--warn);
+    border-color: rgba(239, 68, 68, 0.55);
+    box-shadow: inset 3px 0 0 var(--err);
   }
   .byte-field.has-warn {
-    background: rgba(245, 158, 11, 0.1);
+    background: rgba(239, 68, 68, 0.1);
     border-radius: 4px;
     margin: 0 -4px;
     padding-left: 4px;
     padding-right: 4px;
   }
+  .byte-field.has-warn .field-name { color: var(--err); }
 
   /* Small hint line under a form field (e.g. explaining the greyed entries
      in the Byte 1 dropdown). */

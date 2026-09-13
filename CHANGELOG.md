@@ -57,8 +57,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   applies; Download ZIP stays outside. More options collapsed by default.
 
 ### Changed
-- **VPID problems are loud (2026-09-12).** Hex box turns amber/red; “What's wrong”
-  strip under the input + banner at top of Decoded Source; bad byte fields highlighted.
+- **VPID problems are loud and red (2026-09-12).** Hex box, “What's wrong” strip under
+  the input, Decoded Source banner, flagged byte fields, batch-table warnings — all red
+  (no amber), so a non-compliant VPID reads as a problem at a glance.
 
 ### Fixed
 - **SDP Single tighter validation (2026-08-07).** Reject empty video fmtp tokens
