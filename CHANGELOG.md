@@ -57,6 +57,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   applies; Download ZIP stays outside. More options collapsed by default.
 
 ### Changed
+- **Reserved codes can no longer pass silently; "Unknown" is explained (2026-09-12).**
+  A full sweep of all 79 layouts (every Byte 2/3 value, 5 Byte 4 values) found
+  **Reserved** field codes that rendered with zero warning and zero highlight —
+  e.g. `85 00 07 00` (sampling), and colorimetry `1h` on 0xC0–0xC5/0xD0–0xD3/0xF3
+  and others; some layouts flagged it, most did not. New central `auditFieldCodes()`
+  post-pass in `decodeVpidBytes()` guarantees any Reserved code raises a red
+  problem + highlights the field, for every layout by construction.
+  Conversely, `Unknown` is a **legal, spec-defined** code (ST 425-1:2017 §4.1.6.2.2
+  aspect `b7=0`; ST 292-1:2018 §9.5.2 `b5=0`; colorimetry `3h`) — it is not flagged,
+  but now carries a plain note so it can't be mistaken for a missed check.
+  Colorimetry `3h` label corrected from "Unknown / Reserved" to "Unknown" (only
+  `1h` is reserved). Sweep assertions: 0 unflagged Reserved, 0 unexplained Unknown,
+  0 duplicate warnings, 0 self-test failures.
 - **Plain-English 0x82 mode warnings + field highlight (2026-09-12).** ST 352 §B.2
   scan-vs-rate / scan-vs-sampling messages now say which byte is wrong and what to set
   (with a corrected example VPID). Warnings may carry `{ byte, bits }` so cross-field

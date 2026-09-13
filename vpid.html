@@ -749,6 +749,8 @@
   .reg-deprecated  { background: rgba(255,59,59,0.16);  color: #ff7e7e; border: 1px solid rgba(255,59,59,0.35); }
   .reg-provisional { background: rgba(255,170,0,0.16);  color: #ffc149; border: 1px solid rgba(255,170,0,0.4); }
   .warn-state { color: var(--err); font-weight: 700; }
+  /* Neutral explainer for spec-legal "unknown" codes — deliberately not red. */
+  .field-note { display: block; color: var(--text-faint); font-size: 11px; font-weight: 400; font-style: italic; margin-top: 2px; }
   .byte.has-warn {
     border-color: rgba(239, 68, 68, 0.55);
     box-shadow: inset 3px 0 0 var(--err);
@@ -1496,7 +1498,9 @@ const COLORIMETRY_2BIT = {
   0x0: { code: "Rec.709",         label: "Rec. 709",                                 ref: "ITU-R BT.709 / ST 2036-1 conventional" },
   0x1: { code: "Reserved",        label: "Reserved",                                 ref: "ST 425-1:2017 §6.4.3 Table 5 (was Color VANC packet in pre-2017 split-bit form)" },
   0x2: { code: "Rec.2020/UHDTV",  label: "UHDTV (Rec. 2020)",                        ref: "ST 2036-1 / ITU-R BT.2020" },
-  0x3: { code: "Unknown",         label: "Unknown / Reserved",                       ref: "—" }
+  // 3h is a *defined* code ("unknown colorimetry") in ST 425-1:2017 §4.1.6.2.2
+  // and ST 2082-10:2018 §4.3.3 — legal, not reserved. Only 1h is reserved.
+  0x3: { code: "Unknown",         label: "Unknown",                                  ref: "ST 425-1:2017 §4.1.6.2.2 / ST 2082-10 §4.3.3 (unknown colorimetry)" }
 };
 
 // Bit depth tables differ by family.
@@ -7016,6 +7020,7 @@ function decodeVpidBytes(b1, b2, b3, b4) {
   // Note: In ST 352:2013 §5.1, Byte 1 b7 must be 1 for current standards.
   // (b7=0 is reserved for historical Annex C codes.)
   const result = layout.decode(b2, b3, b4);
+  auditFieldCodes(result);
   return {
     valid: true,
     bytes: [b1, b2, b3, b4],
@@ -7035,6 +7040,49 @@ function decodeVpidBytes(b1, b2, b3, b4) {
 function warnText(w) {
   if (w && typeof w === 'object') return String(w.msg || '');
   return String(w || '');
+}
+
+/* Safety net over every layout's decode().
+ *
+ * Two value classes used to render with no explanation at all, which made the
+ * decoder look like it had simply missed them:
+ *   - a Reserved code (no standard defines it) — that IS a problem, and must
+ *     always raise a visible warning + highlight the field. Individual layouts
+ *     flagged this ad hoc, so some codes (e.g. colorimetry 1h) passed silently.
+ *   - "Unknown" — a *defined, legal* value in the specs (e.g. ST 425-1
+ *     §4.1.6.2.2: aspect b7 = 0 means unknown). It must NOT be flagged, but it
+ *     gets a plain note so nobody has to guess whether the tool missed it.
+ *
+ * Centralized here so all layouts are covered by construction. */
+function auditFieldCodes(result) {
+  if (!result || !Array.isArray(result.fields)) return;
+  const warnings = result.warnings || (result.warnings = []);
+  const explained = new Set();
+  for (const w of warnings) {
+    if (w && typeof w === 'object' && w.byte && w.bits) explained.add(`${w.byte}|${w.bits}`);
+  }
+  const warnBlob = warnings.map(warnText).join(' ~ ');
+  for (const f of result.fields) {
+    const value = String(f.value ?? '');
+    // Reserved *bit* fields ("Reserved" = the field's own name) are already
+    // handled per layout with "0 (correct)" / "should be 0" + their own flag.
+    if (f.name === 'Reserved') continue;
+    const key = `${f.byte}|${f.bits}`;
+    if (/\bReserved\b/i.test(value)) {
+      f.flag = 'warn';
+      const alreadySaid = explained.has(key) ||
+        (warnBlob.includes(`Byte ${f.byte}`) && warnBlob.includes(f.bits));
+      if (!alreadySaid) {
+        warnings.push({
+          byte: f.byte, bits: f.bits,
+          msg: `Byte ${f.byte} ${f.bits} (${f.name}) is set to a Reserved code — no standard defines it, so receivers can't be expected to read this signal correctly.`,
+        });
+        explained.add(key);
+      }
+    } else if (/^Unknown\b/i.test(value) && !f.flag) {
+      f.note = 'legal value — the standard defines this code as "unknown", so the source is declaring it does not know';
+    }
+  }
 }
 
 function warnFieldKeys(list) {
@@ -8153,10 +8201,13 @@ function render(decoded) {
         if (isWarn) byteHasWarn = true;
         row.className = 'byte-field' + (isWarn ? ' has-warn' : '');
         const flagClass = isWarn ? 'warn-state' : '';
+        const note = (!isWarn && f.note)
+          ? `<span class="field-note">${f.note}</span>`
+          : '';
         row.innerHTML = `
           <span class="field-bits mono">${f.bits}</span>
           <span class="field-name tooltip" data-tip="${(f.source || '').replace(/"/g,'&quot;')}">${f.name}</span>
-          <span class="field-value ${flagClass}">${f.value}</span>
+          <span class="field-value ${flagClass}">${f.value}${note}</span>
         `;
         desc.appendChild(row);
       }
