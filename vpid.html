@@ -749,8 +749,25 @@
   .reg-deprecated  { background: rgba(255,59,59,0.16);  color: #ff7e7e; border: 1px solid rgba(255,59,59,0.35); }
   .reg-provisional { background: rgba(255,170,0,0.16);  color: #ffc149; border: 1px solid rgba(255,170,0,0.4); }
   .warn-state { color: var(--err); font-weight: 700; }
-  /* Neutral explainer for spec-legal "unknown" codes — deliberately not red. */
-  .field-note { display: block; color: var(--text-faint); font-size: 11px; font-weight: 400; font-style: italic; margin-top: 2px; }
+  /* Heads-up tier for spec-legal "unknown" codes — amber, deliberately not red. */
+  .note-state { color: var(--warn); font-weight: 700; }
+  .field-note { display: block; color: var(--warn); font-size: 11px; font-weight: 400; font-style: italic; margin-top: 2px; }
+  .byte.has-note { border-color: rgba(245,158,11,0.5); box-shadow: inset 3px 0 0 var(--warn); }
+  .byte-field.has-note { background: rgba(245,158,11,0.08); border-radius: 4px; margin: 0 -4px; padding-left: 4px; padding-right: 4px; }
+  .byte-field.has-note .field-name { color: var(--warn); }
+  .vpid-notices {
+    margin: 0 0 14px; padding: 10px 14px; border-radius: 8px; font-size: 13px; line-height: 1.5;
+    border: 1px solid rgba(245,158,11,0.55); background: rgba(245,158,11,0.1);
+    border-left: 4px solid var(--warn); color: var(--warn);
+  }
+  .vpid-notices strong { display: block; margin-bottom: 6px; font-size: 13px; color: var(--warn); }
+  .vpid-notices ul { margin: 0; padding-left: 1.15em; }
+  .vpid-notices li { margin: 4px 0; color: var(--warn); }
+  .badge.note-badge { background: rgba(245,158,11,0.18); color: var(--warn); border: 1px solid rgba(245,158,11,0.45); }
+  .vpid-status-strip.is-note {
+    display: block; background: rgba(245,158,11,0.12);
+    border: 1px solid rgba(245,158,11,0.5); color: var(--warn);
+  }
   .byte.has-warn {
     border-color: rgba(239, 68, 68, 0.55);
     box-shadow: inset 3px 0 0 var(--err);
@@ -1041,6 +1058,7 @@
       </div>
       <div class="card-body">
         <div id="vpidWarnings" class="vpid-warnings" hidden></div>
+        <div id="vpidNotices" class="vpid-notices" hidden></div>
         <div id="hdrBanner" class="hdr-banner sdr" style="display:none;">
           <span class="dot"></span>
           <span class="label" id="hdrText">SDR</span>
@@ -7030,6 +7048,7 @@ function decodeVpidBytes(b1, b2, b3, b4) {
     citation: layout.citation,
     fields: result.fields,
     warnings: result.warnings || [],
+    notices: result.notices || [],
     characteristics: result.characteristics
   };
 }
@@ -7057,6 +7076,7 @@ function warnText(w) {
 function auditFieldCodes(result) {
   if (!result || !Array.isArray(result.fields)) return;
   const warnings = result.warnings || (result.warnings = []);
+  const notices = result.notices || (result.notices = []);
   const explained = new Set();
   for (const w of warnings) {
     if (w && typeof w === 'object' && w.byte && w.bits) explained.add(`${w.byte}|${w.bits}`);
@@ -7080,10 +7100,26 @@ function auditFieldCodes(result) {
         explained.add(key);
       }
     } else if (/^Unknown\b/i.test(value) && !f.flag) {
-      f.note = 'legal value — the standard defines this code as "unknown", so the source is declaring it does not know';
+      // Legal per spec, but the source is declining to declare something real
+      // gear downstream may need — worth surfacing as a heads-up, not an error.
+      f.flag = 'note';
+      f.note = 'not declared by the source (allowed)';
+      notices.push({
+        byte: f.byte, bits: f.bits,
+        msg: `Byte ${f.byte} ${f.bits} (${f.name}): ${UNKNOWN_NOTICE[f.name] || UNKNOWN_NOTICE._default}`,
+      });
     }
   }
 }
+
+/* Plain-English "so what?" for each field a source can legally declare as
+ * unknown — written for someone troubleshooting downstream behaviour. */
+const UNKNOWN_NOTICE = {
+  'Aspect ratio': 'the source is not telling you its aspect ratio. That is legal, but nearly every real HD/UHD source declares 16:9 — so if a downstream device is stretching, squashing, or pillar-boxing the picture, check this first.',
+  'Colorimetry': 'the source is not telling you its colorimetry. That is legal, but converters and monitors then have to guess between Rec.709 and Rec.2020 — if colour or saturation looks wrong downstream, start here.',
+  'Transfer characteristics': 'the source is not telling you its transfer characteristic (SDR / HLG / PQ). That is legal, but downstream HDR handling becomes a guess — check here if the picture looks washed out or too dark.',
+  _default: 'the source is declaring "unknown" here. That is legal, but anything downstream that needs this value has to guess.',
+};
 
 function warnFieldKeys(list) {
   const keys = new Set();
@@ -8038,6 +8074,31 @@ function render(decoded) {
     }
   }
 
+  // Heads-up tier: spec-legal, but the source left something undeclared that
+  // downstream gear may need. Amber, never red — it is not a spec violation.
+  const noticeEntries = (decoded.valid && Array.isArray(decoded.notices)) ? decoded.notices.filter(Boolean) : [];
+  const noticeKeys = warnFieldKeys(noticeEntries);
+  const notices = noticeEntries.map(warnText).filter(Boolean);
+  const noticeBox = $('#vpidNotices');
+  if (noticeBox) {
+    noticeBox.replaceChildren();
+    if (notices.length) {
+      const title = document.createElement('strong');
+      title.textContent = `Worth knowing (${notices.length}) — legal, but the source left ${notices.length === 1 ? 'this' : 'these'} undeclared`;
+      const ul = document.createElement('ul');
+      for (const n of notices) {
+        const li = document.createElement('li');
+        li.textContent = n;
+        ul.appendChild(li);
+      }
+      noticeBox.appendChild(title);
+      noticeBox.appendChild(ul);
+      noticeBox.hidden = false;
+    } else {
+      noticeBox.hidden = true;
+    }
+  }
+
   const hexWrap = $('#hexInputWrap');
   if (hexWrap) {
     hexWrap.classList.toggle('has-warn', !isInvalid && (warns.length > 0 || isRegistryOnly));
@@ -8046,7 +8107,7 @@ function render(decoded) {
 
   const statusStrip = $('#vpidStatusStrip');
   if (statusStrip) {
-    statusStrip.classList.remove('is-warn', 'is-error');
+    statusStrip.classList.remove('is-warn', 'is-error', 'is-note');
     if (isInvalid) {
       statusStrip.classList.add('is-error');
       statusStrip.innerHTML = `Invalid VPID<span class="vpid-status-detail">${problemLines[0] || ''}</span>`;
@@ -8058,6 +8119,10 @@ function render(decoded) {
     } else if (isRegistryOnly) {
       statusStrip.classList.add('is-warn');
       statusStrip.innerHTML = `Partial decode<span class="vpid-status-detail">Bytes 2–4 not decoded for this Byte 1 family</span>`;
+      statusStrip.hidden = false;
+    } else if (notices.length) {
+      statusStrip.classList.add('is-note');
+      statusStrip.innerHTML = `Spec-compliant · ${notices.length} thing${notices.length === 1 ? '' : 's'} the source left undeclared<span class="vpid-status-detail">${notices[0]}</span>`;
       statusStrip.hidden = false;
     } else {
       statusStrip.hidden = true;
@@ -8084,6 +8149,10 @@ function render(decoded) {
     } else if (isRegistryOnly) {
       statusBadge.className = 'badge warn-badge';
       statusBadge.textContent = 'PARTIAL';
+      statusBadge.hidden = false;
+    } else if (notices.length) {
+      statusBadge.className = 'badge note-badge';
+      statusBadge.textContent = `FYI ${notices.length}`;
       statusBadge.hidden = false;
     } else {
       statusBadge.hidden = true;
@@ -8181,6 +8250,7 @@ function render(decoded) {
     card.appendChild(header);
     card.appendChild(renderBitsRow(byte));
     let byteHasWarn = false;
+    let byteHasNote = false;
     if (bi === 0) {
       // Byte 1 description
       const desc = document.createElement('div');
@@ -8198,9 +8268,11 @@ function render(decoded) {
       for (const f of list) {
         const row = document.createElement('div');
         const isWarn = f.flag === 'warn' || warnKeys.has(`${f.byte}|${f.bits}`);
+        const isNote = !isWarn && (f.flag === 'note' || noticeKeys.has(`${f.byte}|${f.bits}`));
         if (isWarn) byteHasWarn = true;
-        row.className = 'byte-field' + (isWarn ? ' has-warn' : '');
-        const flagClass = isWarn ? 'warn-state' : '';
+        if (isNote) byteHasNote = true;
+        row.className = 'byte-field' + (isWarn ? ' has-warn' : (isNote ? ' has-note' : ''));
+        const flagClass = isWarn ? 'warn-state' : (isNote ? 'note-state' : '');
         const note = (!isWarn && f.note)
           ? `<span class="field-note">${f.note}</span>`
           : '';
@@ -8214,6 +8286,7 @@ function render(decoded) {
       card.appendChild(desc);
     }
     if (byteHasWarn) card.classList.add('has-warn');
+    else if (byteHasNote) card.classList.add('has-note');
     stack.appendChild(card);
   }
 

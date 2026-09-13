@@ -57,6 +57,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   applies; Download ZIP stays outside. More options collapsed by default.
 
 ### Changed
+- **Two severity tiers: red "What's wrong" vs amber "Worth knowing" (2026-09-12).**
+  A spec-legal `Unknown` code is still something an engineer may need to chase
+  (e.g. `89 CA 00 01` — a 1080p59.94 source declaring no aspect ratio), so it now
+  gets its own amber tier instead of only a grey note: a "Worth knowing (n) — legal,
+  but the source left this undeclared" box, an `FYI n` badge, an amber status strip,
+  and an amber-tinted field row + byte card. Red stays reserved for actual spec
+  violations. Notice text is written for troubleshooting ("if a downstream device is
+  stretching the picture, check this first") per field — aspect, colorimetry, TCS.
+  Verified live for red-only, amber-only, both-at-once, and clean VPIDs; invariant
+  checked across all layouts: no field is ever both red and amber (0 conflicts).
 - **Reserved codes can no longer pass silently; "Unknown" is explained (2026-09-12).**
   A full sweep of all 79 layouts (every Byte 2/3 value, 5 Byte 4 values) found
   **Reserved** field codes that rendered with zero warning and zero highlight —
