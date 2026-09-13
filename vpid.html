@@ -142,6 +142,62 @@
       0 0 40px rgba(57, 255, 20, 0.22),
       0 18px 50px rgba(0, 0, 0, 0.35);
   }
+  .hex-input-wrap.has-warn {
+    border-color: rgba(245, 158, 11, 0.85);
+    box-shadow:
+      0 0 0 2px rgba(245, 158, 11, 0.35),
+      0 0 36px rgba(245, 158, 11, 0.22),
+      0 18px 50px rgba(0, 0, 0, 0.35);
+  }
+  .hex-input-wrap.has-warn:focus-within {
+    border-color: rgba(245, 158, 11, 0.95);
+    box-shadow:
+      0 0 0 2px rgba(245, 158, 11, 0.45),
+      0 0 40px rgba(245, 158, 11, 0.28),
+      0 18px 50px rgba(0, 0, 0, 0.35);
+  }
+  .hex-input-wrap.has-error {
+    border-color: rgba(239, 68, 68, 0.9);
+    box-shadow:
+      0 0 0 2px rgba(239, 68, 68, 0.35),
+      0 0 36px rgba(239, 68, 68, 0.2),
+      0 18px 50px rgba(0, 0, 0, 0.35);
+  }
+  .hex-input-wrap.has-error:focus-within {
+    border-color: rgba(239, 68, 68, 1);
+    box-shadow:
+      0 0 0 2px rgba(239, 68, 68, 0.45),
+      0 0 40px rgba(239, 68, 68, 0.28),
+      0 18px 50px rgba(0, 0, 0, 0.35);
+  }
+  .vpid-status-strip {
+    display: none;
+    margin: 10px 0 0;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .vpid-status-strip.is-warn {
+    display: block;
+    background: rgba(245, 158, 11, 0.16);
+    border: 1px solid rgba(245, 158, 11, 0.55);
+    color: var(--warn);
+  }
+  .vpid-status-strip.is-error {
+    display: block;
+    background: rgba(239, 68, 68, 0.14);
+    border: 1px solid rgba(239, 68, 68, 0.55);
+    color: var(--err);
+  }
+  .vpid-status-strip .vpid-status-detail {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0.95;
+  }
   .hex-input-body {
     padding: 18px 20px;
   }
@@ -417,17 +473,33 @@
   .spec-warning { color: var(--warn); }
   .spec-error { color: var(--err); }
   .vpid-warnings {
-    margin: 8px 0 12px; padding: 8px 10px;
-    border: 1px solid rgba(245, 158, 11, 0.45);
-    background: rgba(245, 158, 11, 0.08);
+    margin: 0 0 14px; padding: 12px 14px;
+    border: 1px solid rgba(245, 158, 11, 0.65);
+    background: rgba(245, 158, 11, 0.14);
+    border-left: 4px solid var(--warn);
     border-radius: 8px; color: var(--warn);
-    font-size: 12px; line-height: 1.4;
+    font-size: 13px; line-height: 1.45;
   }
-  .vpid-warnings strong { display: block; margin-bottom: 4px; color: var(--warn); }
+  .vpid-warnings strong {
+    display: block; margin-bottom: 6px; color: var(--warn);
+    font-size: 14px; letter-spacing: 0.02em;
+  }
   .vpid-warnings ul { margin: 0; padding-left: 1.15em; }
-  .vpid-warnings li { margin: 2px 0; }
+  .vpid-warnings li { margin: 4px 0; }
+  .vpid-warnings.is-error {
+    border-color: rgba(239, 68, 68, 0.65);
+    background: rgba(239, 68, 68, 0.12);
+    border-left-color: var(--err);
+    color: var(--err);
+  }
+  .vpid-warnings.is-error strong { color: var(--err); }
   .badge.warn-badge {
-    background: rgba(245, 158, 11, 0.18); color: var(--warn); border-color: rgba(245, 158, 11, 0.5);
+    background: rgba(245, 158, 11, 0.22); color: var(--warn); border-color: rgba(245, 158, 11, 0.65);
+    font-weight: 700;
+  }
+  .badge.error-badge {
+    background: rgba(239, 68, 68, 0.2); color: var(--err); border-color: rgba(239, 68, 68, 0.65);
+    font-weight: 700;
   }
 
   /* Collapsible ST 2110-20 SDP fmtp panel inside the Decoded Source card */
@@ -698,7 +770,18 @@
   .reg-active      { background: rgba(74,158,255,0.18); color: #79b3ff; border: 1px solid rgba(74,158,255,0.35); }
   .reg-deprecated  { background: rgba(255,59,59,0.16);  color: #ff7e7e; border: 1px solid rgba(255,59,59,0.35); }
   .reg-provisional { background: rgba(255,170,0,0.16);  color: #ffc149; border: 1px solid rgba(255,170,0,0.4); }
-  .warn-state { color: var(--warn); }
+  .warn-state { color: var(--warn); font-weight: 700; }
+  .byte.has-warn {
+    border-color: rgba(245, 158, 11, 0.55);
+    box-shadow: inset 3px 0 0 var(--warn);
+  }
+  .byte-field.has-warn {
+    background: rgba(245, 158, 11, 0.1);
+    border-radius: 4px;
+    margin: 0 -4px;
+    padding-left: 4px;
+    padding-right: 4px;
+  }
 
   /* Small hint line under a form field (e.g. explaining the greyed entries
      in the Byte 1 dropdown). */
@@ -939,6 +1022,7 @@
         placeholder="Type here — e.g. 89 CA 80 01"
         maxlength="11"
       >
+      <div id="vpidStatusStrip" class="vpid-status-strip" hidden aria-live="polite"></div>
     </div>
     <div class="input-toolbar">
       <div class="input-toolbar-group" aria-label="Copy actions">
@@ -975,6 +1059,7 @@
         <span id="hdrBadgeMini" class="badge">—</span>
       </div>
       <div class="card-body">
+        <div id="vpidWarnings" class="vpid-warnings" hidden></div>
         <div id="hdrBanner" class="hdr-banner sdr" style="display:none;">
           <span class="dot"></span>
           <span class="label" id="hdrText">SDR</span>
@@ -982,7 +1067,6 @@
         </div>
         <div id="friendlyLabel" class="friendly-label">—</div>
         <div id="standardLine" class="standard-line"></div>
-        <div id="vpidWarnings" class="vpid-warnings" hidden></div>
         <div class="spec-grid" id="specGrid"></div>
         <details id="sdpDetails" class="sdp-details">
           <summary>ST 2110-20 SDP <code>a=fmtp</code> (RFC 4175 + ST 2110-20)</summary>
@@ -7857,16 +7941,30 @@ function render(decoded) {
     $('#standardLine').innerHTML = `<span class="invalid-state">${decoded.error || "Decode failed."}</span>`;
   }
 
-  // Spec warnings (reserved/invalid bits) — decoder already collects these; show them.
-  const warnBox = $('#vpidWarnings');
+  // Spec / invalid problems — make them impossible to miss.
   const warns = Array.isArray(decoded.warnings) ? decoded.warnings.filter(Boolean) : [];
+  const isInvalid = !decoded.valid && !decoded.registered;
+  const isRegistryOnly = !decoded.valid && !!decoded.registered;
+  const problemLines = warns.slice();
+  if (isInvalid) {
+    problemLines.unshift(decoded.error || 'Unassigned or invalid VPID — not in the SMPTE registry.');
+  } else if (isRegistryOnly) {
+    problemLines.unshift('Registered Byte 1 only — bytes 2–4 are not bit-decoded in this build.');
+  }
+
+  const warnBox = $('#vpidWarnings');
   if (warnBox) {
     warnBox.replaceChildren();
-    if (warns.length) {
+    warnBox.classList.toggle('is-error', isInvalid);
+    if (problemLines.length) {
       const title = document.createElement('strong');
-      title.textContent = `Spec warnings (${warns.length}) — decodes, but not fully compliant`;
+      title.textContent = isInvalid
+        ? `What's wrong — invalid VPID`
+        : (warns.length
+          ? `What's wrong (${warns.length}) — decodes, but not fully compliant`
+          : `What's wrong`);
       const ul = document.createElement('ul');
-      for (const w of warns) {
+      for (const w of problemLines) {
         const li = document.createElement('li');
         li.textContent = w;
         ul.appendChild(li);
@@ -7878,21 +7976,57 @@ function render(decoded) {
       warnBox.hidden = true;
     }
   }
-  const hdrMini = $('#hdrBadgeMini');
-  if (hdrMini && warns.length && decoded.valid) {
-    // Keep HDR badge text; add a sibling warn badge if missing.
-    let warnBadge = document.getElementById('vpidWarnBadge');
-    if (!warnBadge) {
-      warnBadge = document.createElement('span');
-      warnBadge.id = 'vpidWarnBadge';
-      warnBadge.className = 'badge warn-badge';
-      hdrMini.insertAdjacentElement('afterend', warnBadge);
+
+  const hexWrap = $('#hexInputWrap');
+  if (hexWrap) {
+    hexWrap.classList.toggle('has-warn', !isInvalid && (warns.length > 0 || isRegistryOnly));
+    hexWrap.classList.toggle('has-error', isInvalid);
+  }
+
+  const statusStrip = $('#vpidStatusStrip');
+  if (statusStrip) {
+    statusStrip.classList.remove('is-warn', 'is-error');
+    if (isInvalid) {
+      statusStrip.classList.add('is-error');
+      statusStrip.innerHTML = `Invalid VPID<span class="vpid-status-detail">${problemLines[0] || ''}</span>`;
+      statusStrip.hidden = false;
+    } else if (warns.length) {
+      statusStrip.classList.add('is-warn');
+      statusStrip.innerHTML = `What's wrong · ${warns.length} issue${warns.length === 1 ? '' : 's'}<span class="vpid-status-detail">${warns[0]}</span>`;
+      statusStrip.hidden = false;
+    } else if (isRegistryOnly) {
+      statusStrip.classList.add('is-warn');
+      statusStrip.innerHTML = `Partial decode<span class="vpid-status-detail">Bytes 2–4 not decoded for this Byte 1 family</span>`;
+      statusStrip.hidden = false;
+    } else {
+      statusStrip.hidden = true;
+      statusStrip.textContent = '';
     }
-    warnBadge.textContent = `WARN ${warns.length}`;
-    warnBadge.hidden = false;
-  } else {
-    const warnBadge = document.getElementById('vpidWarnBadge');
-    if (warnBadge) warnBadge.hidden = true;
+  }
+
+  const hdrMini = $('#hdrBadgeMini');
+  let statusBadge = document.getElementById('vpidWarnBadge');
+  if (!statusBadge && hdrMini) {
+    statusBadge = document.createElement('span');
+    statusBadge.id = 'vpidWarnBadge';
+    hdrMini.insertAdjacentElement('afterend', statusBadge);
+  }
+  if (statusBadge) {
+    if (isInvalid) {
+      statusBadge.className = 'badge error-badge';
+      statusBadge.textContent = 'INVALID';
+      statusBadge.hidden = false;
+    } else if (warns.length) {
+      statusBadge.className = 'badge warn-badge';
+      statusBadge.textContent = `WARN ${warns.length}`;
+      statusBadge.hidden = false;
+    } else if (isRegistryOnly) {
+      statusBadge.className = 'badge warn-badge';
+      statusBadge.textContent = 'PARTIAL';
+      statusBadge.hidden = false;
+    } else {
+      statusBadge.hidden = true;
+    }
   }
 
   // HDR banner — full-width strip at the top of the card. Label + colour
@@ -7985,6 +8119,7 @@ function render(decoded) {
     `;
     card.appendChild(header);
     card.appendChild(renderBitsRow(byte));
+    let byteHasWarn = false;
     if (bi === 0) {
       // Byte 1 description
       const desc = document.createElement('div');
@@ -8001,8 +8136,10 @@ function render(decoded) {
       desc.className = 'byte-fields';
       for (const f of list) {
         const row = document.createElement('div');
-        row.className = 'byte-field';
-        const flagClass = f.flag === 'warn' ? 'warn-state' : '';
+        const isWarn = f.flag === 'warn';
+        if (isWarn) byteHasWarn = true;
+        row.className = 'byte-field' + (isWarn ? ' has-warn' : '');
+        const flagClass = isWarn ? 'warn-state' : '';
         row.innerHTML = `
           <span class="field-bits mono">${f.bits}</span>
           <span class="field-name tooltip" data-tip="${(f.source || '').replace(/"/g,'&quot;')}">${f.name}</span>
@@ -8012,6 +8149,7 @@ function render(decoded) {
       }
       card.appendChild(desc);
     }
+    if (byteHasWarn) card.classList.add('has-warn');
     stack.appendChild(card);
   }
 

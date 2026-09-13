@@ -56,6 +56,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Bulk Generate under More options (2026-08-07).** Button lives with the options it
   applies; Download ZIP stays outside. More options collapsed by default.
 
+### Changed
+- **VPID problems are loud (2026-09-12).** Hex box turns amber/red; “What's wrong”
+  strip under the input + banner at top of Decoded Source; bad byte fields highlighted.
+
 ### Fixed
 - **SDP Single tighter validation (2026-08-07).** Reject empty video fmtp tokens
   (sampling/TCS/colorimetry/PM/SSN/TP), empty origin user, empty 2022-7 group labels,
