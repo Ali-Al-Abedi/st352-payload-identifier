@@ -1476,6 +1476,22 @@ const PICTURE_RATE = {
   0xF: { hz: 120,             label: "120" }
 };
 
+// ST 352:2013 Table 2 (st0352-2013.txt:490) defines only 2h,3h,4h..Bh and
+// reserves 1h, Ch, Dh, Eh, Fh. The HFR values above come from the *extended*
+// Table 2 published by the 6G/12G/24G standards — ST 2081-10/-11/-12 Table 4,
+// ST 2082-10/-11/-12 Table 4 (st2082-10-2018.txt:901), ITU-R BT.2077-2
+// Table 3-9 and BT.2077-3 Table 4-17. So the same code means "96/1.001" on a
+// 12G VPID and "Reserved" on an HD one: which table applies depends on the
+// standard that owns byte 1, hence the citation-driven test below rather than
+// one global table.
+const RESERVED_RATE_ST352 = new Set([0x1, 0xC, 0xD, 0xE, 0xF]);
+const EXTENDED_RATE_STANDARDS = /\b(ST 2081-1[012]|ST 2082-1[012]|BT\.2077-[23])\b/;
+// BT.2077-2 Table 3-9 footnotes every HFR value it inherits with footnote 7,
+// "Not permitted in this Recommendation" (:8503) — and that includes 4h
+// (48/1.001) and 8h (48), which are ordinary ST 352 rates. So BT.2077-2 is
+// neither the base set nor the extended set.
+const NOT_PERMITTED_RATE_BT2077_2 = new Set([0x1, 0x4, 0x8, 0xC]);
+
 // Sampling structure — base ST 352:2013 §5 (Table 3), extended in newer
 // family standards (added 4:2:0, ICTCP coverage, X'Y'Z', alpha/data).
 const SAMPLING = {
@@ -7086,6 +7102,7 @@ function decodeVpidBytes(b1, b2, b3, b4) {
   // Note: In ST 352:2013 §5.1, Byte 1 b7 must be 1 for current standards.
   // (b7=0 is reserved for historical Annex C codes.)
   const result = layout.decode(b2, b3, b4);
+  auditPictureRate(result, layout, b2);
   auditFieldCodes(result);
   return {
     valid: true,
@@ -7107,6 +7124,44 @@ function decodeVpidBytes(b1, b2, b3, b4) {
 function warnText(w) {
   if (w && typeof w === 'object') return String(w.msg || '');
   return String(w || '');
+}
+
+/* Byte 2 b3:b0 (picture rate) is read from one shared table, but the legal set
+ * depends on the standard that owns byte 1: ST 352:2013 Table 2 reserves 1h and
+ * Ch–Fh, and only the 6G/12G/24G standards fill those slots with high frame
+ * rates. So an HD VPID carrying 1h used to read "96/1.001" with no complaint,
+ * when no receiver can interpret it. Corrected centrally so every layout is
+ * covered. */
+function auditPictureRate(result, layout, b2) {
+  if (!result || !Array.isArray(result.fields)) return;
+  const f = result.fields.find(x => x.byte === 2 && x.bits === "b3:b0" && /rate/i.test(x.name));
+  if (!f) return;
+  const rate = b2 & 0xF;
+  const hex = rate.toString(16).toUpperCase();
+  // A delegating code (e.g. ST 2082-30's DBh) carries another layout's bytes
+  // 2–4 verbatim, so its byte 2 follows the *base* layout's standard.
+  let owner = layout;
+  for (let hop = 0; owner && owner.baseLayoutHex != null && hop < 4; hop++) {
+    owner = VPID_LAYOUTS[owner.baseLayoutHex] || owner;
+  }
+  const citation = String((owner && owner.citation) || '');
+
+  let msg = null;
+  if (/\bBT\.2077-2\b/.test(citation) && NOT_PERMITTED_RATE_BT2077_2.has(rate)) {
+    f.value = `Not permitted (${hex}h)`;
+    msg = `Byte 2 b3:b0 = ${hex}h (${PICTURE_RATE[rate].label} Hz) is not permitted for BT.2077-2 24G formats — Table 3-9 footnote 7 marks 1h, 4h, 8h and Ch "Not permitted in this Recommendation".`;
+  } else if (!EXTENDED_RATE_STANDARDS.test(citation) && RESERVED_RATE_ST352.has(rate)) {
+    f.value = `Reserved (${hex}h)`;
+    msg = `Byte 2 b3:b0 = ${hex}h is Reserved by ST 352:2013 Table 2 — ${PICTURE_RATE[rate].label} Hz only exists in the extended Table 2 of the 6G/12G/24G standards (ST 2081-1x, ST 2082-1x, BT.2077), which don't govern this byte 1. A receiver reading this VPID has no defined frame rate.`;
+  }
+  if (!msg) return;
+  f.flag = "warn";
+  const warnings = result.warnings || (result.warnings = []);
+  // Many layouts already complain about the rate through their own allowedRates
+  // check, in their own (more specific) words. Keep theirs and don't stack a
+  // second warning on the same field — auditFieldCodes links it to the field.
+  const said = warnings.some(w => /\b(picture|frame|source picture) rate\b/i.test(warnText(w)));
+  if (!said) warnings.push({ byte: 2, bits: "b3:b0", msg });
 }
 
 /* Safety net over every layout's decode().
@@ -7138,12 +7193,54 @@ function auditFieldCodes(result) {
    * "reserved" would let one warning silence the others. */
   const alreadySaid = (f) => {
     if (explained.has(`${f.byte}|${f.bits}`)) return true;
+    // Some layout warnings name the field but not the byte ("Picture rate 1h is
+    // not valid for SD-270"). A warning carrying the field's full name is
+    // unambiguously about that field, so accept it without the byte gate.
+    if (f.name !== 'Reserved' && warnBlobLower.includes(f.name.toLowerCase())) return true;
     if (!warnBlob.includes(`Byte ${f.byte}`)) return false;
     if (warnBlob.includes(f.bits)) return true;
     if (f.name === 'Reserved') return false;
     const nameToken = f.name.split(/[\s(]/)[0].toLowerCase();
     return nameToken.length > 3 && warnBlobLower.includes(nameToken);
   };
+
+  /* A flagged field must be traceable to a warning the UI can pin to it — free
+   * text can't highlight a byte. When the layout explained the field in prose,
+   * adopt that message for the field instead of adding a second one saying the
+   * same thing. */
+  const linkLooseWarning = (f) => {
+    const key = `${f.byte}|${f.bits}`;
+    if (explained.has(key)) return;
+    const i = warnings.findIndex(w => typeof w === 'string' &&
+      (w.includes(f.bits) ||
+       (f.name !== 'Reserved' && w.toLowerCase().includes(f.name.toLowerCase()))));
+    if (i < 0) return;
+    warnings[i] = { byte: f.byte, bits: f.bits, msg: warnings[i] };
+    explained.add(key);
+  };
+
+  /* Same defect from the other side: a layout can describe a bad field in free
+   * text and never flag it, so the problem box says something is wrong but no
+   * byte lights up (exactly the complaint that started this). Resolve each
+   * plain warning to a field when it names exactly ONE — by bit token, else by
+   * a unique field name — and flag that field. Ambiguous text is left alone
+   * rather than guessed at. */
+  for (let i = 0; i < warnings.length; i++) {
+    const text = warnings[i];
+    if (typeof text !== 'string') continue;
+    let hits = result.fields.filter(f => text.includes(`Byte ${f.byte}`) && text.includes(f.bits));
+    if (hits.length !== 1) {
+      const lower = text.toLowerCase();
+      hits = result.fields.filter(f => f.name !== 'Reserved' && lower.includes(f.name.toLowerCase()));
+    }
+    if (hits.length !== 1) continue;
+    const f = hits[0];
+    const key = `${f.byte}|${f.bits}`;
+    if (explained.has(key)) continue;
+    warnings[i] = { byte: f.byte, bits: f.bits, msg: text };
+    explained.add(key);
+    f.flag = 'warn';
+  }
 
   for (const f of result.fields) {
     const value = String(f.value ?? '');
@@ -7157,7 +7254,9 @@ function auditFieldCodes(result) {
       // Invariant: a field flagged as wrong must ALWAYS be explained in the
       // problem box. Layouts used to flag a field and push no warning, which
       // left the red highlight with no text telling the operator why.
-      if (!alreadySaid(f)) {
+      if (alreadySaid(f)) {
+        linkLooseWarning(f);
+      } else {
         warnings.push({
           byte: f.byte, bits: f.bits,
           msg: isReservedCode

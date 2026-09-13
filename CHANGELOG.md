@@ -8,6 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Picture rate was read from the wrong table on 58 of 78 layouts (2026-09-12).**
+  ST 352:2013 Table 2 defines rates `2h`–`Bh` and **reserves `1h` and `Ch`–`Fh`**;
+  only the 6G/12G/24G standards (ST 2081-10/-11/-12 Table 4, ST 2082-10/-11/-12
+  Table 4, BT.2077-3 Table 4-17) fill those slots with 96/100/120 Hz. The tool
+  used the extended table everywhere, so an HD or 3G VPID carrying `1h` decoded
+  as a confident "96/1.001" with no warning — a rate no receiver of that
+  standard can interpret. Which table applies is now derived from the standard
+  that owns byte 1 (following `baseLayoutHex` for the ST 2081-30/2082-30 codes
+  that carry another layout's bytes 2–4), so the 20 extended layouts keep the
+  HFR values and the other 58 report `Reserved (1h)` with the reason.
+- **BT.2077-2 rates `1h`/`4h`/`8h`/`Ch` now rejected (2026-09-12).** Table 3-9
+  footnote 7 marks them "Not permitted in this Recommendation" — including `4h`
+  (48/1.001) and `8h` (48), which *are* legal ST 352 rates. The 24G codes
+  (`DFh`, `E0h`–`E3h`, `F1h`) are therefore neither the base nor the extended set.
+- **Warnings that named a field but highlighted nothing (2026-09-12).** Layouts
+  describe some violations in prose ("frame rate 1h is not in the permitted
+  set"), which the UI could not pin to a byte — the same defect as the original
+  `82 06 00 01` report, from the other side. Each free-text warning is now
+  resolved to a field when it names exactly one (by bit token, else by a unique
+  field name) and that field is flagged; ambiguous text is left alone rather
+  than guessed at. A field explained in prose no longer gets a second,
+  generically-worded warning stacked on top of it.
+
 - **Four false "Reserved" errors on spec-conformant VPIDs (2026-09-12).** Each was
   verified line-by-line against the governing document, not inferred:
   - **Byte 4 b2 on 3G-SDI Link 1 (`0x94`–`0x98`)** was labelled `Reserved (link 1)`,
