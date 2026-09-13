@@ -57,6 +57,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   applies; Download ZIP stays outside. More options collapsed by default.
 
 ### Changed
+- **Cyan field labels (2026-09-12).** Label captions and table headers across VPID + SDP
+  (`Byte 1 family`, `Scan`, spec grid, byte breakdown field names, compare/batch headers,
+  SDP form labels) use a new `--label` cyan token instead of faint grey.
 - **VPID problems are loud and red (2026-09-12).** Hex box, “What's wrong” strip under
   the input, Decoded Source banner, flagged byte fields, batch-table warnings — all red
   (no amber), so a non-compliant VPID reads as a problem at a glance.

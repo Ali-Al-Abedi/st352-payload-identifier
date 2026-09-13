@@ -15,7 +15,8 @@
     --text: #ffffff;
     --text-ui: #c5cfc5;       /* menus, tabs, toggles, chrome */
     --text-dim: #8ea3b5;      /* descriptions, FAQ, hints, subtitles */
-    --text-faint: #6a756c;    /* field labels, section caps */
+    --text-faint: #6a756c;    /* metadata, hints, citations */
+    --label: #22d3ee;         /* field labels / section caps (cyan) */
     --accent: #39ff14;
     --accent-dim: #0f9d3a;
     --on-accent: #04150c;
@@ -438,7 +439,7 @@
   }
   .spec-label {
     font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em;
-    color: var(--text-faint); font-weight: 600; margin-bottom: 2px;
+    color: var(--label); font-weight: 600; margin-bottom: 2px;
   }
   .spec-value {
     font-size: 14.5px; color: var(--text); font-weight: 500;
@@ -548,7 +549,7 @@
     border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
   }
   .batch-table th {
-    background: var(--bg); color: var(--text-dim);
+    background: var(--bg); color: var(--label);
     font-weight: 600; font-size: 11px;
     text-transform: uppercase; letter-spacing: 0.06em;
     padding: 8px 10px; text-align: left;
@@ -587,7 +588,7 @@
   }
   .compare-input-wrap { flex: 1; min-width: 220px; display: flex; flex-direction: column; }
   .compare-label {
-    font-size: 11px; color: var(--text-dim); text-transform: uppercase;
+    font-size: 11px; color: var(--label); text-transform: uppercase;
     letter-spacing: 0.06em; margin-bottom: 4px; font-weight: 600;
   }
   .compare-actions { display: flex; gap: 8px; }
@@ -599,7 +600,7 @@
   }
   .compare-summary-card { flex: 1; min-width: 220px; }
   .compare-summary-card .label {
-    font-size: 11px; color: var(--text-dim); text-transform: uppercase;
+    font-size: 11px; color: var(--label); text-transform: uppercase;
     letter-spacing: 0.06em; font-weight: 600; margin-bottom: 4px;
   }
   .compare-summary-card .value { font-size: 13.5px; color: var(--text); font-weight: 500; }
@@ -609,7 +610,7 @@
     border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
   }
   .compare-table th {
-    background: var(--bg); color: var(--text-dim);
+    background: var(--bg); color: var(--label);
     font-weight: 600; font-size: 11px;
     text-transform: uppercase; letter-spacing: 0.06em;
     padding: 8px 10px; text-align: left;
@@ -642,7 +643,7 @@
   }
   .byte-name {
     font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
-    color: var(--text-dim); font-weight: 600;
+    color: var(--label); font-weight: 600;
   }
   .byte-hex {
     font-family: 'JetBrains Mono', monospace;
@@ -685,7 +686,7 @@
     color: var(--text-faint); font-size: 11px; white-space: nowrap;
     min-width: 60px;
   }
-  .field-name { color: var(--text-dim); flex: 1; }
+  .field-name { color: var(--label); flex: 1; }
   .field-value { color: var(--text); font-weight: 600; text-align: right; }
 
   /* Builder dropdowns */
@@ -695,7 +696,7 @@
   }
   .form-row label {
     font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em;
-    color: var(--text-faint); font-weight: 600;
+    color: var(--label); font-weight: 600;
   }
   .form-row select, .form-row input[type=text] {
     background: var(--bg);
@@ -852,13 +853,13 @@
   }
 #tool-sdp .card h2 {
     font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em;
-    color: var(--text-faint); font-weight: 700; margin-bottom: 14px;
+    color: var(--label); font-weight: 700; margin-bottom: 14px;
   }
 
 #tool-sdp .field { margin-bottom: 12px; }
 #tool-sdp .field label {
     display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
-    color: var(--text-faint); font-weight: 600; margin-bottom: 5px;
+    color: var(--label); font-weight: 600; margin-bottom: 5px;
   }
 #tool-sdp input, #tool-sdp select, #tool-sdp textarea {
     width: 100%; background: rgba(0,0,0,0.28); border: 1px solid var(--border);
@@ -923,7 +924,7 @@
 
 #tool-sdp table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
 #tool-sdp th, #tool-sdp td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
-#tool-sdp th { color: var(--text-faint); text-transform: uppercase; font-size: 10px; letter-spacing: 0.08em; }
+#tool-sdp th { color: var(--label); text-transform: uppercase; font-size: 10px; letter-spacing: 0.08em; }
 #tool-sdp .badge-ok { color: var(--ok); font-weight: 700; }
 #tool-sdp .badge-err { color: var(--err); font-weight: 700; }
 #tool-sdp .badge-warn { color: var(--warn); font-weight: 600; }

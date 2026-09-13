@@ -15,7 +15,8 @@
     --text: #ffffff;
     --text-ui: #c5cfc5;       /* menus, tabs, toggles, chrome */
     --text-dim: #8ea3b5;      /* descriptions, FAQ, hints, subtitles */
-    --text-faint: #6a756c;    /* field labels, section caps */
+    --text-faint: #6a756c;    /* metadata, hints, citations */
+    --label: #22d3ee;         /* field labels / section caps (cyan) */
     --accent: #39ff14;
     --accent-dim: #0f9d3a;
     --on-accent: #04150c;
@@ -126,13 +127,13 @@
   }
   .card h2 {
     font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em;
-    color: var(--text-faint); font-weight: 700; margin-bottom: 14px;
+    color: var(--label); font-weight: 700; margin-bottom: 14px;
   }
 
   .field { margin-bottom: 12px; }
   .field label {
     display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
-    color: var(--text-faint); font-weight: 600; margin-bottom: 5px;
+    color: var(--label); font-weight: 600; margin-bottom: 5px;
   }
   input, select, textarea {
     width: 100%; background: rgba(0,0,0,0.28); border: 1px solid var(--border);
@@ -193,7 +194,7 @@
 
   table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
   th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
-  th { color: var(--text-faint); text-transform: uppercase; font-size: 10px; letter-spacing: 0.08em; }
+  th { color: var(--label); text-transform: uppercase; font-size: 10px; letter-spacing: 0.08em; }
   .badge-ok { color: var(--ok); font-weight: 700; }
   .badge-err { color: var(--err); font-weight: 700; }
   .badge-warn { color: var(--warn); font-weight: 600; }
