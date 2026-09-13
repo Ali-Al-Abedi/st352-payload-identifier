@@ -57,6 +57,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   applies; Download ZIP stays outside. More options collapsed by default.
 
 ### Changed
+- **P0: sampling code `7h` was mislabelled "Reserved" for every layout (2026-09-12).**
+  `7h` is a **defined** value — "SMPTE ST 2048-2 FS" — in ST 352:2013 Table 3
+  (`st0352-2013.txt:547`) and identically in ST 292-1:2018 Table 6, ST 372:2017
+  Table 6 and ST 292-2:2011 Table 4 (footnote: *"Indicates 4:4:4 RFS GFS BFS
+  Sampling…the Color VANC packet referenced in SMPTE ST 2048-2 will be present"*).
+  The global `SAMPLING` table said "Reserved" and `RESERVED_SAMPLING` contained
+  `0x7`, so e.g. `85 CA 27 01` decoded as Reserved **and** (after the new safety
+  net) raised a false red "no standard defines it" warning. Now
+  `4:4:4 RFS/GFS/BFS (ST 2048-2 FS)`; reserved set corrected to `{Bh, Ch, Dh, Fh}`
+  (`Eh` = 4:4:4 X'Y'Z' was already right). Two decoders already special-cased
+  `7h` correctly, which is what made the global table's error survive.
+  Warning dedupe also tightened so a layout's own citation-bearing message isn't
+  duplicated by the generic one (verified 0 duplicates, 0 flagged-but-unexplained,
+  0 tier collisions across all layouts).
 - **Spec re-audit, pass 1: flagged fields must be explained; "Not defined" surfaced (2026-09-12).**
   Structural sweep across all 78 layouts (bit coverage, encoder round-trip, value
   vocabulary) found two systemic holes the earlier audit missed:

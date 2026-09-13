@@ -1486,7 +1486,12 @@ const SAMPLING = {
   0x4: "4:2:2:4 Y'CbCr+A",
   0x5: "4:4:4:4 Y'CbCr+A",
   0x6: "4:4:4:4 R'G'B'+A",
-  0x7: "Reserved",
+  // 7h is a DEFINED value in ST 352:2013 Table 3 ("SMPTE ST 2048-2 FS"), and
+  // identically in ST 292-1:2018 Table 6, ST 372:2017 Table 6, ST 292-2:2011
+  // Table 4. ST 292-1 footnote *1: "Indicates 4:4:4 RFS GFS BFS Sampling. In
+  // this case, the Color VANC packet referenced in SMPTE ST 2048-2 will be
+  // present." It was previously mislabelled Reserved.
+  0x7: "4:4:4 RFS/GFS/BFS (ST 2048-2 FS)",
   0x8: "4:2:2:4 Y'CbCr+D",
   0x9: "4:4:4:4 Y'CbCr+D",
   0xA: "4:4:4:4 R'G'B'+D",
@@ -1653,7 +1658,10 @@ function bitDepthTo2Bit(v) {
   if (v === "12-bit Full Range") return 0x3;
   return 0x1; // "10-bit" / default
 }
-const RESERVED_SAMPLING = new Set([0x7, 0xB, 0xC, 0xD, 0xF]);
+// Reserved sampling codes per ST 352:2013 Table 3 (and the identical tables in
+// ST 292-1:2018 T6, ST 372:2017 T6, ST 292-2:2011 T4): Bh, Ch, Dh, Fh.
+// 7h (ST 2048-2 FS) and Eh (4:4:4 X'Y'Z') are defined, not reserved.
+const RESERVED_SAMPLING = new Set([0xB, 0xC, 0xD, 0xF]);
 
 // Decode (trans, pic) bits into a scan-mode label.
 // Per ST 274 / ST 292-1 / ST 425-1 conventions:
@@ -5508,7 +5516,7 @@ VPID_LAYOUTS[0x86] = {
  *   Byte 4 b1:b0   Bit depth: 1h=10-bit, 2h=12-bit (0,3 reserved)
  * ============================================================ */
 const ST2048_3_SAMPLING = Object.assign({}, SAMPLING, {
-  0x7: "ST 2048-2 FS 1 (DCI Color VANC)" // ST 2048-3 §7.1: 7h replaces ST 352's "Reserved"
+  0x7: "ST 2048-2 FS 1 (DCI Color VANC)" // ST 2048-3 §7.1 names 7h for DCI; ST 352:2013 Table 3 already defines it as "SMPTE ST 2048-2 FS"
 });
 
 VPID_LAYOUTS[0xB3] = {
@@ -7086,8 +7094,20 @@ function auditFieldCodes(result) {
     if (w && typeof w === 'object' && w.byte && w.bits) explained.add(`${w.byte}|${w.bits}`);
   }
   const warnBlob = warnings.map(warnText).join(' ~ ');
-  const alreadySaid = (f) => explained.has(`${f.byte}|${f.bits}`) ||
-    (warnBlob.includes(`Byte ${f.byte}`) && warnBlob.includes(f.bits));
+  const warnBlobLower = warnBlob.toLowerCase();
+  /* Has some existing warning already explained this field? Layout messages are
+   * free text, so match either the bit token ("Byte 3 b3:b0") or the field name
+   * ("Byte 3 sampling Bh is Reserved..."). Reserved-*bit* fields must match on
+   * the bit token only — a byte can hold several of them, and matching the word
+   * "reserved" would let one warning silence the others. */
+  const alreadySaid = (f) => {
+    if (explained.has(`${f.byte}|${f.bits}`)) return true;
+    if (!warnBlob.includes(`Byte ${f.byte}`)) return false;
+    if (warnBlob.includes(f.bits)) return true;
+    if (f.name === 'Reserved') return false;
+    const nameToken = f.name.split(/[\s(]/)[0].toLowerCase();
+    return nameToken.length > 3 && warnBlobLower.includes(nameToken);
+  };
 
   for (const f of result.fields) {
     const value = String(f.value ?? '');
